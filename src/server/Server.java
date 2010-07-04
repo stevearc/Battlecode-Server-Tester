@@ -486,9 +486,10 @@ public class Server implements Controller{
 				cleanDeadClients();
 				checkMatchTimeout();
 				Network idleClient = getIdleClient();
-				if (idleClient != null)
+				if (idleClient != null) {
 					sendMatchToClient(idleClient, team_a, team_b);
-
+				}
+					
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {

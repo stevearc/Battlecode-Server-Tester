@@ -8,6 +8,7 @@ package networking;
  *
  */
 public class Message extends Packet{
+	private static final long serialVersionUID = 4776773433158752958L;
 	/** The Network that received this packet */
 	public Network receivedBy;
 	
