@@ -18,8 +18,6 @@ public class Packet implements Serializable {
 	public String team_a;
 	/** Name of revision to use for Team B */
 	public String team_b;
-	/** Number of bytes in the match data file */
-	public int matchLength;
 	/** Type of packet */
 	public PacketType type;
 	/** Whether or not Team A won the match */
@@ -27,13 +25,11 @@ public class Packet implements Serializable {
 	
 	public Packet() {}
 
-	public Packet(PacketType type, String map, String team_a, String team_b, 
-			int matchLength, boolean a_wins, 
+	public Packet(PacketType type, String map, String team_a, String team_b, boolean a_wins, 
 			byte[] match) {
 		this.map = map;
 		this.team_a = team_a;
 		this.team_b = team_b;
-		this.matchLength = matchLength;
 		this.type = type;
 		this.a_wins = a_wins;
 		this.match = match;
@@ -41,7 +37,7 @@ public class Packet implements Serializable {
 
 	public Packet (Packet packet) {
 		this (packet.type, packet.map, packet.team_a, packet.team_b, 
-				packet.matchLength, packet.a_wins, packet.match);
+				packet.a_wins, packet.match);
 	}
 	
 	/**
@@ -49,28 +45,23 @@ public class Packet implements Serializable {
 	 * @return True if the packet is valid.  False otherwise.
 	 */
 	public boolean validate() {
-		if (match == null) {
-			if (matchLength != 0)
-				return false;
-		}
-		else if (matchLength != match.length)
-			return false;
 		switch (type) {
 		case SEND_MAP:
-			if (matchLength != 0)
-				return false;
+			if (map != null && team_a != null && team_b != null && match == null)
+				return true;
+			break;
 		case MAP_RESULT:
 			if (map != null && team_a != null && team_b != null)
 				return true;					
 			break;
 		case REQUEST_MAP:
 			if (map == null && team_a == null && team_b == null &&
-					matchLength == 0)
+					match == null)
 				return true;
 			break;
 		case RESET_RUNS:
 			if (map == null && team_a == null && team_b == null &&
-					matchLength == 0)
+					match == null)
 				return true;
 			break;
 		}
@@ -83,12 +74,11 @@ public class Packet implements Serializable {
 		sb.append(type + "\n");
 		sb.append("map: " + map + "\n");
 		sb.append(team_a + " vs " + team_b + "\n");
-		sb.append("match length: " + matchLength);
 		sb.append("\nmatch: ");
 		if (match == null)
 			sb.append("null");
 		else 
-			sb.append("not null, len: " + match.length);
+			sb.append("not null");
 		return sb.toString();
 	}
 }

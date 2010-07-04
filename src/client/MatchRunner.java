@@ -47,7 +47,7 @@ public class MatchRunner implements Runnable {
 	 * Runs the battlecode match
 	 */
 	public void run() {
-		Packet responsePacket = new Packet(PacketType.MAP_RESULT, packet.map, packet.team_a, packet.team_b, 0, false, null);
+		Packet responsePacket = new Packet(PacketType.MAP_RESULT, packet.map, packet.team_a, packet.team_b, false, null);
 		byte[] matchData;
 		// Clean out the old data
 		File oldMatchFile = new File(config.repo + "/match.rms");
@@ -130,7 +130,6 @@ public class MatchRunner implements Runnable {
 		}
 
 		responsePacket.match = matchData;
-		responsePacket.matchLength = responsePacket.match.length;
 		response = responsePacket;
 	}
 

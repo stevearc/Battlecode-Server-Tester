@@ -18,7 +18,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import networking.Controller;
-import networking.Message;
 import networking.Network;
 import networking.Packet;
 import networking.PacketType;
@@ -62,7 +61,7 @@ public class Server implements Controller{
 		String map = queued.poll();
 		if (map != null) {
 			_log.info("Sending map: " + map + " to " + net);
-			net.send(new Packet(PacketType.SEND_MAP, map, team_a, team_b, 0, false, null));
+			net.send(new Packet(PacketType.SEND_MAP, map, team_a, team_b, false, null));
 			clients.get(net).add(map);
 			availableClients.remove(net);
 			executeSQL("INSERT INTO running_matches (conn_id, map) VALUES (" + idFromAddr(net.toSQL()) + ", \"" + map + "\")");
@@ -425,7 +424,7 @@ public class Server implements Controller{
 		availableClients.clear();
 		// Tell all clients to stop any current runs they may have
 		for (Network net: clients.keySet()) {
-			net.send(new Packet(PacketType.RESET_RUNS, null, null, null, 0, true, null));
+			net.send(new Packet(PacketType.RESET_RUNS, null, null, null, true, null));
 		}
 		executeSQL("DELETE FROM connections");
 		executeSQL("DELETE FROM running_matches");
