@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Fri Apr 02 16:11:16 EDT 2010
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=Battlecode.jar
+manifest.mergeall=true
+manifest.mainclass=main.Main
+manifest.file=<createnew>
+jarname.isextern=false
+onejar.expand=
+excludes=
+includes=
