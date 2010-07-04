@@ -1,0 +1,3 @@
+Javascript up the interface
+update ports.conf
+put create db commands into java

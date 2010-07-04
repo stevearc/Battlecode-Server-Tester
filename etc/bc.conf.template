@@ -1,0 +1,30 @@
+# Match server settings
+bc.server.throttle=yield
+bc.server.throttle-count=50
+
+# Game engine settings
+bc.engine.debug-methods=false
+bc.engine.silence-a=true
+bc.engine.silence-b=true
+bc.engine.gc=false
+bc.engine.gc-rounds=50
+bc.engine.upkeep=true
+bc.engine.breakpoints=false
+bc.engine.bytecodes-used=true
+
+# Client settings
+bc.client.opengl=true
+bc.client.use-models=true
+bc.client.renderprefs2d=bgxd
+bc.client.renderprefs3d=
+bc.client.sound-on=false
+
+# Headless settings - for "ant file"
+bc.game.maps=map_goes_here
+bc.game.team-a=old_team_a
+bc.game.team-b=old_team_b
+bc.server.save-file=map_goes_here.rms
+
+# Transcriber settings
+bc.server.transcribe-input=matches\\match.rms
+bc.server.transcribe-output=matches\\transcribed.txt

@@ -1,0 +1,103 @@
+#!/usr/bin/perl
+
+###########################################################
+###########################################################
+#
+
+# The directory that the Battlecode.jar file is stored in
+use constant BATTLECODE_DIR => "/home/steven/battlecode";
+# Affects the behavior of start and stop.  If 1, start will
+# do start-server.  If 0, start will do start-client.  Same
+# for stop
+use constant SERVER => 1;
+
+#
+###########################################################
+###########################################################
+
+use strict;
+
+my $cmd = shift();
+
+if ( $cmd eq "start" ) { start(); }
+elsif ( $cmd eq "start-server" ) { start_server(); }
+elsif ( $cmd eq "start-client" ) { start_client(); }
+elsif ( $cmd eq "stop" ) { stop(); }
+elsif ( $cmd eq "stop-server" ) { stop_server(); }
+elsif ( $cmd eq "stop-client" ) { stop_client(); }
+elsif ( $cmd eq "status" ) { status(); }
+else { usage(); }
+
+sub start {
+	if (SERVER) {
+		start_server();
+	} else {
+		start_client();
+	}
+}
+
+sub stop {
+	if (SERVER) {
+		stop_server();
+	} else {
+		stop_client();
+	}
+}
+
+sub start_server {
+	chdir( BATTLECODE_DIR );
+	system( './run.sh -s > /dev/null 2>/dev/null &' );
+}
+
+sub start_client {
+	chdir( BATTLECODE_DIR );
+	system( './run.sh > /dev/null 2>/dev/null &' );
+}
+
+sub stop_server {
+	my $pid = `ps x | grep Battlecode.jar -s | grep -v grep | egrep ".+\-s\$"`;
+	$pid =~ s/^\s*(\d+) .*/$1/;
+
+	if ( $pid ) {
+		`kill $pid`;
+	}
+}
+
+sub stop_client {
+	my $pid = `ps x | grep Battlecode.jar | grep -v grep | egrep -v ".+\-s\$"`;
+	$pid =~ s/^\s*(\d+) .*/$1/;
+
+	if ( $pid ) {
+		`kill $pid`;
+	}
+}
+
+sub status {
+
+	my $pid = `ps x | grep Battlecode.jar | grep -v grep | egrep -v ".+\-s\$"`;
+	$pid =~ s/^\s*(\d+) .*/$1/;
+
+	if ( $pid ) {
+		print "Client running\n"
+	} else {
+		print "Client not running\n"
+	}
+	
+	$pid = `ps x | grep Battlecode.jar | grep -v grep | egrep ".+\-s\$"`;
+	$pid =~ s/^\s*(\d+) .*/$1/;
+
+	if ( $pid ) {
+		print "Server running\n"
+	} else {
+		print "Server not running\n"
+	}
+}
+
+
+sub usage {
+	print <<EOF;
+
+Usage: battlecode (start|stop|start-server|start-client|stop-server|stop-client|status)
+
+EOF
+}
