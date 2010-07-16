@@ -37,4 +37,3 @@ popd
 $CMD_PREFIX git checkout -f master
 
 popd
-cp -r maps $REPO

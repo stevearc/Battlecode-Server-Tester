@@ -1,6 +1,7 @@
 update ports.conf
 put create db commands into java
 Put in checks to make sure client doesn't send more requests than it can handle
+grab maps from most recent repo
 
 
 Interface:

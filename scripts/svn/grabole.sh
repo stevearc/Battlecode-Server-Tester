@@ -37,4 +37,3 @@ popd
 $CMD_PREFIX svn up
 
 popd
-cp -r maps $REPO
