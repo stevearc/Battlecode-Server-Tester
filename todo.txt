@@ -5,6 +5,7 @@ grab maps from most recent repo
 out of memory failures are visible
 store match files better
 make gen_conf.sh eliminate need for bc template file
+maybe make script to generate apache configuration
 
 
 Interface:
