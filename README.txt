@@ -2,7 +2,7 @@
 ## REQUIREMENTS ##
 ##################
 You need four things in order for this system to work properly:
-	* Apache server with php and php-mysql module
+	* Apache server with ssl, php, and php-mysql module
 	* MySQL server
 	* Git or SVN
 	* Java and Ant (to run the battlecode client)
@@ -15,12 +15,11 @@ sudo apt-get install apache2 libapache2-mod-php5 php5-mysql git-core subversion 
 Create a new user and database in MySQL.
   mysql -u root -p
   [enter password]
-  create user 'user'@'localhost' identified by 'password';
-  create database 'dbname';
-  grant all on dbname.* to 'user'@'localhost';
-  quit
-After you do that, the setup commands are all in etc/db.sql, so you can simply run:
-	mysql -u root -p dbname < etc/db.sql
+  CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
+  CREATE DATABASE 'dbname';
+  GRANT ALL ON dbname.* TO 'user'@'localhost';
+  QUIT
+After this setup, you need to put the database user/password information into the etc/battlecode.conf file
 
 ################
 ## WEB SERVER ##
@@ -54,13 +53,21 @@ You will need to set up ssh keys such that the repository can update without ent
   ssh-copy-id [server_with_repo]
 I would not recommend having a client and server share the same repository.
 
-#############
-## RUNNING ##
-#############
-First make sure that you copied the battlecode.conf file to /etc and edited the values appropriately
-You must run all commands as root.  To run the client, do 
+############
+## CONFIG ##
+############
+The java program first tries to read from /etc/battlecode.conf and if that fails it will attempt to read from ./etc/battlecode.conf.  The web interface can only read from /etc/battlecode.conf.  Make sure the file you are using has all the appropriate information.
+
+########################
+## RUNNING THE CLIENT ##
+########################
 sudo ./run.sh
-To run the server, add a -s argument 
+
+###########################
+## INSTALLING THE SERVER ##
+###########################
+First make sure that you copied the battlecode.conf file to /etc and edited the values appropriately
+To run the server you can do a sudo ./run.sh -s
 To run as a daemon, configure the parameters at the top of the etc/init.d/battlecode file and place it in your /etc/init.d directory.  Then do:
   sudo update-rc.d battlecode defaults
 Now it will start on bootup and you can manage it with invoke-rc.d

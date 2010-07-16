@@ -9,11 +9,8 @@ runsql () {
 	echo `mysql -u $DB_USER -p$DB_PASS $DATABASE -e "$1" | awk '{split($0,a," ")} END{print a[1]}'`
 }
 
-CMD_PREFIX=""
-CUR_USER=`whoami`
-if [ "$CUR_USER" != "$USER" ]; then
-	CMD_PREFIX="sudo -u $USER"
-fi
+USER=`ls -l $REPO | awk '{split($0,a," ")} END{print a[3]}'`
+CMD_PREFIX="sudo -u $USER"
 
 cd $REPO
 $CMD_PREFIX svn revert .
