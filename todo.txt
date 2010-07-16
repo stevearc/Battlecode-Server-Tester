@@ -1,3 +1,22 @@
-Javascript up the interface
 update ports.conf
 put create db commands into java
+Put in checks to make sure client doesn't send more requests than it can handle
+
+
+Interface:
+FXN
+	Start new run (autocomplete)
+		view old run
+		delete old run
+	compare two runs
+		filter by name
+	view connections
+  manage aliases
+	
+	{change user permissions}
+
+team A | team B | wins/wins | status | time
+
+
+Error code to display incorrect runs
+tooltip over aliased rows to display actual name
