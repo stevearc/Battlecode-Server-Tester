@@ -1,3 +1,9 @@
+#################
+## QUICK START ##
+#################
+If you want to set up an server on an ubuntu machine, you can simply
+run install.sh and skip down to the section on Version Control
+
 ##################
 ## REQUIREMENTS ##
 ##################
@@ -6,8 +12,6 @@ You need four things in order for this system to work properly:
 	* MySQL server
 	* Git or SVN
 	* Java and Ant (to run the battlecode client)
-On Ubuntu, the packages should be:
-sudo apt-get install apache2 libapache2-mod-php5 php5-mysql git-core subversion openjdk-6-jre ant
 
 ##############
 ## DATABASE ##
@@ -25,7 +29,6 @@ After this setup, you need to put the database user/password information into th
 ## WEB SERVER ##
 ################
 This section makes many references to the files in etc/apache2.
-Make sure the configuration in the included ports.conf file is copied to your /etc/apache2 folder.
 
 These instructions will help you generate a personal X.509 certificate
 sudo mkdir /etc/apache2/ssl
@@ -46,7 +49,6 @@ sudo mkdir /var/www-ssl
 Restart apache (sudo invoke-rc.d apache2 restart)
 unzip battlecode_web.tar.gz into /var/www-ssl
 You will need to create a symbolic link from the directory you are storing the match files in to /var/www-ssl/battlecode/matches
-
 
 #####################
 ## VERSION CONTROL ##

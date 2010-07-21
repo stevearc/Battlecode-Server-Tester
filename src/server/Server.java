@@ -43,12 +43,30 @@ public class Server implements Controller{
 	private Config config;
 	private Connection conn;
 	private String[] maps;
+	private static String[] createStmts = {"CREATE TABLE IF NOT EXISTS `connections` (`id` int(11) NOT NULL AUTO_INCREMENT, `addr` varchar(60) DEFAULT NULL, PRIMARY KEY (`id`))",
+		"CREATE TABLE IF NOT EXISTS `delete_queue` (`id` int(11) NOT NULL",
+		"CREATE TABLE IF NOT EXISTS `matches` (`id` int(11) NOT NULL DEFAULT '0',`map` varchar(30) NOT NULL, `win` int(1) NOT NULL,`file` varchar(150) NOT NULL)",
+		"CREATE TABLE IF NOT EXISTS `queue` (`id` int(11) NOT NULL AUTO_INCREMENT,`team_a` varchar(45) DEFAULT NULL,`team_b` varchar(45) DEFAULT NULL,PRIMARY KEY (`id`))",
+		"CREATE TABLE IF NOT EXISTS `running_matches` (`conn_id` int(11) NOT NULL,`map` varchar(50) NOT NULL,`modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)",
+		"CREATE TABLE IF NOT EXISTS `runs` (`id` int(11) NOT NULL AUTO_INCREMENT,`team_a` varchar(45) NOT NULL,`team_b` varchar(45) NOT NULL,`started` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',`finished` int(11) DEFAULT '0',`ended` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (`id`))",
+		"CREATE TABLE IF NOT EXISTS `tags` (`tag` varchar(45) NOT NULL,`alias` varchar(20) DEFAULT NULL,UNIQUE KEY `tag` (`tag`))"
+		};
 
-	public Server(Config config) {
+	public Server(Config config) throws Exception {
 		this.config = config;
 		_log = config.getServerLogger();
 		handler = new NetworkHandler(this, config);
 		new Thread(handler).start();
+		try {
+			Class.forName ("com.mysql.jdbc.Driver").newInstance ();
+			conn = DriverManager.getConnection(config.db_addr,config.db_user,config.db_pass);
+		} catch (Exception e) {
+			_log.severe("Cannot connect to database");
+			throw e;
+		}
+		for (String stmt: createStmts) {
+			executeSQL(stmt);
+		}
 	}
 
 	/**
@@ -604,15 +622,6 @@ public class Server implements Controller{
 
 	public void run() {
 		boolean noErrors = true;
-		try {
-			Class.forName ("com.mysql.jdbc.Driver").newInstance ();
-			conn = DriverManager.getConnection(config.db_addr,config.db_user,config.db_pass);
-		} catch (Exception e) {
-			_log.severe("Cannot connect to database");
-			if (config.DEBUG)
-				e.printStackTrace();
-			noErrors = false;
-		}
 		executeSQL("DELETE FROM connections");
 		executeSQL("DELETE FROM running_matches");
 		while (noErrors) {

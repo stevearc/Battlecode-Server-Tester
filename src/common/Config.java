@@ -91,9 +91,6 @@ public class Config {
 		else if (option.equals("matches")) {
 			matches = value;
 		}
-		else if (option.equals("address")) {
-			db_addr = value;
-		}
 		else if (option.equals("db_user")) {
 			db_user = value;
 		}
@@ -101,7 +98,7 @@ public class Config {
 			db_pass = value;
 		}
 		else if (option.equals("database")) {
-			// Do nothing
+			db_addr = "jdbc:mysql://localhost/" + value;
 		}
 		else if (option.equals("debug")) {
 			DEBUG = (Integer.parseInt(value) != 0);

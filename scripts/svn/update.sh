@@ -9,7 +9,7 @@ runsql () {
 	echo `mysql -u $DB_USER -p$DB_PASS $DATABASE -e "$1" | awk '{split($0,a," ")} END{print a[1]}'`
 }
 
-USER=`ls -l $REPO | awk '{split($0,a," ")} END{print a[3]}'`
+USER=`ls -ld $REPO | awk '{split($0,a," ")} END{print a[3]}'`
 CMD_PREFIX="sudo -u $USER"
 
 cd $REPO

@@ -1,12 +1,8 @@
-update ports.conf
-put create db commands into java
 Put in checks to make sure client doesn't send more requests than it can handle
-grab maps from most recent repo
+? grab maps from most recent repo
 out of memory failures are visible
 store match files better
-make gen_conf.sh eliminate need for bc template file
-maybe make script to generate apache configuration
-
+? make gen_conf.sh eliminate need for bc template file
 
 Interface:
 FXN
