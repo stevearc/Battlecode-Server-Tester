@@ -1,11 +1,21 @@
 package main;
 
-import java.util.HashSet;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
+import web.WebServer;
+import backend.Server;
+import client.Client;
 
 import common.Config;
 
-import server.Server;
-import client.Client;
+import db.Database;
+import db.HSQLDatabase;
+import db.MySQLDatabase;
 
 /**
  * Where everything starts
@@ -20,24 +30,64 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		HashSet<String> argSet = new HashSet<String>();
-		for (String s: args)
-			argSet.add(s);
-		
-		if (argSet.contains("-h") || argSet.contains("--help")) {
-			System.out.println("Run with no arguments for the client, or with -s for the server");
-			System.exit(0);
-		}
-		if (argSet.contains("-v")) {
-			System.out.println("Verion: " + VERSION);
-			System.exit(0);
-		}
+		Options options = new Options();
+		HelpFormatter formatter = new HelpFormatter();
+		options.addOption("s", "server", false, "run as server");
+		options.addOption("h", "help", false, "display help text");
+		options.addOption("v", "version", false, "display version");
+		options.addOption("o", "http-port", true, "what port for the http server to listen on (default 80)");
+		options.addOption("l", "ssl-port", true, "what port for the https server to listen on (default 443)");
+		options.addOption("r", "reset-db", false, "clear and re-create the database");
+
+		CommandLineParser parser = new GnuParser();
+		CommandLine cmd = null;
 		try {
-			if (argSet.contains("-s")) {
-				new Server(new Config(true)).run();
+			cmd = parser.parse(options, args);
+		} catch (ParseException e1) {
+			formatter.printHelp("run.sh", options);
+			return;
+		}
+		if (cmd.hasOption('h')) {
+			formatter.printHelp("run.sh", options);
+			return;
+		}
+		if (cmd.hasOption('v')) {
+			System.out.println("Version: " + VERSION);
+			return;
+		}
+
+
+		try {
+			if (cmd.hasOption('s')) {
+				Config c = new Config(true);
+				Config.setConfig(c);
+				if (cmd.hasOption('o')) {
+					c.http_port = Integer.parseInt(cmd.getOptionValue('o'));
+				}
+				if (cmd.hasOption('l')) {
+					c.https_port = Integer.parseInt(cmd.getOptionValue('l'));
+				}
+				c.reset_db = cmd.hasOption('r');
+				Database db = null;
+				if (c.db_type.equals("mysql")){
+					db = new MySQLDatabase();
+				} else if (c.db_type.equals("hsql")) {
+					db = new HSQLDatabase();
+				} else {
+					throw new Exception("Invalid database type");
+				}
+				db.connect();
+				Config.setDB(db);
+				Server s = new Server();
+				Config.setServer(s);
+				new Thread(s).start();
+				new Thread(new WebServer()).start();
 			}
-			else
-				new Client(new Config(false)).run();
+			else {
+				Config c = new Config(false);
+				Config.setConfig(c);
+				new Thread(new Client()).start();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

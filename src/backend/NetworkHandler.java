@@ -1,10 +1,11 @@
-package server;
+package backend;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import networking.Controller;
@@ -31,10 +32,10 @@ public class NetworkHandler implements Runnable {
 	 * @param server The server that controls this NetworkHandler
 	 * @param config The configuration parameters
 	 */
-	public NetworkHandler(Controller server, Config config) {
-		this.config = config;
+	public NetworkHandler(Controller server) {
+		this.config = Config.getConfig();
 		this.server = server;
-		this._log = config.getServerLogger();
+		this._log = config.getLogger();
 	}
 
 	/**
@@ -63,7 +64,7 @@ public class NetworkHandler implements Runnable {
 		while (!finished) {
 			try {
 				Socket socket = serverSocket.accept();
-				Network net = new Network(server, config, socket, _log);
+				Network net = new Network(server, socket);
 				new Thread(net).start();
 				queue.add(net);
 			} catch (IOException e) {
@@ -82,14 +83,10 @@ public class NetworkHandler implements Runnable {
 			socket = new Socket("localhost", config.port);
 			socket.close();
 		} catch (UnknownHostException e) {
-			_log.severe("Cannot find localhost?");
-			if (config.DEBUG)
-				e.printStackTrace();
+			_log.log(Level.SEVERE,"Cannot find localhost?", e);
 		} catch (IOException e) {
-			_log.severe("Error shutting down connection listener");
-			if (config.DEBUG)
-				e.printStackTrace();
-			}
+			_log.log(Level.SEVERE, "Error shutting down connection listener", e);
+		}
 		for (Network net: queue) {
 			net.stop();
 		}

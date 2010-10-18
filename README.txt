@@ -1,7 +1,7 @@
 #################
 ## QUICK START ##
 #################
-If you want to set up an server on an ubuntu machine, you can simply
+If you want to set up an server on an ubuntu machine (10.04 only), you can simply
 run install.sh and skip down to the section on Version Control
 
 ##################
@@ -23,6 +23,7 @@ Create a new user and database in MySQL.
   CREATE DATABASE 'dbname';
   GRANT ALL ON dbname.* TO 'user'@'localhost';
   QUIT
+#TODO: create tables
 After this setup, you need to put the database user/password information into the etc/battlecode.conf file
 
 ################
@@ -46,9 +47,8 @@ sudo ln -s ../mods-available/ssl.load /etc/apache2/mods-enabled
 sudo ln -s ../mods-available/ssl.conf /etc/apache2/mods-enabled
 sudo cp etc/apache2/ssl/mitclientca.crt /etc/apache2/ssl
 sudo mkdir /var/www-ssl
-Restart apache (sudo invoke-rc.d apache2 restart)
+sudo invoke-rc.d apache2 restart
 unzip battlecode_web.tar.gz into /var/www-ssl
-You will need to create a symbolic link from the directory you are storing the match files in to /var/www-ssl/battlecode/matches
 
 #####################
 ## VERSION CONTROL ##
@@ -57,12 +57,12 @@ To run a client or server you need to set up a copy of your repository that will
 You will need to set up ssh keys such that the repository can update without entering a password.  The simplest way to do this is:
   ssh-keygen # don't enter a passphrase
   ssh-copy-id [server_with_repo]
-I would not recommend having a client and server share the same repository.
+I would not recommend having a client and server share the same repository if you are running both on the same computer.
 
 ############
 ## CONFIG ##
 ############
-The java program first tries to read from /etc/battlecode.conf and if that fails it will attempt to read from ./etc/battlecode.conf.  The web interface can only read from /etc/battlecode.conf.  Make sure the file you are using has all the appropriate information.
+The java client/server first tries to read from /etc/battlecode.conf and if that fails it will attempt to read from ./etc/battlecode.conf.  The web interface can only read from /etc/battlecode.conf.  Make sure the file you are using has all the appropriate information.
 
 #############
 ## RUNNING ##
@@ -75,6 +75,7 @@ sudo ./run.sh -s
 ################
 ## INSTALLING ##
 ################
+If you ran install.sh this step has already been completed.
 To run on bootup, configure the parameters at the top of the etc/init.d/battlecode file and place it in your /etc/init.d directory.  Then do:
   sudo update-rc.d battlecode defaults
 Now it will start on bootup and you can manage it with invoke-rc.d

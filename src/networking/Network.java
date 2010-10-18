@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import common.Config;
@@ -20,9 +21,9 @@ public class Network implements Runnable{
 	private Controller controller;
 	private Config config;
 
-	public Network (Controller controller, Config config, Socket socket, Logger _log) throws IOException{
-		this._log = _log;
-		this.config = config;
+	public Network (Controller controller, Socket socket) throws IOException{
+		config = Config.getConfig();
+		_log = config.getLogger();
 		this.socket = socket;
 		this.controller = controller;
 	}
@@ -35,9 +36,7 @@ public class Network implements Runnable{
 			try {
 				packet = (Packet) ois.readObject();
 			} catch (ClassNotFoundException e) {
-				_log.severe("Could not find class during packet deserialization");
-				if (config.DEBUG)
-					e.printStackTrace();
+				_log.log(Level.SEVERE, "Could not find class during packet deserialization", e);
 				return;
 			}
 
@@ -49,9 +48,7 @@ public class Network implements Runnable{
 
 		} 
 		catch (IOException e){
-			_log.warning("Could not read from connection");
-			if (config.DEBUG)
-				e.printStackTrace();
+			_log.log(Level.WARNING, "Could not read from connection", e);
 			stop();
 		}
 	}
@@ -73,10 +70,7 @@ public class Network implements Runnable{
 				_log.severe("Trying to send invalid packet:\n" + packet);
 			}
 		} catch (IOException e) {
-			_log.severe("Error serializing packet:\n" + packet);
-			if (config.DEBUG) {
-				e.printStackTrace();
-			}
+			_log.log(Level.SEVERE, "Error serializing packet:\n" + packet, e);
 		}
 	}
 

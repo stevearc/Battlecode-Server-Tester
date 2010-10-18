@@ -5,20 +5,12 @@ else
 	source etc/battlecode.conf
 fi
 
-runsql () {
-	echo `mysql -u $DB_USER -p$DB_PASS $DATABASE -e "$1" | awk '{split($0,a," ")} END{print a[1]}'`
-}
-
 USER=`ls -ld $REPO | awk '{split($0,a," ")} END{print a[3]}'`
 CMD_PREFIX="sudo -u $USER"
 
 cd $REPO
-$CMD_PREFIX git reset --hard
-$CMD_PREFIX git checkout -f master
-$CMD_PREFIX git pull
-if [ "$1" == "server" ]; then
-	for TAG in `git tag`; do
-		runsql "INSERT IGNORE INTO tags (tag) VALUES (\"$TAG\")"
-	done
-fi
+$CMD_PREFIX git reset --hard > /dev/null
+$CMD_PREFIX git checkout -f master > /dev/null
+$CMD_PREFIX git pull > /dev/null
 chown -R $USER .
+git tag

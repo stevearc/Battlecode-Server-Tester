@@ -1,10 +1,10 @@
 #Fat Jar Configuration File
-#Sat Jul 03 22:32:07 PDT 2010
+#Sat Oct 16 21:58:00 EDT 2010
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
 onejar.checkbox=false
-jarname=\ Battlecode.jar
+jarname=Battlecode.jar
 manifest.mergeall=true
 manifest.mainclass=main.Main
 manifest.file=<createnew>

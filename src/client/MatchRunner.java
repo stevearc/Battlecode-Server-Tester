@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import networking.Packet;
@@ -28,11 +29,11 @@ public class MatchRunner implements Runnable {
 	private ReentrantLock repoLock;
 	private Runner runner = null;
 
-	public MatchRunner(Config config, Packet packet, ReentrantLock repoLock) {
-		this.config = config;
+	public MatchRunner(Packet packet, ReentrantLock repoLock) {
+		config = Config.getConfig();
 		this.packet = packet;
 		this.repoLock = repoLock;
-		_log = config.getClientLogger();
+		_log = config.getLogger();
 	}
 
 	/**
@@ -49,9 +50,9 @@ public class MatchRunner implements Runnable {
 	public void run() {
 		Packet responsePacket = new Packet(PacketType.MAP_RESULT, packet.map, packet.team_a, packet.team_b, false, null);
 		byte[] matchData;
-		// Clean out the old data
-		File oldMatchFile = new File(config.repo + "/match.rms");
-		oldMatchFile.delete();
+		// Clean out old data
+		File f = new File(config.repo + "/" + packet.map + ".rms");
+		f.delete();
 
 		try {
 			_log.info("Running: " + packet.map);
@@ -60,7 +61,7 @@ public class MatchRunner implements Runnable {
 				repoLock.lock();
 
 				// Update the repository
-				Process p = Runtime.getRuntime().exec(config.cmd_update);
+				Process p = run.exec(config.cmd_update);
 				p.waitFor();
 				// Get the appropriate teams for the match
 				p = run.exec(new String[] {config.cmd_grabole, packet.team_a, packet.team_b});
@@ -102,7 +103,7 @@ public class MatchRunner implements Runnable {
 				// Keyboard Interrupt
 				response = responsePacket;
 				return;
-			}
+			} 
 
 			// Kind of sloppy win detection, but it works
 			if (output.indexOf("(A) wins") != -1) {
@@ -111,9 +112,7 @@ public class MatchRunner implements Runnable {
 
 			_log.info("Finished: " + packet.map);
 		} catch (Exception e) {
-			_log.severe("Failed to run match");
-			if (config.DEBUG)
-				e.printStackTrace();
+			_log.log(Level.SEVERE, "Failed to run match", e);
 			response = responsePacket;
 			return;
 		}
@@ -122,9 +121,7 @@ public class MatchRunner implements Runnable {
 		try {
 			matchData = getMatchData(matchFile);
 		} catch (IOException e) {
-			_log.severe("Failed to read " + matchFile);
-			if (config.DEBUG)
-				e.printStackTrace();
+			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
 			response = responsePacket;
 			return;
 		}

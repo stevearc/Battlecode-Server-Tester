@@ -6,8 +6,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
+import backend.Server;
+import db.Database;
 
 /**
  * Handles the parsing of battlecode.conf and stores
@@ -16,8 +20,21 @@ import java.util.logging.SimpleFormatter;
  *
  */
 public class Config {
+	private static Config rootConfig;
+	private static Database rootDB;
+	private static Server rootServer;
+	
 	private boolean isServer;
 	private String log_dir = "";
+	public String keytool_pass = "elevenened";
+	/* These options are only specified on the command line */
+	public int http_port = 80;
+	public int https_port = 443;
+	public boolean reset_db = false;
+	
+	/* These options are specified in the battlecode.conf file */
+	/** The directory the application is installed into */
+	public String home = "";
 	/** The location of the repository being used */
 	public String repo = "";
 	/** CLIENT ONLY: The internet address of the server to connect to */
@@ -26,11 +43,15 @@ public class Config {
 	public int port = 0;
 	/** SERVER ONLY: The location to store all the match files. */
 	public String matches = "";
-	/** SERVER ONLY: The address of the MYSQL database to connect to. */
-	public String db_addr = "";
-	/** SERVER ONLY: The username to use when connecting to the MYSQL database. */
+	/** SERVER ONLY: The type of database to use */
+	public String db_type = "";
+	/** SERVER ONLY: The name of the database to use */
+	public String db_name = "";
+	/** SERVER ONLY: The host of the database */
+	public String db_host = "";
+	/** SERVER ONLY: The username to use when connecting to the database. */
 	public String db_user = "";
-	/** SERVER ONLY: The password to use when connecting to the MYSQL database. */
+	/** SERVER ONLY: The password to use when connecting to the database. */
 	public String db_pass = "";
 	/** The name of the user that owns the repository folder */
 	public String user = "";
@@ -40,10 +61,10 @@ public class Config {
 	public String cmd_grabole = "";
 	/** The path to the script that will generate the proper bc.conf file */
 	public String cmd_gen_conf = "";
+	/** The name of the team */
+	public String team = "";
 	/** The version control program being used (currently supports git and svn) */
 	public String version_control = "";
-	/** Whether or not to print out stack traces of exceptions */
-	public boolean DEBUG = false;
 	/** CLIENT ONLY: The number of simultaneous matches to run at a time */
 	public int cores = 0;
 	/** Time, in seconds, to wait before assuming match failed to run properly */
@@ -68,7 +89,65 @@ public class Config {
 		}
 		validate();
 	}
-
+	
+	public static Config getConfig() {
+		return rootConfig;
+	}
+	
+	public static void setConfig(Config c) {
+		rootConfig = c;
+	}
+	
+	public static Database getDB() {
+		return rootDB;
+	}
+	
+	public static void setDB(Database db) {
+		rootDB = db;
+	}
+	
+	public static Server getServer() {
+		return rootServer;
+	}
+	
+	public static void setServer(Server s) {
+		rootServer = s;
+	}
+	
+	public Logger getLogger() {
+		if (isServer) {
+			Logger logger = Logger.getLogger("Server");
+			logger.setLevel(Level.ALL);
+			try {
+				if (logger.getHandlers().length < 2) {
+					FileHandler server_handler = new FileHandler(log_dir + "/battlecode_srv.txt");
+					server_handler.setFormatter(new SimpleFormatter());
+					logger.addHandler(server_handler);
+				}
+			} catch (SecurityException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return logger;
+		} else {
+			Logger logger = Logger.getLogger("Client");
+			logger.setLevel(Level.ALL);
+			try {
+				if (logger.getHandlers().length < 2) {
+					FileHandler client_handler = new FileHandler(log_dir + "/battlecode.txt");
+					client_handler.setFormatter(new SimpleFormatter());
+					logger.addHandler(client_handler);
+				}
+			} catch (SecurityException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return logger;
+		}
+	}
+	
 	/**
 	 * Assigns the values of a parameter in the conf file to variables in Config
 	 * @param option
@@ -76,7 +155,10 @@ public class Config {
 	 */
 	private void parse(String option, String value) {
 		option = option.toLowerCase();
-		if (option.equals("repo")) {
+		if (option.equals("home")) {
+			home = value;
+		}
+		else if (option.equals("repo")) {
 			repo = value;
 		}
 		else if (option.equals("log_dir")) {
@@ -91,20 +173,23 @@ public class Config {
 		else if (option.equals("matches")) {
 			matches = value;
 		}
+		else if (option.equals("db_type")) {
+			db_type = value.toLowerCase();
+		}
+		else if (option.equals("db_name")) {
+			db_name = value;
+		}
+		else if (option.equals("db_host")) {
+			db_host = value;
+		}
 		else if (option.equals("db_user")) {
 			db_user = value;
 		}
 		else if (option.equals("db_pass")) {
 			db_pass = value;
 		}
-		else if (option.equals("database")) {
-			db_addr = "jdbc:mysql://localhost/" + value;
-		}
-		else if (option.equals("debug")) {
-			DEBUG = (Integer.parseInt(value) != 0);
-		}
 		else if (option.equals("team")) {
-			// Do nothing
+			team = value;
 		}
 		else if (option.equals("authorized_users")) {
 			// Do nothing
@@ -140,6 +225,9 @@ public class Config {
 
 		if (!new File(repo).exists())
 			throw new InvalidConfigException("Invalid repository location " + repo);
+		
+		if (!new File(home).exists())
+			throw new InvalidConfigException("Invalid install directory " + home);
 
 		if (port < 1 || port > 65535)
 			throw new InvalidConfigException("Invalid port number " + port);
@@ -164,59 +252,25 @@ public class Config {
 
 		// Check the server values
 		if (isServer) {
+			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
+				throw new InvalidConfigException("Invalid database type: " + db_type);
+			
 			if (matches.equals(""))
 				throw new InvalidConfigException("Invalid match directory " + matches);
 
-			if (!db_addr.matches("jdbc:mysql://\\w+/\\w+"))
-				throw new InvalidConfigException("MYSQL address much match the format: jdbc:mysql://server/database");
-
 			if (db_user.equals(""))
-				throw new InvalidConfigException("Invalid MYSQL database user");
+				throw new InvalidConfigException("Invalid database user");
 
 			if (db_pass.equals(""))
-				throw new InvalidConfigException("Must have a non-blank MYSQL database password");
+				throw new InvalidConfigException("Must have a non-blank database password");
+			
+			if (db_name.equals(""))
+				throw new InvalidConfigException("Must have a non-blank database name");
+			
+			if (db_host.equals(""))
+				throw new InvalidConfigException("Must have a valid database host");
 		}
 
-	}
-
-	/**
-	 * Get the Logger for the Client to use
-	 * @return The Logger object the Client uses
-	 */
-	public Logger getClientLogger() {
-		Logger logger = Logger.getLogger("Client");
-		try {
-			if (logger.getHandlers().length < 2) {
-				FileHandler client_handler = new FileHandler(log_dir + "/battlecode.txt");
-				client_handler.setFormatter(new SimpleFormatter());
-				logger.addHandler(client_handler);
-			}
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return logger;
-	}
-
-	/**
-	 * Get the Logger for the server to use
-	 * @return The Logger object the Server uses
-	 */
-	public Logger getServerLogger() {
-		Logger logger = Logger.getLogger("Server");
-		try {
-			if (logger.getHandlers().length < 2) {
-				FileHandler server_handler = new FileHandler(log_dir + "/battlecode_srv.txt");
-				server_handler.setFormatter(new SimpleFormatter());
-				logger.addHandler(server_handler);
-			}
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return logger;
 	}
 
 }

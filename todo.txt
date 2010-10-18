@@ -1,8 +1,10 @@
+fix EOFException on client shutdown
 Put in checks to make sure client doesn't send more requests than it can handle
-? grab maps from most recent repo
 out of memory failures are visible
-store match files better
-? make gen_conf.sh eliminate need for bc template file
+sort by map metadata (size)
+analysis on map metadata
+allow running on select maps
+Add redundancy on last maps to account for slow computers
 
 Interface:
 FXN
@@ -14,10 +16,10 @@ FXN
 	view connections
   manage aliases
 	
-	{change user permissions}
-
-team A | team B | wins/wins | status | time
+team A | team B | wins/wins | status | time (x)
 
 
-Error code to display incorrect runs
+? Error code to display incorrectly named runs
 tooltip over aliased rows to display actual name
+progress bar
+login/register

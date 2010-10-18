@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.HashSet;
 import java.util.Vector;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import networking.Controller;
@@ -27,9 +28,9 @@ public class Client implements Controller, Runnable {
 	private Config config;
 	private ReentrantLock repoLock = new ReentrantLock();
 
-	public Client(Config config) {
-		this.config = config;
-		_log = config.getClientLogger();
+	public Client() {
+		config = Config.getConfig();
+		_log = config.getLogger();
 	}
 
 	/**
@@ -41,12 +42,11 @@ public class Client implements Controller, Runnable {
 			Socket socket = null;
 			try {
 				socket = new Socket(config.server, config.port);
-				network = new Network(this, config, socket, _log);
+				network = new Network(this, socket);
 				new Thread(network).start();
 				_log.info("Connected to server");
 			} catch (IOException e) {
-				if (config.DEBUG)
-					e.printStackTrace();
+				// Server may be down
 			}
 
 			while (network != null && network.isConnected()) {
@@ -86,7 +86,7 @@ public class Client implements Controller, Runnable {
 					case SEND_MAP:
 						// Run the match described by the packet
 						if (running.size() < config.cores) {
-							MatchRunner runner = new MatchRunner(config, p, repoLock);
+							MatchRunner runner = new MatchRunner(p, repoLock);
 							running.add(runner);
 							new Thread(runner).start();
 						} // Otherwise we can't handle it
@@ -104,8 +104,7 @@ public class Client implements Controller, Runnable {
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
-					if (config.DEBUG)
-						e.printStackTrace();
+					_log.log(Level.WARNING, "Client interrupted", e);
 				}
 			}
 			
@@ -119,8 +118,7 @@ public class Client implements Controller, Runnable {
 			try {
 				Thread.sleep(10000);
 			} catch (InterruptedException e) {
-				if (config.DEBUG)
-					e.printStackTrace();
+				_log.log(Level.WARNING, "Client interrupted", e);
 			}
 		}
 	}
