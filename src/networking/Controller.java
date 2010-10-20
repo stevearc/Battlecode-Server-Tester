@@ -12,6 +12,8 @@ public interface Controller {
 	 * @param network The Network that received this packet
 	 * @param p The packet that was received
 	 */
-	public void addPacket(Network network, Packet p);
+	public void addPacket(Packet p);
+	
+	public void onDisconnect();
 	
 }

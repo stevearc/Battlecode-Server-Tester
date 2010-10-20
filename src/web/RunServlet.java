@@ -2,12 +2,14 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import backend.ServerMethodCaller;
+
+import common.MatchSet;
 
 public class RunServlet extends AbstractServlet {
 	private static final long serialVersionUID = -5024779464960322694L;
@@ -28,13 +30,10 @@ public class RunServlet extends AbstractServlet {
 			return;
 		} 
 		try {
-			PreparedStatement stmt = db.prepare("INSERT INTO queue (team_a, team_b) VALUES (?, ?)");
-			stmt.setString(1, team_a);
-			stmt.setString(2, team_b);
-			stmt.executeUpdate();
-			stmt.close();
+			MatchSet ms = new MatchSet(team_a, team_b);
+			ServerMethodCaller.queueRun(ms);
 			out.print("success");
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace(out);
 		}
 

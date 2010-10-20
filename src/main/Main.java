@@ -9,6 +9,7 @@ import org.apache.commons.cli.ParseException;
 
 import web.WebServer;
 import backend.Server;
+import backend.ServerMethodCaller;
 import client.Client;
 
 import common.Config;
@@ -80,7 +81,7 @@ public class Main {
 				Config.setDB(db);
 				Server s = new Server();
 				Config.setServer(s);
-				new Thread(s).start();
+				ServerMethodCaller.pokeServer();
 				new Thread(new WebServer()).start();
 			}
 			else {

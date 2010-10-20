@@ -2,8 +2,8 @@ package client;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.HashSet;
-import java.util.Vector;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,9 +11,10 @@ import java.util.logging.Logger;
 import networking.Controller;
 import networking.Network;
 import networking.Packet;
-import networking.PacketType;
+import networking.PacketCmd;
 
 import common.Config;
+import common.Match;
 
 /**
  * Handles connecting to server and running matches
@@ -21,110 +22,87 @@ import common.Config;
  *
  */
 public class Client implements Controller, Runnable {
+	private Config config;
 	private Logger _log;
 	private Network network;
-	private Vector<Packet> packetQueue = new Vector<Packet>();
 	private HashSet<MatchRunner> running = new HashSet<MatchRunner>();
-	private Config config;
 	private ReentrantLock repoLock = new ReentrantLock();
+	private boolean runClient = true;
 
 	public Client() {
 		config = Config.getConfig();
 		_log = config.getLogger();
 	}
 
-	/**
-	 * Main method.  Starts everything.
-	 */
+	public synchronized void matchFinish(MatchRunner mr, Match match, String status, int winner, byte[] data) {
+		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, data});
+		network.send(p);
+		mr.stop();
+		running.remove(mr);
+	}
+
+	@Override
 	public void run() {
-		while (true) {
-			// Try to connect to the server
-			Socket socket = null;
+		while (runClient) {
 			try {
-				socket = new Socket(config.server, config.port);
-				network = new Network(this, socket);
-				new Thread(network).start();
-				_log.info("Connected to server");
-			} catch (IOException e) {
-				// Server may be down
-			}
-
-			while (network != null && network.isConnected()) {
-				// Check to see if any matches finished
-				HashSet<MatchRunner> finished = new HashSet<MatchRunner>();
-				for (MatchRunner mr: running) {
-					Packet p = mr.getResponse();
-					if (p != null) {
-						network.send(p);
-						finished.add(mr);
+				if (network == null || !network.isConnected()) {
+					try {
+						Socket socket = new Socket(config.server, config.port);
+						network = new Network(this, socket);
+						new Thread(network).start();
+						_log.info("Logging in to server");
+						network.send(new Packet(PacketCmd.AUTH, new Object[]{config.password, config.cores}));
+					} catch (UnknownHostException e) {
+					} catch (IOException e) {
 					}
 				}
-				running.removeAll(finished);
-
-				// Check to see if we have any new packets
-				if (packetQueue.size() != 0) {
-					while (packetQueue.size() > 1) {
-						packetQueue.remove(0);
-					}
-					Packet p = packetQueue.firstElement();
-					packetQueue.remove(0);
-					switch (p.type) {
-					case MAP_RESULT:
-						// Not handled by Client
-						break;
-					case REQUEST_MAP:
-						// Not handled by Client
-						break;
-					case RESET_RUNS:
-						// Stop all currently running matches
-						for (MatchRunner mr: running) {
-							_log.info("Terminating current run");
-							mr.stop();
-						}
-						running.clear();
-						break;
-					case SEND_MAP:
-						// Run the match described by the packet
-						if (running.size() < config.cores) {
-							MatchRunner runner = new MatchRunner(p, repoLock);
-							running.add(runner);
-							new Thread(runner).start();
-						} // Otherwise we can't handle it
-						else {
-							network.send(new Packet(PacketType.MAP_RESULT, p.map, p.team_a, p.team_b, true, null));
-						}
-						break;
-					}
-
-				} // If we can run more matches, request more
-				else if (running.size() < config.cores){
-					network.send(new Packet(PacketType.REQUEST_MAP, null, null, null, false, null));
-				}
-
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					_log.log(Level.WARNING, "Client interrupted", e);
-				}
-			}
-			
-			// Clean up any matches still running
-			for (MatchRunner mr: running) {
-				_log.info("Terminating current run");
-				mr.stop();
-			}
-			network = null;
-
-			try {
-				Thread.sleep(10000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				_log.log(Level.WARNING, "Client interrupted", e);
+				_log.log(Level.WARNING, "Interrupt exception", e);
 			}
 		}
 	}
 
 	@Override
-	public void addPacket(Network network, Packet p) {
-		packetQueue.add(p);
+	public synchronized void addPacket(Packet p) {
+		switch (p.getCmd()) {
+		case RUN:
+			try {
+				MatchRunner m = new MatchRunner(this, (Match) p.get(0), repoLock);
+				new Thread(m).start();
+				running.add(m);
+			} catch (Exception e) {
+				_log.warning("Error running match");
+			}
+			break;
+		case STOP:
+			_log.info("Received stop command");
+			for (MatchRunner mr: running) {
+				mr.stop();
+			}
+			running.clear();
+			break;
+		case AUTH_REPLY:
+			String status = (String) p.get(0);
+			if ("ok".equals(status)) {
+				_log.info("Connected to server");
+			} else {
+				_log.warning("Failed to log in: " + status);
+				runClient = false;
+				network.close();
+			}
+			break;
+		default:
+			_log.warning("Unrecognized packet command: " + p.getCmd());
+		}
+	}
+
+	@Override
+	public synchronized void onDisconnect() {
+		for (MatchRunner mr: running) {
+			mr.stop();
+		}
+		running.clear();
+		_log.info("Disconnected from server");
 	}
 }

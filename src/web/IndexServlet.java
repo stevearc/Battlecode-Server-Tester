@@ -23,81 +23,9 @@ public class IndexServlet extends AbstractServlet {
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
-		out.println("<title>Battlecode Tester - " + config.team + "</title>");
+		out.println("<title>Battlecode Tester</title>");
 		out.println("<meta http-equiv=\"refresh\" content=\"30\">");
-		out.println("<script type=\"text/javascript\">");
-		// AJAX call to RunServlet
-		out.println("function newRun(team_a, team_b) {\n" + 
-				"if (team_a.length==0 || team_b.length==0) {\n" + 
-				"alert(\"Must have a non-empty team name\");\n" +
-				"return;\n" + 
-				"}\n" + 
-				"xmlhttp=new XMLHttpRequest();\n" + 
-				"xmlhttp.onreadystatechange=function() {\n" + 
-				"if (xmlhttp.readyState==4 && xmlhttp.status==200) {\n" +
-				"if (xmlhttp.responseText == \"err team_a\") {\n" + 
-				"alert(\"Must have a valid name for Team A\");\n" +
-				"} else if (xmlhttp.responseText == \"err team_b\") {\n" + 
-				"alert(\"Must have a valid name for Team B\");\n" + 
-				"} else if (xmlhttp.responseText != \"success\") {\n" +
-				"alert(xmlhttp.responseText);\n" + 
-				"} else {\n" + 
-				"location.reload(true);\n" +
-				"}\n" + 
-				"}\n" + 
-				"}\n" + 
-				"xmlhttp.open(\"GET\",\"" + response.encodeURL(RunServlet.name) + "?team_a=\"+team_a+\"&team_b=\"+team_b,true);\n" + 
-				"xmlhttp.send();\n" + 
-		"}");
-		// AJAX call to DeleteServlet
-		out.println("function delRun(id) {\n" + 
-				"if(!confirm(\"This will delete the run and all replay files.  Continue?\")) {\n" +
-				"return;\n" + 
-				"}\n" + 
-				"xmlhttp=new XMLHttpRequest();\n" + 
-				"xmlhttp.onreadystatechange=function() {\n" + 
-				"if (xmlhttp.readyState==4 && xmlhttp.status==200) {\n" +
-				"if (xmlhttp.responseText != \"success\") {\n" +
-				"alert(xmlhttp.responseText);\n" + 
-				"} else {\n" + 
-				"location.reload(true);\n" +
-				"}\n" + 
-				"}\n" + 
-				"}\n" + 
-				"xmlhttp.open(\"GET\",\"" + response.encodeURL(DeleteServlet.name) + "?id=\"+id,true);\n" + 
-				"xmlhttp.send();\n" + 
-		"}");
-		// AJAX call to DequeueServlet
-		out.println("function dqRun(id) {\n" + 
-				"xmlhttp=new XMLHttpRequest();\n" + 
-				"xmlhttp.onreadystatechange=function() {\n" + 
-				"if (xmlhttp.readyState==4 && xmlhttp.status==200) {\n" +
-				"if (xmlhttp.responseText != \"success\") {\n" +
-				"alert(xmlhttp.responseText);\n" + 
-				"} else {\n" + 
-				"location.reload(true);\n" +
-				"}\n" + 
-				"}\n" + 
-				"}\n" + 
-				"xmlhttp.open(\"GET\",\"" + response.encodeURL(DequeueServlet.name) + "?id=\"+id,true);\n" + 
-				"xmlhttp.send();\n" + 
-		"}");
-		// AJAX call to CancelServlet
-		out.println("function cancelRun(id) {\n" + 
-				"xmlhttp=new XMLHttpRequest();\n" + 
-				"xmlhttp.onreadystatechange=function() {\n" + 
-				"if (xmlhttp.readyState==4 && xmlhttp.status==200) {\n" +
-				"if (xmlhttp.responseText != \"success\") {\n" +
-				"alert(xmlhttp.responseText);\n" + 
-				"} else {\n" + 
-				"location.reload(true);\n" +
-				"}\n" + 
-				"}\n" + 
-				"}\n" + 
-				"xmlhttp.open(\"GET\",\"" + response.encodeURL(CancelServlet.name) + "?id=\"+id,true);\n" + 
-				"xmlhttp.send();\n" + 
-		"}");
-		out.println("</script>");
+		out.println("<script type=\"text/javascript\" src=\"js/index.js\"></script>");
 		out.println("</head>");
 		out.println("<body>");
 		String search = request.getParameter("search");
@@ -137,32 +65,9 @@ public class IndexServlet extends AbstractServlet {
 				"<th>Time</th>" +
 		"</tr>");
 
-		// Print queued runs
-		try {
-			ResultSet rs = db.query("SELECT * FROM queue ORDER BY id DESC");
-			while (rs.next()) {
-				out.println("<tr>" +
-						"<td>?</td>" +
-						"<td>" + rs.getString("team_a") + "</td>" +
-						"<td>" + rs.getString("team_b") + "</td>" +
-						"<td>0</td>" +
-						"<td>matches</td>" +
-						"<td>queued</td>" +
-						"<td />" + 
-						"<td><input type=\"button\" value=\"dequeue\" onclick=\"dqRun(" + rs.getInt("id") + ")\"></td>" +
-				"</tr>");
-			}
-			rs.close();
-		} catch (SQLException e) {
-			e.printStackTrace(out);
-		}
-
 		// Display current runs
 		try {
-			String sql = "SELECT id, team_a, t1.alias a_nick, team_b, t2.alias b_nick, finished, " +
-			"timediff(ended, started) as taken, timediff(now(), started) as sofar " +
-			"FROM runs r LEFT JOIN tags t1 ON r.team_a = t1.tag LEFT JOIN tags t2 ON r.team_b = t2.tag";
-			sql = "SELECT id, team_a, t1.alias a_nick, team_b, t2.alias b_nick, finished, " +
+			String sql = "SELECT id, team_a, t1.alias a_nick, team_b, t2.alias b_nick, status, " +
 			"started, ended, now() as now " +
 			"FROM runs r LEFT JOIN tags t1 ON r.team_a = t1.tag LEFT JOIN tags t2 ON r.team_b = t2.tag";
 			if (search != null) {
@@ -182,35 +87,45 @@ public class IndexServlet extends AbstractServlet {
 						"<td>" + rs.getInt("id") + "</td>" + 
 						"<td>" + rs.getString("team_a") + "</td>" +
 						"<td>" + rs.getString("team_b") + "</td>" +				
-						"<td>" + mapsQuery.getInt("wins") + "/" + mapsQuery.getInt("maps") + "</td>" +
-						"<td><a href=\"" + response.encodeURL(MatchesServlet.name) + "?id=" + rs.getInt("id") + "\">matches</a></td>");
-				switch (rs.getInt("finished")){
+						"<td>" + mapsQuery.getInt("wins") + "/" + mapsQuery.getInt("maps") + "</td>");
+				int status = rs.getInt("status");
+				switch (status){
 				case 0:
-					out.println("<td>Running </td>");
+					out.println("<td />");
+					out.println("<td>Queued</td>");
+					out.println("<td />");
+					out.println("<td><input type=\"button\" value=\"dequeue\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
 					break;
 				case 1:
-					out.println("<td>Complete</td>");
-					break;
-				default:
-					out.println("<td>Error</td>");
-				}
-				if (rs.getInt("finished") == 1) {
-					Timestamp ended = rs.getTimestamp("ended");
-					Timestamp started = rs.getTimestamp("started");
-					long taken = ended.getTime() - started.getTime();
-					out.println("<td>" + new Timer(taken) + "</td>");
-				} else if (rs.getInt("finished") == 0) {
+					out.println("<td><a href=\"" + response.encodeURL(MatchesServlet.name) + "?id=" + rs.getInt("id") + "\">matches</a></td>");
+					out.println("<td>Running</td>");
 					Timestamp now = rs.getTimestamp("now");
 					Timestamp started = rs.getTimestamp("started");
 					long sofar = now.getTime() - started.getTime();
 					out.println("<td>" + new Timer(sofar) + "</td>");
-				} else {
+					out.println("<td><input type=\"button\" value=\"cancel\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
+					break;
+				case 2:
+					out.println("<td><a href=\"" + response.encodeURL(MatchesServlet.name) + "?id=" + rs.getInt("id") + "\">matches</a></td>");
+					out.println("<td>Complete</td>");
+					Timestamp ended = rs.getTimestamp("ended");
+					Timestamp start = rs.getTimestamp("started");
+					long taken = ended.getTime() - start.getTime();
+					out.println("<td>" + new Timer(taken) + "</td>");
+					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ", true)\"></td>");
+					break;
+				case 3:
 					out.println("<td />");
+					out.println("<td>Error</td>");
+					out.println("<td />");
+					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
+					break;
+				default:
+					out.println("<td />");
+					out.println("<td>Unknown Error</td>");
+					out.println("<td />");
+					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
 				}
-				if (rs.getInt("finished") != 0)
-					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ")\"></td>");
-				else
-					out.println("<td><input type=\"button\" value=\"cancel\" onclick=\"cancelRun(" + rs.getInt("id") + ")\"></td>");
 				out.println("</tr>");
 				mapsQuery.close();
 			}

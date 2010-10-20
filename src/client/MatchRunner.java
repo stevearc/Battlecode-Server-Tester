@@ -5,14 +5,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import networking.Packet;
-import networking.PacketType;
-
 import common.Config;
+import common.Match;
 
 /**
  * This class handles the running of battlecode matches and returning the results
@@ -23,15 +23,16 @@ import common.Config;
 public class MatchRunner implements Runnable {
 	private Logger _log;
 	private Config config;
-	private Packet packet;
-	private Packet response = null;
+	private Client client;
+	private Match match;
 	private boolean stop = false;
 	private ReentrantLock repoLock;
-	private Runner runner = null;
+	private Process curProcess;
 
-	public MatchRunner(Packet packet, ReentrantLock repoLock) {
+	public MatchRunner(Client client, Match match, ReentrantLock repoLock) {
 		config = Config.getConfig();
-		this.packet = packet;
+		this.match = match;
+		this.client = client;
 		this.repoLock = repoLock;
 		_log = config.getLogger();
 	}
@@ -41,101 +42,118 @@ public class MatchRunner implements Runnable {
 	 */
 	public void stop() {
 		stop = true;
-		runner.terminate();
+		if (curProcess != null)
+			curProcess.destroy();
 	}
 
 	/**
 	 * Runs the battlecode match
 	 */
 	public void run() {
-		Packet responsePacket = new Packet(PacketType.MAP_RESULT, packet.map, packet.team_a, packet.team_b, false, null);
-		byte[] matchData;
+		String status = null;
+		int winner = 0;
+		byte[] data = null;
 		// Clean out old data
-		File f = new File(config.repo + "/" + packet.map + ".rms");
+		File f = new File(config.repo + "/" + match.map + ".rms");
 		f.delete();
 
 		try {
-			_log.info("Running: " + packet.map);
+			_log.info("Running: " + match.map);
 			Runtime run = Runtime.getRuntime();
 			try {
 				repoLock.lock();
 
 				// Update the repository
-				Process p = run.exec(config.cmd_update);
-				p.waitFor();
+				if (stop)
+					return;
+				curProcess = run.exec(config.cmd_update);
+				curProcess.waitFor();
+				if (stop)
+					return;
 				// Get the appropriate teams for the match
-				p = run.exec(new String[] {config.cmd_grabole, packet.team_a, packet.team_b});
-				p.waitFor();
+				curProcess = run.exec(new String[] {config.cmd_grabole, match.team_a, match.team_b});
+				curProcess.waitFor();
+				if (stop)
+					return;
 				// Generate the bc.conf file
-				p = run.exec(new String[] {config.cmd_gen_conf, packet.map});
-				p.waitFor();
-
-
-				/*
-				 * We create the thread that will run the match, then sleep.
-				 * When the thread running the match finishes, it will interrupt the current thread, which
-				 * was sleeping.  We know that if we were interrupted, the match finished correctly.  
-				 * Otherwise, if we sleep for the full amount of time, we know something probably went wrong.
-				 */
-				runner = new Runner(Thread.currentThread(), new String[] {"ant", "file", "-f", config.repo + "/build.xml"});
-				new Thread(runner).start();
-				Thread.sleep(1000);
+				curProcess = run.exec(new String[] {config.cmd_gen_conf, match.map});
+				curProcess.waitFor();
+				if (stop)
+					return;
+				// Run the match
+				_log.info("Starting ant - " + match.map);
+				curProcess = run.exec(new String[] {"ant", "file", "-f", config.repo + "/build.xml"});
+				Thread.sleep(10000);
 			} finally {
 				repoLock.unlock();
 			}
+//			curProcess.waitFor();
+			new Thread(new Callback(Thread.currentThread(), curProcess)).start();
 			try {
-				Thread.sleep(config.timeout * 1000);
-				runner.terminate();
-				// If we stopped it manually, there was no problem.  Otherwise, log it.
-				if (!stop) 
-					_log.severe("Timed out while running match");
-
-				response = responsePacket;
-				return;
+			Thread.sleep(config.timeout);
 			} catch (InterruptedException e) {
-				// The runner thread should interrupt us when it finishes, 
-				// taking us here instead of to the runner.terminate() line above
-
 			}
+			_log.info("Finished ant - " + match.map);
 
-			String output = runner.getOutput();
-			if (output == null) {
-				// Keyboard Interrupt
-				response = responsePacket;
+			Writer writer = new StringWriter();
+			BufferedReader read = new BufferedReader(new InputStreamReader(curProcess.getInputStream()));
+			char[] buffer = new char[1024];
+			int n;
+			while ((n = read.read(buffer)) != -1) {
+				writer.write(buffer, 0, n);
+			}
+			String output = writer.toString();
+
+			if (stop)
 				return;
-			} 
+			if (curProcess.exitValue() != 0) {
+				_log.severe("Error running match\n" + output);
+				status = "error";
+				client.matchFinish(this, match, status, winner, data);
+				return;
+			}
 
 			// Kind of sloppy win detection, but it works
-			if (output.indexOf("(A) wins") != -1) {
-				responsePacket.a_wins = true;
+			int a_index = output.indexOf("(A) wins");
+			int b_index = output.indexOf("(B) wins");
+			if (a_index == -1) {
+				if (b_index == -1) {
+					status = "error";
+					_log.warning("Unknown error running match\n" + output);
+					_log.warning("^ error: a_index: " + a_index + " b_index: " + b_index);
+					if (!stop) 
+						client.matchFinish(this, match, status, winner, data);
+					return;
+				}
+				winner = 0;
+			} else {
+				winner = 1;
 			}
 
-			_log.info("Finished: " + packet.map);
+			_log.info("Finished: " + match.map);
 		} catch (Exception e) {
-			_log.log(Level.SEVERE, "Failed to run match", e);
-			response = responsePacket;
+			if (!stop) {
+				_log.log(Level.SEVERE, "Failed to run match", e);
+				status = "error";
+				client.matchFinish(this, match, status, winner, data);
+			}
 			return;
 		}
-		
-		String matchFile = config.repo + "/" + packet.map + ".rms";
+
+		String matchFile = config.repo + "/" + match.map + ".rms";
 		try {
-			matchData = getMatchData(matchFile);
+			data = getMatchData(matchFile);
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
-			response = responsePacket;
+			status = "error";
+			if (!stop)
+				client.matchFinish(this, match, status, winner, data);
 			return;
 		}
 
-		responsePacket.match = matchData;
-		response = responsePacket;
-	}
-
-	/**
-	 * Fetch the result when the match is finished. 
-	 * @return Returns null if the match is still running.  Returns the packet to send to the server if finished.
-	 */
-	public Packet getResponse() {
-		return response;
+		status = "ok";
+		if (!stop)
+			client.matchFinish(this, match, status, winner, data);
 	}
 
 	/**
@@ -172,55 +190,29 @@ public class MatchRunner implements Runnable {
 		return data;
 	}
 
-}
-
-class Runner implements Runnable {
-	private String[] commands;
-	private Thread parent;
-	private Process p;
-	private String output;
-
-	public Runner(Thread parent, String[] commands){
-		this.commands = commands;
-		this.parent = parent;
+	@Override
+	public String toString() {
+		return match.toString();
 	}
 
+}
+
+class Callback implements Runnable {
+	private Thread parent;
+	private Process proc;
+
+	public Callback (Thread parent, Process proc) {
+		this.parent = parent;
+		this.proc = proc;
+	}
+	
 	@Override
 	public void run() {
 		try {
-			p = Runtime.getRuntime().exec(commands);
-			p.waitFor();
-			if (p.exitValue() == 0) {
-				BufferedReader read = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				StringBuffer sb = new StringBuffer();
-				for (String line = read.readLine(); line != null; line = read.readLine()) {
-					sb.append(line);
-				}
-				output = sb.toString();
-			}
-		} catch (IOException e) {
-		} catch (InterruptedException e) {
-			p.destroy();
-		} finally {
+			proc.waitFor();
 			parent.interrupt();
+		} catch (InterruptedException e) {
 		}
 	}
-
-	public void terminate() {
-		p.destroy();
-	}
-
-	/**
-	 * 
-	 * @return The stdout of the process, or null if it is not available
-	 */
-	public String getOutput() {
-		try {
-			if (p.exitValue() == 0)
-				return output;
-		} catch (IllegalThreadStateException e) {
-		} 
-		return null;
-	}
-
+	
 }

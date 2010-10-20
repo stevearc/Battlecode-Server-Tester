@@ -15,19 +15,20 @@ public class FileServlet extends AbstractServlet {
 	private static final long serialVersionUID = 1535716853886006962L;
 	public static final String name = "file.html";
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		response.setContentType("application/octet-stream");
 		response.setHeader("Content-Disposition", "attachment; filename=\"" + request.getParameter("run_id") + 
 				request.getParameter("map") + ".rms\"");
-		
-		response.setStatus(HttpServletResponse.SC_OK);
-		String strId = request.getParameter("id");
-		if (strId == null || !strId.matches("\\d+")) {
-			response.getWriter().println("Invalid id: " + strId);
-		}
 
-		int id = Integer.parseInt(strId);
+		response.setStatus(HttpServletResponse.SC_OK);
 		try {
+			String strId = request.getParameter("id");
+			if (strId == null || !strId.matches("\\d+")) {
+				response.getWriter().println("Invalid id: " + strId);
+			}
+
+			int id = Integer.parseInt(strId);
+
 			PreparedStatement st = db.prepare("SELECT data FROM matches WHERE id = ?");
 			st.setInt(1, id);
 			ResultSet rs = db.query(st);
@@ -41,6 +42,10 @@ public class FileServlet extends AbstractServlet {
 			st.close();
 		} catch (SQLException e) {
 			config.getLogger().log(Level.WARNING, "Error serving file", e);
+		} catch (IOException e) {
+			config.getLogger().log(Level.WARNING, "Error serving file", e);
+		} catch (NumberFormatException e) {
+			config.getLogger().log(Level.WARNING, "Error with arguments", e);
 		}
 	}
 }

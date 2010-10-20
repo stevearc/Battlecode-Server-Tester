@@ -2,15 +2,15 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import common.Timer;
+import backend.ClientRepr;
+
+import common.Config;
+import common.Match;
 
 public class ConnectionsServlet extends AbstractServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
@@ -22,8 +22,8 @@ public class ConnectionsServlet extends AbstractServlet {
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
-		out.println("<title>Battlecode Tester - " + config.team + "</title>");
-		out.println("<meta http-equiv=\"refresh\" content=\"30\">");
+		out.println("<title>Battlecode Tester</title>");
+		out.println("<meta http-equiv=\"refresh\" content=\"10\">");
 		out.println("</head>");
 		out.println("<body>");
 		out.println("<a href=\"" + response.encodeURL(IndexServlet.name) + "\">back</a><br /><br />");
@@ -31,28 +31,16 @@ public class ConnectionsServlet extends AbstractServlet {
 		out.println("<tr>" +
 				"<th>Client</th>" +
 				"<th>Map</th>" +
-				"<th>Time</th>" +
 		"</tr>");
-		try {
-			ResultSet rs = db.query("SELECT addr, map, modified, now() as now " +
-			"FROM connections c LEFT JOIN running_matches r ON c.id = r.conn_id ORDER BY addr, map");
-			while (rs.next()) {
-				out.println("<tr>");
-				out.println("<td>" + rs.getString("addr") + "</td>");
-				out.println("<td>" + (rs.getString("map") == null ? "" : rs.getString("map")) + "</td>");
-				Timestamp now = rs.getTimestamp("now");
-				Timestamp modified = rs.getTimestamp("modified");
-				if (modified != null) {
-					long diff = now.getTime() - modified.getTime();
-					out.println("<td>" + new Timer(diff) + "</td>");
-				} else {
-					out.println("<td />");
-				}
-				out.println("</tr>");
+		for (ClientRepr c: Config.getServer().getConnections()) {
+			out.println("<tr>");
+			out.println("<td>" + c.connectionString() + "</td>");
+			out.println("<td>");
+			for (Match m: c.getRunningMatches()) {
+				out.println(m.map + ", ");
 			}
-			rs.close();
-		} catch (SQLException e) {
-			e.printStackTrace(out);
+			out.println("</td>");
+			out.println("</tr>");
 		}
 		out.println("</table>" +
 				"</body>" +

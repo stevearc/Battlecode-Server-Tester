@@ -10,47 +10,22 @@ import java.util.logging.Logger;
 import common.Config;
 
 /**
- * Sends and recieves packets to and from one other Network at a remote location
+ * Sends and receives packets to and from one other Network at a remote location
  * @author steven
  *
  */
 public class Network implements Runnable{
-	private Logger _log;
-	private Socket socket;
-	private boolean finish = false;
-	private Controller controller;
-	private Config config;
+	protected Logger _log;
+	protected Socket socket;
+	protected boolean finish = false;
+	protected Controller controller;
+	protected Config config;
 
 	public Network (Controller controller, Socket socket) throws IOException{
 		config = Config.getConfig();
 		_log = config.getLogger();
 		this.socket = socket;
 		this.controller = controller;
-	}
-
-	private void getPacket() {
-		try {
-
-			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-			Packet packet;
-			try {
-				packet = (Packet) ois.readObject();
-			} catch (ClassNotFoundException e) {
-				_log.log(Level.SEVERE, "Could not find class during packet deserialization", e);
-				return;
-			}
-
-			if (packet.validate()) {
-				controller.addPacket(this, packet);
-			} else {
-				_log.warning("Received invalid packet:\n" + packet);
-			}
-
-		} 
-		catch (IOException e){
-			_log.log(Level.WARNING, "Could not read from connection", e);
-			stop();
-		}
 	}
 
 	/**
@@ -62,13 +37,9 @@ public class Network implements Runnable{
 		if (!isConnected())
 			return;
 		try {
-			if (packet.validate()) {
-				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-				oos.writeObject(packet);
-				oos.flush();
-			} else {
-				_log.severe("Trying to send invalid packet:\n" + packet);
-			}
+			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			oos.writeObject(packet);
+			oos.flush();
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Error serializing packet:\n" + packet, e);
 		}
@@ -78,7 +49,7 @@ public class Network implements Runnable{
 	 * Close the current connection.
 	 *
 	 */
-	private void close(){
+	public void close(){
 		finish = true;
 		if (!socket.isClosed()) {
 			try {
@@ -100,19 +71,26 @@ public class Network implements Runnable{
 	@Override
 	public void run() {
 		while (!finish){
-			getPacket();
+			try {
+				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				Packet packet;
+				try {
+					packet = (Packet) ois.readObject();
+				} catch (ClassNotFoundException e) {
+					_log.log(Level.SEVERE, "Could not find class during packet deserialization", e);
+					return;
+				}
+
+				controller.addPacket(packet);
+			} 
+			catch (IOException e){
+				break;
+			}
 		}
 		close();
+		controller.onDisconnect();
 	}
-
-	/**
-	 * Cleanly stop transmissions and close the connection.
-	 */
-	public void stop() {
-		_log.info("Stopping connection " + socket.toString());
-		finish = true;
-	}
-
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -123,11 +101,4 @@ public class Network implements Runnable{
 			return "Null Network";
 	}
 
-	/**
-	 * Format the Network for the MYSQL database
-	 * @return
-	 */
-	public String toSQL() {
-		return socket.getInetAddress().toString();
-	}
 }

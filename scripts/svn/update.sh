@@ -1,9 +1,5 @@
 #!/bin/bash
-if [ -e /etc/battlecode.conf ]; then
-	source /etc/battlecode.conf
-else
-	source etc/battlecode.conf
-fi
+source /etc/battlecode.conf
 
 USER=`ls -ld $REPO | awk '{split($0,a," ")} END{print a[3]}'`
 CMD_PREFIX="sudo -u $USER"

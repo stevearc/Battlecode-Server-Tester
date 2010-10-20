@@ -1,9 +1,5 @@
 #!/bin/bash
-if [ -e /etc/battlecode.conf ]; then
-	source /etc/battlecode.conf
-else
-	source etc/battlecode.conf
-fi
+source /etc/battlecode.conf
 
 USER=`ls -l $REPO | awk '{split($0,a," ")} END{print a[3]}'`
 CMD_PREFIX="sudo -u $USER"
@@ -19,8 +15,8 @@ $CMD_PREFIX svn up -r $TEAM_A
 pushd teams
 cp -r $TEAM old_team_a
 cd old_team_a
-find -name '*.java' | xargs sed -i -e 's/package '"$TEAM"'/package old_team_a/g'
-find -name '*.java' | xargs sed -i -e 's/import '"$TEAM"'/import old_team_a/g'
+find -name '*.java' | xargs sed -i -e 's/package team[0-9]\{3\}/package old_team_a/g'
+find -name '*.java' | xargs sed -i -e 's/import team[0-9]\{3\}/import old_team_a/g'
 popd
 
 # Get team b
@@ -29,8 +25,8 @@ $CMD_PREFIX svn up -r $TEAM_B
 pushd teams
 cp -r $TEAM old_team_b
 cd old_team_b
-find -name '*.java' | xargs sed -i -e 's/package '"$TEAM"'/package old_team_b/g'
-find -name '*.java' | xargs sed -i -e 's/import '"$TEAM"'/import old_team_b/g'
+find -name '*.java' | xargs sed -i -e 's/package team[0-9]\{3\}/package old_team_b/g'
+find -name '*.java' | xargs sed -i -e 's/import team[0-9]\{3\}/import old_team_b/g'
 popd
 $CMD_PREFIX svn up
 

@@ -19,7 +19,7 @@ public class MatchesServlet extends AbstractServlet {
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
-		out.println("<title>Battlecode Tester" + config.team + "</title>");
+		out.println("<title>Battlecode Tester</title>");
 		out.println("<script type=\"text/javascript\">");
 		// AJAX call to FileServlet
 		out.println("function downloadMatch(id, map, run_id) {\n" +

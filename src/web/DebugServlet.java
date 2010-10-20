@@ -7,23 +7,26 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import backend.ServerMethodCaller;
+import common.Config;
 
-public class DeleteServlet extends AbstractServlet {
-	private static final long serialVersionUID = 4149519483270976451L;
-	public static final String name = "delete.html";
+public class DebugServlet extends AbstractServlet {
+	private static final long serialVersionUID = 5540409128136287730L;
+	public static final String name = "debug.html";
 
+	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
-		String strId = request.getParameter("id");
-		if (strId == null || !strId.matches("\\d+")) {
-			out.println("Invalid id: " + strId);
-		}
+		out.println("<html><head>");
+		out.println("<title>Battlecode Tester</title>");
+		out.println("</head>");
+		out.println("<body>");
+		out.println(Config.getServer().debugDump().replaceAll("\n", "<br />"));
+		out.println("</body>" +
+		"</html>");
+		
+		
 
-		int id = Integer.parseInt(strId);
-		ServerMethodCaller.deleteRun(id);
-		out.print("success");
 	}
 }

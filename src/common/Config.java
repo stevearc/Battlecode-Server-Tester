@@ -25,7 +25,7 @@ public class Config {
 	private static Server rootServer;
 	
 	private boolean isServer;
-	private String log_dir = "";
+	private String log_dir = "/var/log";
 	public String keytool_pass = "elevenened";
 	/* These options are only specified on the command line */
 	public int http_port = 80;
@@ -37,45 +37,37 @@ public class Config {
 	public String home = "";
 	/** The location of the repository being used */
 	public String repo = "";
+	public long timeout = 300000;
 	/** CLIENT ONLY: The internet address of the server to connect to */
 	public String server = "";
 	/** The port number of the server to connect to (or listen on, if running as server) */
-	public int port = 0;
-	/** SERVER ONLY: The location to store all the match files. */
-	public String matches = "";
+	public int port = 8888;
+	/** The password that authenticates clients */
+	public String password = "";
 	/** SERVER ONLY: The type of database to use */
-	public String db_type = "";
+	public String db_type = "hsql";
 	/** SERVER ONLY: The name of the database to use */
-	public String db_name = "";
+	public String db_name = "battlecode";
 	/** SERVER ONLY: The host of the database */
-	public String db_host = "";
+	public String db_host = "localhost";
 	/** SERVER ONLY: The username to use when connecting to the database. */
-	public String db_user = "";
+	public String db_user = "battlecode";
 	/** SERVER ONLY: The password to use when connecting to the database. */
-	public String db_pass = "";
-	/** The name of the user that owns the repository folder */
-	public String user = "";
+	public String db_pass = "battlepass";
 	/** The path to the script that will update the repository */
 	public String cmd_update = "";
 	/** The path to the script that will retrieve the appropriate teams from repository history */
 	public String cmd_grabole = "";
 	/** The path to the script that will generate the proper bc.conf file */
 	public String cmd_gen_conf = "";
-	/** The name of the team */
-	public String team = "";
 	/** The version control program being used (currently supports git and svn) */
 	public String version_control = "";
 	/** CLIENT ONLY: The number of simultaneous matches to run at a time */
-	public int cores = 0;
-	/** Time, in seconds, to wait before assuming match failed to run properly */
-	public int timeout = 0;
+	public int cores = 1;
 
 	public Config(boolean isServer) throws IOException {
 		this.isServer = isServer;
 		File file = new File("/etc/battlecode.conf");
-		if (!file.exists()) {
-			file = new File("etc/battlecode.conf");
-		}
 		FileInputStream f = new FileInputStream(file);
 		BufferedReader read = new BufferedReader(new InputStreamReader(f));
 		for (String line = read.readLine(); line != null; line = read.readLine()) {
@@ -170,8 +162,8 @@ public class Config {
 		else if (option.equals("port")) {
 			port = Integer.parseInt(value);
 		} 
-		else if (option.equals("matches")) {
-			matches = value;
+		else if (option.equals("password")) {
+			password = value;
 		}
 		else if (option.equals("db_type")) {
 			db_type = value.toLowerCase();
@@ -188,18 +180,6 @@ public class Config {
 		else if (option.equals("db_pass")) {
 			db_pass = value;
 		}
-		else if (option.equals("team")) {
-			team = value;
-		}
-		else if (option.equals("authorized_users")) {
-			// Do nothing
-		}
-		else if (option.equals("user")) {
-			user = value;
-		}
-		else if (option.equals("timeout")) {
-			timeout = Integer.parseInt(value);
-		}
 		else if (option.equals("version_control")) {
 			version_control = value.toLowerCase();
 			cmd_gen_conf = "./scripts/" + value + "/gen_conf.sh";
@@ -208,6 +188,9 @@ public class Config {
 		}
 		else if (option.equals("cores")) {
 			cores = Integer.parseInt(value);
+		}
+		else if (option.equals("team")) {
+			// pass
 		}
 		else {
 			System.err.println("Unrecognized option: " + option);
@@ -231,15 +214,12 @@ public class Config {
 
 		if (port < 1 || port > 65535)
 			throw new InvalidConfigException("Invalid port number " + port);
-
-		if (user.equals(""))
-			throw new InvalidConfigException("Invalid repository owner " + user);
+		
+		if ("".equals(password)) 
+			throw new InvalidConfigException("Password cannot be blank!");
 
 		if (!version_control.equals("svn") && !version_control.equals("git"))
 			throw new InvalidConfigException("Invalid version control " + version_control);
-
-		if (timeout < 60) 
-			throw new InvalidConfigException("Invalid timeout parameter (min 60): " + timeout);
 
 		// Check the client values
 		if (!isServer) {
@@ -255,9 +235,6 @@ public class Config {
 			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
 				throw new InvalidConfigException("Invalid database type: " + db_type);
 			
-			if (matches.equals(""))
-				throw new InvalidConfigException("Invalid match directory " + matches);
-
 			if (db_user.equals(""))
 				throw new InvalidConfigException("Invalid database user");
 

@@ -1,5 +1,5 @@
 #Fat Jar Configuration File
-#Sat Oct 16 21:58:00 EDT 2010
+#Wed Oct 20 09:26:06 EDT 2010
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
@@ -11,4 +11,4 @@ manifest.file=<createnew>
 jarname.isextern=false
 onejar.expand=
 excludes=
-includes=
+includes=<inc|DistributedBattlecode/js>
