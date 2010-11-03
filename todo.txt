@@ -1,10 +1,15 @@
-fix EOFException on client shutdown
-Put in checks to make sure client doesn't send more requests than it can handle
-out of memory failures are visible
+Allow buffer of most recent publications to channel
+redirect 80 to 443
+make pretty interface
+add data aggregation
+test install process thoroughly (& fix svn scripts)
+migrate gen_conf script up
+
+
 sort by map metadata (size)
 analysis on map metadata
 allow running on select maps
-Add redundancy on last maps to account for slow computers
+allow resume
 
 Interface:
 FXN
@@ -19,7 +24,6 @@ FXN
 team A | team B | wins/wins | status | time (x)
 
 
-? Error code to display incorrectly named runs
 tooltip over aliased rows to display actual name
 progress bar
 login/register

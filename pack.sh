@@ -1,9 +1,9 @@
 #!/bin/bash
-if [ -e battlecode.tar.gz ]; then
-  rm battlecode.tar.gz
+if [ -e bs-tester.tar.gz ]; then
+  rm bs-tester.tar.gz
 fi
 
-cp -r Battlecode.jar README.txt scripts etc run.sh battlecode
-tar -cvvf battlecode.tar battlecode
-gzip battlecode.tar
-rm -rf battlecode/*
+cp -r bs-tester.jar README.txt scripts etc run.sh setup.sh bs-tester
+tar -cvvf bs-tester.tar bs-tester
+gzip bs-tester.tar
+rm -rf bs-tester/*

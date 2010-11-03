@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import networking.CometCmd;
+import networking.CometMessage;
 import networking.Packet;
 
 import common.Config;
@@ -35,17 +37,19 @@ public class Server {
 	private NetworkHandler handler;
 	private HashSet<ClientRepr> clients = new HashSet<ClientRepr>();
 	private HashSet<String> maps = new HashSet<String>();
+	private WebPollHandler wph;
 
 	public Server() throws Exception {
 		config = Config.getConfig();
 		db = Config.getDB();
+		wph = Config.getWebPollHandler();
 		_log = config.getLogger();
 		handler = new NetworkHandler();
 		new Thread(handler).start();
+		new Thread(new Updater(this)).start();
 	}
 
 	public synchronized void poke() {
-		_log.info("Server.poke()");
 		try {
 			startRun();
 		} catch (SQLException e) {
@@ -53,27 +57,31 @@ public class Server {
 	}
 
 	public synchronized void queueRun(MatchSet run) {
-		_log.info("Server.queueRun()");
 		try {
 			PreparedStatement st = db.prepare("INSERT INTO runs (team_a, team_b) VALUES (?, ?)");
 			st.setString(1, run.getTeam_a());
 			st.setString(2, run.getTeam_b());
 			db.update(st, true);
-
+			ResultSet rs = db.query("SELECT MAX(id) as newest FROM runs"); 
+			rs.next();
+			int id = rs.getInt("newest");
+			wph.broadcastMsg("table", new CometMessage(CometCmd.INSERT_TABLE_ROW, new Object[] {id, 
+					run.getTeam_a(), run.getTeam_b()}));
 			startRun();
 		} catch (SQLException e) {
 		}
 	}
 
 	public synchronized void deleteRun(int runId) {
-		_log.info("Server.deleteRun()");
 		try {
 			if (runId == getCurrentId()) {
 				stopCurrentRun();
+				wph.broadcastMsg("table", new CometMessage(CometCmd.CANCEL_RUN, new Object[] {runId}));
 				startRun();
 			} else {
 				db.update("DELETE FROM matches WHERE run_id = " + runId, true);
 				db.update("DELETE FROM runs WHERE id = " + runId, true);
+				wph.broadcastMsg("table", new CometMessage(CometCmd.DELETE_TABLE_ROW, new Object[] {runId}));
 			}
 		} catch (SQLException e) {
 		}
@@ -110,6 +118,7 @@ public class Server {
 				stmt.setInt(3, winner);
 				stmt.setBinaryStream(4, new ByteArrayInputStream(data), data.length);
 				db.update(stmt, true);
+				wph.broadcastMsg("table", new CometMessage(CometCmd.MATCH_FINISHED, new Object[] {m.run_id, winner}));
 
 				// If finished, start next run
 				if (getMapsLeft(m.run_id).isEmpty()) {
@@ -194,8 +203,10 @@ public class Server {
 			stmt.setString(1, run.getTeam_a());
 			stmt.setString(2, run.getTeam_b());
 			db.update(stmt, true);
+			wph.broadcastMsg("table", new CometMessage(CometCmd.RUN_ERROR, new Object[] {rs.getInt("id")}));
 			return;
 		}
+		wph.broadcastMsg("table", new CometMessage(CometCmd.START_RUN, new Object[] {rs.getInt("id")}));
 		for (ClientRepr c: clients) {
 			sendClientMatches(c);
 		}
@@ -271,7 +282,7 @@ public class Server {
 		return true;
 	}
 
-	private void updateRepo() throws SQLException {
+	public synchronized void updateRepo() throws SQLException {
 		try {
 			Process p = Runtime.getRuntime().exec(new String[] {config.cmd_update, "server"});
 
@@ -289,7 +300,7 @@ public class Server {
 		}
 	}
 
-	private void updateMaps() {
+	public synchronized void updateMaps() {
 		File file = new File(config.repo + "/maps");
 		String[] mapFiles = file.list(new FilenameFilter() {
 			@Override
@@ -306,5 +317,35 @@ public class Server {
 	public Set<ClientRepr> getConnections() {
 		return clients;
 	}
+	
+	public double getProgress() throws SQLException {
+		double left = getMapsLeft(getCurrentId()).size();
+		double total = maps.size();
+		double progress = total - left;
+		return progress/total;
+	}
+
+}
+
+class Updater implements Runnable {
+	private Server server;
+
+	public Updater(Server server) {
+		this.server = server;
+	}
+
+	@Override
+	public void run() {
+		while (true) {
+			try {
+				Thread.sleep(300000);
+				server.updateRepo();
+				server.updateMaps();
+			} catch (InterruptedException e) {
+			} catch (SQLException e) {
+			}
+		}
+	}
+
 
 }

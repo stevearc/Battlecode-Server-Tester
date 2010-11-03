@@ -11,7 +11,11 @@ import common.Config;
 
 public class DebugServlet extends AbstractServlet {
 	private static final long serialVersionUID = 5540409128136287730L;
-	public static final String name = "debug.html";
+	public static final String NAME = "debug.html";
+	
+	public DebugServlet() {
+		super(NAME);
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

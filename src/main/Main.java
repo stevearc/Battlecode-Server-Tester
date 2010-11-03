@@ -60,25 +60,26 @@ public class Main {
 
 		try {
 			if (cmd.hasOption('s')) {
-				Config c = new Config(true);
-				Config.setConfig(c);
+				Config config = new Config(true);
+				Config.setConfig(config);
 				if (cmd.hasOption('o')) {
-					c.http_port = Integer.parseInt(cmd.getOptionValue('o'));
+					config.http_port = Integer.parseInt(cmd.getOptionValue('o'));
 				}
 				if (cmd.hasOption('l')) {
-					c.https_port = Integer.parseInt(cmd.getOptionValue('l'));
+					config.https_port = Integer.parseInt(cmd.getOptionValue('l'));
 				}
-				c.reset_db = cmd.hasOption('r');
+				config.reset_db = cmd.hasOption('r');
 				Database db = null;
-				if (c.db_type.equals("mysql")){
+				if (config.db_type.equals("mysql")){
 					db = new MySQLDatabase();
-				} else if (c.db_type.equals("hsql")) {
+				} else if (config.db_type.equals("hsql")) {
 					db = new HSQLDatabase();
 				} else {
 					throw new Exception("Invalid database type");
 				}
 				db.connect();
 				Config.setDB(db);
+
 				Server s = new Server();
 				Config.setServer(s);
 				ServerMethodCaller.pokeServer();

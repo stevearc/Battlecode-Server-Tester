@@ -18,8 +18,7 @@ public class ClientRepr implements Controller {
 	private Logger _log;
 	private Network net;
 	private ArrayList<Match> runningMatches;
-	private boolean authenticated = false;
-	private int numCores = 1;
+	private int numCores = 0;
 
 	public ClientRepr(Socket s) throws IOException {
 		config = Config.getConfig();
@@ -40,13 +39,7 @@ public class ClientRepr implements Controller {
 		runningMatches.clear();
 	}
 
-	public boolean isAuthenticated() {
-		return authenticated;
-	}
-
 	public boolean isFree() {
-		if (!authenticated)
-			return false;
 		return runningMatches.size() < numCores;
 	}
 
@@ -69,18 +62,9 @@ public class ClientRepr implements Controller {
 			runningMatches.remove((Match) p.get(0));
 			ServerMethodCaller.matchFinished(this, p);
 			break;
-		case AUTH:
-			if (config.password.equals(p.get(0))) {
-				numCores = (Integer) p.get(1);
-				net.send(new Packet(PacketCmd.AUTH_REPLY, new Object[] {"ok"}));
-				authenticated = true;
-				ServerMethodCaller.sendClientMatches(this);
-			} else {
-				net.send(new Packet(PacketCmd.AUTH_REPLY, new Object[] {"password mismatch"}));
-			}
-			if (!authenticated) {
-				net.close();
-			}
+		case INIT:
+			numCores = (Integer) p.get(0);
+			ServerMethodCaller.sendClientMatches(this);
 			break;
 		default:
 			_log.warning("Invalid packet command: " + p.getCmd());

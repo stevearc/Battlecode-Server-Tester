@@ -21,7 +21,7 @@ public class HSQLDatabase extends JDBCDatabase {
 	public void connect() throws Exception {
 		try {
 			Class.forName ("com.mysql.jdbc.Driver").newInstance();
-			conn = DriverManager.getConnection("jdbc:hsqldb:file:" + config.home + "/hsqldb" + config.db_host,config.db_user,config.db_pass);
+			conn = DriverManager.getConnection("jdbc:hsqldb:file:" + config.install_dir + "/hsqldb" + config.db_host,config.db_user,config.db_pass);
 		} catch (Exception e) {
 			_log.severe("Cannot connect to database");
 			throw e;

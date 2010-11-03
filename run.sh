@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar Battlecode.jar $*
+java -jar bs-tester.jar $*

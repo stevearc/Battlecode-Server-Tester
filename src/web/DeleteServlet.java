@@ -11,7 +11,11 @@ import backend.ServerMethodCaller;
 
 public class DeleteServlet extends AbstractServlet {
 	private static final long serialVersionUID = 4149519483270976451L;
-	public static final String name = "delete.html";
+	public static final String NAME = "delete.html";
+	
+	public DeleteServlet() {
+		super(NAME);
+	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");

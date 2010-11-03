@@ -1,12 +1,21 @@
 package client;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.KeyStore;
 import java.util.HashSet;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 import networking.Controller;
 import networking.Network;
@@ -28,10 +37,27 @@ public class Client implements Controller, Runnable {
 	private HashSet<MatchRunner> running = new HashSet<MatchRunner>();
 	private ReentrantLock repoLock = new ReentrantLock();
 	private boolean runClient = true;
+	private SSLSocketFactory sf;
 
-	public Client() {
+	public Client() throws Exception{
 		config = Config.getConfig();
 		_log = config.getLogger();
+
+		KeyStore keystore = KeyStore.getInstance("JKS");
+		keystore.load(new FileInputStream(config.keystore), config.keystore_pass.toCharArray());
+
+		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+		tmf.init(keystore);
+
+		SSLContext context = SSLContext.getInstance("TLS");
+		TrustManager[] trustManagers = tmf.getTrustManagers();
+		
+		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+		kmf.init(keystore, config.keystore_pass.toCharArray());
+		KeyManager[] keyManagers = kmf.getKeyManagers();
+
+		context.init(keyManagers, trustManagers, null);
+		sf = context.getSocketFactory();
 	}
 
 	public synchronized void matchFinish(MatchRunner mr, Match match, String status, int winner, byte[] data) {
@@ -47,11 +73,11 @@ public class Client implements Controller, Runnable {
 			try {
 				if (network == null || !network.isConnected()) {
 					try {
-						Socket socket = new Socket(config.server, config.port);
+						Socket socket = sf.createSocket(config.server, config.port);
 						network = new Network(this, socket);
 						new Thread(network).start();
-						_log.info("Logging in to server");
-						network.send(new Packet(PacketCmd.AUTH, new Object[]{config.password, config.cores}));
+						_log.info("Connecting to server");
+						network.send(new Packet(PacketCmd.INIT, new Object[]{config.cores}));
 					} catch (UnknownHostException e) {
 					} catch (IOException e) {
 					}
@@ -81,16 +107,6 @@ public class Client implements Controller, Runnable {
 				mr.stop();
 			}
 			running.clear();
-			break;
-		case AUTH_REPLY:
-			String status = (String) p.get(0);
-			if ("ok".equals(status)) {
-				_log.info("Connected to server");
-			} else {
-				_log.warning("Failed to log in: " + status);
-				runClient = false;
-				network.close();
-			}
 			break;
 		default:
 			_log.warning("Unrecognized packet command: " + p.getCmd());

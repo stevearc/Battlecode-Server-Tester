@@ -13,7 +13,11 @@ import common.MatchSet;
 
 public class RunServlet extends AbstractServlet {
 	private static final long serialVersionUID = -5024779464960322694L;
-	public static final String name = "run.html";
+	public static final String NAME = "run.html";
+	
+	public RunServlet() {
+		super(NAME);
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

@@ -12,7 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 
 public class MatchesServlet extends AbstractServlet {
 	private static final long serialVersionUID = 3122992891626513814L;
-	public static final String name = "matches.html";
+	public static final String NAME = "matches.html";
+	
+	public MatchesServlet() {
+		super(NAME);
+	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
@@ -23,13 +27,13 @@ public class MatchesServlet extends AbstractServlet {
 		out.println("<script type=\"text/javascript\">");
 		// AJAX call to FileServlet
 		out.println("function downloadMatch(id, map, run_id) {\n" +
-				"document.location = \"" + response.encodeURL(FileServlet.name) + "?id=\" + id + \"" +
+				"document.location = \"" + response.encodeURL(FileServlet.NAME) + "?id=\" + id + \"" +
 						"&map=\" + map + \"&run_id=\" + run_id;\n" + 
 		"}");
 		out.println("</script>");
 		out.println("</head>");
 		out.println("<body>");
-		out.println("<a href=\"" + response.encodeURL(IndexServlet.name)+ "\">back</a><br />");
+		out.println("<a href=\"" + response.encodeURL(IndexServlet.NAME)+ "\">back</a><br />");
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
 			out.println("Invalid id</body></html>");

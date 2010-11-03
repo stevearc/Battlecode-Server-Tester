@@ -13,7 +13,11 @@ import javax.servlet.http.HttpServletResponse;
 
 public class FileServlet extends AbstractServlet {
 	private static final long serialVersionUID = 1535716853886006962L;
-	public static final String name = "file.html";
+	public static final String NAME = "file.html";
+	
+	public FileServlet() {
+		super(NAME);
+	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		response.setContentType("application/octet-stream");

@@ -81,7 +81,6 @@ public class MatchRunner implements Runnable {
 				if (stop)
 					return;
 				// Run the match
-				_log.info("Starting ant - " + match.map);
 				curProcess = run.exec(new String[] {"ant", "file", "-f", config.repo + "/build.xml"});
 				Thread.sleep(10000);
 			} finally {
@@ -93,7 +92,6 @@ public class MatchRunner implements Runnable {
 			Thread.sleep(config.timeout);
 			} catch (InterruptedException e) {
 			}
-			_log.info("Finished ant - " + match.map);
 
 			Writer writer = new StringWriter();
 			BufferedReader read = new BufferedReader(new InputStreamReader(curProcess.getInputStream()));

@@ -4,9 +4,8 @@ public enum PacketCmd {
 	// Server -> Client
 	RUN, 
 	STOP,
-	AUTH_REPLY,
 	
 	// Client -> Server
-	AUTH,
+	INIT,
 	RUN_REPLY,
 }

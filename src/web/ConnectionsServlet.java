@@ -14,7 +14,11 @@ import common.Match;
 
 public class ConnectionsServlet extends AbstractServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
-	public static final String name = "connections.html";
+	public static final String NAME = "connections.html";
+	
+	public ConnectionsServlet() {
+		super(NAME);
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -26,7 +30,7 @@ public class ConnectionsServlet extends AbstractServlet {
 		out.println("<meta http-equiv=\"refresh\" content=\"10\">");
 		out.println("</head>");
 		out.println("<body>");
-		out.println("<a href=\"" + response.encodeURL(IndexServlet.name) + "\">back</a><br /><br />");
+		out.println("<a href=\"" + response.encodeURL(IndexServlet.NAME) + "\">back</a><br /><br />");
 		out.println("<table border=\"1\">");
 		out.println("<tr>" +
 				"<th>Client</th>" +

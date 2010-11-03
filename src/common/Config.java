@@ -11,10 +11,11 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import backend.Server;
+import backend.WebPollHandler;
 import db.Database;
 
 /**
- * Handles the parsing of battlecode.conf and stores
+ * Handles the parsing of bs-tester.conf and stores
  * all the data in one convenient container
  * @author steven
  *
@@ -23,27 +24,30 @@ public class Config {
 	private static Config rootConfig;
 	private static Database rootDB;
 	private static Server rootServer;
+	private static WebPollHandler webPollHandler;
 	
 	private boolean isServer;
 	private String log_dir = "/var/log";
-	public String keytool_pass = "elevenened";
+	public String keystore_pass = "";
 	/* These options are only specified on the command line */
 	public int http_port = 80;
 	public int https_port = 443;
 	public boolean reset_db = false;
+	public String client_tar = "";
+	public String keystore = "";
 	
 	/* These options are specified in the battlecode.conf file */
 	/** The directory the application is installed into */
-	public String home = "";
+	public String install_dir = "";
 	/** The location of the repository being used */
 	public String repo = "";
 	public long timeout = 300000;
 	/** CLIENT ONLY: The internet address of the server to connect to */
 	public String server = "";
+	/** The address of the repository */
+	public String repo_addr;
 	/** The port number of the server to connect to (or listen on, if running as server) */
 	public int port = 8888;
-	/** The password that authenticates clients */
-	public String password = "";
 	/** SERVER ONLY: The type of database to use */
 	public String db_type = "hsql";
 	/** SERVER ONLY: The name of the database to use */
@@ -67,7 +71,10 @@ public class Config {
 
 	public Config(boolean isServer) throws IOException {
 		this.isServer = isServer;
-		File file = new File("/etc/battlecode.conf");
+		File file = new File("/etc/bs-tester.conf");
+		if (!file.exists()) {
+			throw new IOException("Config file /etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
+		}
 		FileInputStream f = new FileInputStream(file);
 		BufferedReader read = new BufferedReader(new InputStreamReader(f));
 		for (String line = read.readLine(); line != null; line = read.readLine()) {
@@ -80,6 +87,7 @@ public class Config {
 			parse(data[0], data[1]);
 		}
 		validate();
+		setWebPollHandler(new WebPollHandler());
 	}
 	
 	public static Config getConfig() {
@@ -106,13 +114,21 @@ public class Config {
 		rootServer = s;
 	}
 	
+	public static WebPollHandler getWebPollHandler() {
+		return webPollHandler;
+	}
+	
+	private static void setWebPollHandler(WebPollHandler wph) {
+		webPollHandler = wph;
+	}
+	
 	public Logger getLogger() {
 		if (isServer) {
 			Logger logger = Logger.getLogger("Server");
 			logger.setLevel(Level.ALL);
 			try {
 				if (logger.getHandlers().length < 2) {
-					FileHandler server_handler = new FileHandler(log_dir + "/battlecode_srv.txt");
+					FileHandler server_handler = new FileHandler(log_dir + "/bs-tester.txt");
 					server_handler.setFormatter(new SimpleFormatter());
 					logger.addHandler(server_handler);
 				}
@@ -127,7 +143,7 @@ public class Config {
 			logger.setLevel(Level.ALL);
 			try {
 				if (logger.getHandlers().length < 2) {
-					FileHandler client_handler = new FileHandler(log_dir + "/battlecode.txt");
+					FileHandler client_handler = new FileHandler(log_dir + "/bs-client.txt");
 					client_handler.setFormatter(new SimpleFormatter());
 					logger.addHandler(client_handler);
 				}
@@ -147,11 +163,17 @@ public class Config {
 	 */
 	private void parse(String option, String value) {
 		option = option.toLowerCase();
-		if (option.equals("home")) {
-			home = value;
+		if (option.equals("install_dir")) {
+			install_dir = value;
+			client_tar = install_dir + "/client.tar";
+			keystore = install_dir + "/keystore";
+			repo = install_dir + "/repo";
 		}
-		else if (option.equals("repo")) {
-			repo = value;
+		else if (option.equals("keystore_pass")) {
+			keystore_pass = value;
+		}
+		else if (option.equals("repo_addr")) {
+			repo_addr = value;
 		}
 		else if (option.equals("log_dir")) {
 			log_dir = value;
@@ -162,9 +184,6 @@ public class Config {
 		else if (option.equals("port")) {
 			port = Integer.parseInt(value);
 		} 
-		else if (option.equals("password")) {
-			password = value;
-		}
 		else if (option.equals("db_type")) {
 			db_type = value.toLowerCase();
 		}
@@ -209,15 +228,15 @@ public class Config {
 		if (!new File(repo).exists())
 			throw new InvalidConfigException("Invalid repository location " + repo);
 		
-		if (!new File(home).exists())
-			throw new InvalidConfigException("Invalid install directory " + home);
+		if ("".equals(keystore_pass))
+			throw new InvalidConfigException("Keystore password cannot be blank");
+		
+		if (!new File(install_dir).exists())
+			throw new InvalidConfigException("Invalid install directory " + install_dir);
 
 		if (port < 1 || port > 65535)
 			throw new InvalidConfigException("Invalid port number " + port);
 		
-		if ("".equals(password)) 
-			throw new InvalidConfigException("Password cannot be blank!");
-
 		if (!version_control.equals("svn") && !version_control.equals("git"))
 			throw new InvalidConfigException("Invalid version control " + version_control);
 

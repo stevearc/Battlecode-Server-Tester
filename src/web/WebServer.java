@@ -1,7 +1,5 @@
 package web;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,6 +18,15 @@ import common.Config;
 public class WebServer implements Runnable {
 	private Config config;
 	private Logger _log;
+	private AbstractServlet[] servlets = {
+			new IndexServlet(),
+			new ConnectionsServlet(),
+			new DeleteServlet(),
+			new MatchesServlet(),
+			new RunServlet(),
+			new FileServlet(),
+			new DebugServlet(),
+			};
 
 	public WebServer() {
 		config = Config.getConfig();
@@ -40,32 +47,38 @@ public class WebServer implements Runnable {
 			context.setContextPath("/");
 
 			context.addServlet(new ServletHolder(new IndexServlet()),"/");
-			context.addServlet(new ServletHolder(new IndexServlet()),"/" + IndexServlet.name);
-			context.addServlet(new ServletHolder(new ConnectionsServlet()),"/" + ConnectionsServlet.name);
-			context.addServlet(new ServletHolder(new DeleteServlet()),"/" + DeleteServlet.name);
-			context.addServlet(new ServletHolder(new MatchesServlet()),"/" + MatchesServlet.name);
-			context.addServlet(new ServletHolder(new RunServlet()),"/" + RunServlet.name);
-			context.addServlet(new ServletHolder(new FileServlet()),"/" + FileServlet.name);
-			context.addServlet(new ServletHolder(new DebugServlet()),"/" + DebugServlet.name);
+			for (AbstractServlet s: servlets)
+				context.addServlet(new ServletHolder(s), "/" + s.name);
 			
-			// Add the javascript server
+			// Add the cometd servlet
+			ServletHolder sh = new ServletHolder(new CometServlet());
+			context.addServlet(sh, "/comet/*");
+
+			// Add the javascript path
 			ContextHandler jsContext = new ContextHandler();
 			jsContext.setContextPath("/js");
-			jsContext.setHandler(new JavascriptHandler());
+			jsContext.setHandler(new StaticFileHandler("text/javascript", ".+\\.js"));
 			
-			// Add both contexts
+			// Add the css path
+			ContextHandler cssContext = new ContextHandler();
+			cssContext.setContextPath("/css");
+			cssContext.setHandler(new StaticFileHandler("text/css", ".+\\.css"));
+			
+			// Add the img path
+			ContextHandler imgContext = new ContextHandler();
+			imgContext.setContextPath("/img");
+			imgContext.setHandler(new ImageHandler());
+			
+			// Add contexts
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.setHandlers(new Handler[] {jsContext, context});
+			contexts.setHandlers(new Handler[] {jsContext, cssContext, imgContext, context});
 			server.setHandler(contexts);
 			
 			SslSelectChannelConnector ssl_connector = new SslSelectChannelConnector();
 			ssl_connector.setPort(config.https_port);
-			File ks = new File(config.home + "/keystore");
-			if (!ks.exists()) {
-				makeDefaultKeystore();
-			}
-			ssl_connector.setKeystore(config.home + "/keystore");
-			ssl_connector.setPassword(config.keytool_pass);
+			ssl_connector.setKeystore(config.keystore);
+			ssl_connector.setPassword(config.keystore_pass);
+//			ssl_connector.setSslContext(Config.getSSLContext());
 			
 			server.setConnectors(new Connector[]{ connector0, ssl_connector});
 			server.start();
@@ -75,10 +88,4 @@ public class WebServer implements Runnable {
 		}
 	}
 	
-	private void makeDefaultKeystore() throws IOException, InterruptedException {
-		_log.info("Creating keystore");
-		Process p = Runtime.getRuntime().exec(new String[] {"./scripts/gen_keystore.sh", 
-				config.home + "/keystore", config.keytool_pass});
-		p.waitFor();
-	}
 }

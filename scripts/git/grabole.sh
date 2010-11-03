@@ -1,6 +1,7 @@
 #!/bin/bash
-source /etc/battlecode.conf
+source /etc/bs-tester.conf
 
+REPO=$INSTALL_DIR/repo
 USER=`ls -l $REPO | awk '{split($0,a," ")} END{print a[3]}'`
 CMD_PREFIX="sudo -u $USER"
 
