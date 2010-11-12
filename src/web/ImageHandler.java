@@ -1,9 +1,8 @@
 package web;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 
 import javax.servlet.ServletException;
@@ -25,14 +24,18 @@ public class ImageHandler extends AbstractHandler {
 			baseRequest.setHandled(true);
 			return;
 		}
-		PrintWriter out = response.getWriter();
+		OutputStream out = response.getOutputStream();
 		response.setStatus(HttpServletResponse.SC_OK);
 		baseRequest.setHandled(true);
-		response.setContentType("image/" + path.substring(path.lastIndexOf(".")).toLowerCase());
-		BufferedReader read = new BufferedReader(new InputStreamReader(url.openStream()));
-		for (String line = read.readLine(); line != null; line = read.readLine()) {
-			out.println(line);
-		}
+		response.setContentType("image/" + path.substring(path.lastIndexOf(".")+1).toLowerCase());
+		response.setHeader("Content-Type", "image/" + path.substring(path.lastIndexOf(".")+1).toLowerCase());
+		InputStream istream = url.openStream();
+		
+		byte[] buffer = new byte[1024];
+		int n;
+		while ((n = istream.read(buffer)) != -1) {
+			out.write(buffer, 0, n);
+		}	
 	}
 
 }

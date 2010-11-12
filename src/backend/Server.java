@@ -19,6 +19,7 @@ import networking.CometCmd;
 import networking.CometMessage;
 import networking.Packet;
 
+import common.BattlecodeMap;
 import common.Config;
 import common.Match;
 import common.MatchSet;
@@ -36,7 +37,7 @@ public class Server {
 	private Logger _log;
 	private NetworkHandler handler;
 	private HashSet<ClientRepr> clients = new HashSet<ClientRepr>();
-	private HashSet<String> maps = new HashSet<String>();
+	private HashSet<BattlecodeMap> maps = new HashSet<BattlecodeMap>();
 	private WebPollHandler wph;
 
 	public Server() throws Exception {
@@ -50,6 +51,7 @@ public class Server {
 	}
 
 	public synchronized void poke() {
+		_log.info("poke");
 		try {
 			startRun();
 		} catch (SQLException e) {
@@ -65,7 +67,7 @@ public class Server {
 			ResultSet rs = db.query("SELECT MAX(id) as newest FROM runs"); 
 			rs.next();
 			int id = rs.getInt("newest");
-			wph.broadcastMsg("table", new CometMessage(CometCmd.INSERT_TABLE_ROW, new Object[] {id, 
+			wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new Object[] {id, 
 					run.getTeam_a(), run.getTeam_b()}));
 			startRun();
 		} catch (SQLException e) {
@@ -76,12 +78,11 @@ public class Server {
 		try {
 			if (runId == getCurrentId()) {
 				stopCurrentRun();
-				wph.broadcastMsg("table", new CometMessage(CometCmd.CANCEL_RUN, new Object[] {runId}));
 				startRun();
 			} else {
 				db.update("DELETE FROM matches WHERE run_id = " + runId, true);
 				db.update("DELETE FROM runs WHERE id = " + runId, true);
-				wph.broadcastMsg("table", new CometMessage(CometCmd.DELETE_TABLE_ROW, new Object[] {runId}));
+				wph.broadcastMsg("matches", new CometMessage(CometCmd.DELETE_TABLE_ROW, new Object[] {runId}));
 			}
 		} catch (SQLException e) {
 		}
@@ -102,26 +103,37 @@ public class Server {
 		Match m = (Match) p.get(0);
 		String status = (String) p.get(1);
 		int winner = (Integer) p.get(2);
-		byte[] data = (byte[]) p.get(3);
+		int win_condition = (Integer) p.get(3);
+		int a_points = (Integer) p.get(4);
+		int b_points = (Integer) p.get(5);
+		byte[] data = (byte[]) p.get(6);
 		try {
 			if ("ok".equals(status) && m.run_id == getCurrentId()) {
-				if (!getMapsLeft(m.run_id).contains(m.map)) {
+				if (!getMatchesLeft().contains(m)) {
 					_log.info("Received duplicate match: " + m);
 					sendClientMatches(client);
 					return;
 				}
 				_log.info("Match finished: " + m + " winner: " + (winner == 1 ? "A" : "B"));
 				PreparedStatement stmt = null;
-				stmt = db.prepare("INSERT INTO matches (run_id, map, win, data) VALUES (?, ?, ?, ?)");
+				stmt = db.prepare("INSERT INTO matches (run_id, map, reverse, win, win_condition, height, width, rounds, points, a_points, b_points, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 				stmt.setInt(1, m.run_id);
-				stmt.setString(2, m.map);
-				stmt.setInt(3, winner);
-				stmt.setBinaryStream(4, new ByteArrayInputStream(data), data.length);
+				stmt.setString(2, m.map.map);
+				stmt.setInt(3, m.reverse);
+				stmt.setInt(4, winner);
+				stmt.setInt(5, win_condition);
+				stmt.setInt(6, m.map.height);
+				stmt.setInt(7, m.map.width);
+				stmt.setInt(8, m.map.rounds);
+				stmt.setInt(9, m.map.points);
+				stmt.setInt(10, a_points);
+				stmt.setInt(11, b_points);
+				stmt.setBinaryStream(12, new ByteArrayInputStream(data), data.length);
 				db.update(stmt, true);
-				wph.broadcastMsg("table", new CometMessage(CometCmd.MATCH_FINISHED, new Object[] {m.run_id, winner}));
+				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new Object[] {m.run_id, winner}));
 
 				// If finished, start next run
-				if (getMapsLeft(m.run_id).isEmpty()) {
+				if (getMatchesLeft().isEmpty()) {
 					stopCurrentRun();
 					startRun();
 				}
@@ -130,7 +142,7 @@ public class Server {
 				_log.warning("Match " + m + " on client " + client + " failed");
 			}
 
-			if (getMapsLeft(getCurrentId()).isEmpty()) {
+			if (getMatchesLeft().isEmpty()) {
 				stopCurrentRun();
 				startRun();
 			} else {
@@ -146,9 +158,9 @@ public class Server {
 		sb.append("\n");
 		try {
 			if (getCurrentId() != -1) {
-				sb.append("Maps left: " + getMapsLeft(getCurrentId()));
+				sb.append("Matches left: " + getMatchesLeft());
 				sb.append("\n");
-				sb.append("Maps left not running: " + getMapsLeftAndNotRunning(getCurrentId()));
+				sb.append("Matches left not running: " + getMatchesLeftAndNotRunning());
 				sb.append("\n");
 			}
 		} catch (SQLException e) {
@@ -160,28 +172,19 @@ public class Server {
 
 	public synchronized void sendClientMatches(ClientRepr client) {
 		try {
-			ResultSet rs = db.query("SELECT * FROM runs WHERE status = 1");
-			if (!rs.next())
-				return;
-			int run_id = rs.getInt("id");
-			String team_a;
-
-			team_a = rs.getString("team_a");
-
-			String team_b = rs.getString("team_b");
-			HashSet<String> maps = getMapsLeftAndNotRunning(run_id);
-			for (String m: maps) {
+			HashSet<Match> matches = getMatchesLeftAndNotRunning();
+			for (Match m: matches) {
 				if (!client.isFree())
 					break;
-				_log.info("Sending map " + m + " to client " + client);
-				client.runMatch(new Match(run_id, team_a, team_b, m));
+				_log.info("Sending match " + m + " to client " + client);
+				client.runMatch(m);
 			}
 
 			// If we are currently running all necessary maps, add some redundancy
-			String[] mapIndex = getMapsLeft(run_id).toArray(new String[0]);
+			Match[] matchIndex = getMatchesLeft().toArray(new Match[0]);
 			Random r = new Random();
 			if (client.isFree()) {
-				client.runMatch(new Match(run_id, team_a, team_b, mapIndex[r.nextInt(mapIndex.length)]));
+				client.runMatch(matchIndex[r.nextInt(matchIndex.length)]);
 			}
 		} catch (SQLException e) {
 		}
@@ -203,12 +206,13 @@ public class Server {
 			stmt.setString(1, run.getTeam_a());
 			stmt.setString(2, run.getTeam_b());
 			db.update(stmt, true);
-			wph.broadcastMsg("table", new CometMessage(CometCmd.RUN_ERROR, new Object[] {rs.getInt("id")}));
-			return;
-		}
-		wph.broadcastMsg("table", new CometMessage(CometCmd.START_RUN, new Object[] {rs.getInt("id")}));
-		for (ClientRepr c: clients) {
-			sendClientMatches(c);
+			wph.broadcastMsg("matches", new CometMessage(CometCmd.RUN_ERROR, new Object[] {rs.getInt("id")}));
+			startRun();
+		} else {
+			wph.broadcastMsg("matches", new CometMessage(CometCmd.START_RUN, new Object[] {rs.getInt("id")}));
+			for (ClientRepr c: clients) {
+				sendClientMatches(c);
+			}
 		}
 	}
 
@@ -222,37 +226,51 @@ public class Server {
 	}
 
 	private void stopCurrentRun() throws SQLException {
-		db.update("UPDATE runs SET status = 2, ended = NOW() WHERE id = " + getCurrentId(), true);
+		_log.info("Stopping current run");
+		int id = getCurrentId();
+		db.update("UPDATE runs SET status = 2, ended = NOW() WHERE id = " + id, true);
+		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new Object[] {id}));
 		for (ClientRepr c: clients) {
 			c.stopAllMatches();
 		}
 	}
 
-	private HashSet<String> getMapsLeft(int run) throws SQLException {
-		PreparedStatement st = db.prepare("SELECT map FROM matches WHERE run_id = ?");
+	private HashSet<Match> getMatchesLeft() throws SQLException {
+		ResultSet rs = db.query("SELECT id, team_a, team_b FROM runs WHERE status = 1");
+		rs.next();
+		int run = rs.getInt("id");
+		String team_a = rs.getString("team_a");
+		String team_b = rs.getString("team_b");
+		rs.close();
+		PreparedStatement st = db.prepare("SELECT map, reverse FROM matches WHERE run_id = ?");
 		st.setInt(1, run);
-		ResultSet rs = db.query(st);
-		HashSet<String> finishedMaps = new HashSet<String>();
+		rs = db.query(st);
+		HashSet<Match> finishedMatches = new HashSet<Match>();
 		while (rs.next()) {
-			finishedMaps.add(rs.getString("map"));
+			finishedMatches.add(new Match(run, team_a, team_b, new BattlecodeMap(rs.getString("map"), 0, 0, 0, 0), rs.getInt("reverse")));
 		}
-		HashSet<String> mapsLeft = new HashSet<String>();
-		for (String s: maps) {
-			if (!finishedMaps.contains(s)){
-				mapsLeft.add(s);
+		HashSet<Match> matchesLeft = new HashSet<Match>();
+		for (BattlecodeMap map: maps) {
+			Match m1 = new Match(run, team_a, team_b, map, 0);
+			if (!finishedMatches.contains(m1)){
+				matchesLeft.add(m1);
+			}
+			Match m2 = new Match(run, team_a, team_b, map, 1);
+			if (!finishedMatches.contains(m2)){
+				matchesLeft.add(m2);
 			}
 		}
-		return mapsLeft;
+		return matchesLeft;
 	}
 
-	private HashSet<String> getMapsLeftAndNotRunning(int run) throws SQLException {
-		HashSet<String> mapsLeft = getMapsLeft(run);
+	private HashSet<Match> getMatchesLeftAndNotRunning() throws SQLException {
+		HashSet<Match> matchesLeft = getMatchesLeft();
 		for (ClientRepr c: clients) {
 			for (Match m: c.getRunningMatches()) {
-				mapsLeft.remove(m.map);
+				matchesLeft.remove(m);
 			}
 		}
-		return mapsLeft;
+		return matchesLeft;
 	}
 
 	private boolean validateTeams(MatchSet run) throws SQLException {
@@ -302,31 +320,47 @@ public class Server {
 
 	public synchronized void updateMaps() {
 		File file = new File(config.repo + "/maps");
-		String[] mapFiles = file.list(new FilenameFilter() {
+		File[] mapFiles = file.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.toLowerCase().endsWith(".xml");
 			}
 		});
 		maps.clear();
-		for (String m: mapFiles) {
-			maps.add(m.substring(0, m.length() - 4));
+		for (File m: mapFiles) {
+			try {
+				maps.add(new BattlecodeMap(m));
+			} catch (Exception e) {
+				_log.log(Level.WARNING, "Error parsing map", e);
+			}
 		}
 	}
 
 	public Set<ClientRepr> getConnections() {
 		return clients;
 	}
-	
+
 	public double getProgress() throws SQLException {
-		double left = getMapsLeft(getCurrentId()).size();
+		double left = getMatchesLeft().size();
 		double total = maps.size();
 		double progress = total - left;
 		return progress/total;
 	}
+	
+	public HashSet<BattlecodeMap> getMaps() {
+		return maps;
+	}
 
 }
 
+/**
+ * Periodically updates the repo
+ * @author steven
+ * The reason this is necessary is if the user deletes a map from the repo.  The clients will pull
+ * the updated repo without the map, but the server will still attempt to make them run a match on that map.
+ * If the server periodically updates (instead of just at the beginning of a run), this error will not require
+ * a restart.
+ */
 class Updater implements Runnable {
 	private Server server;
 

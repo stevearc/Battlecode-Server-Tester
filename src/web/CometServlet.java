@@ -38,7 +38,8 @@ public class CometServlet extends AbstractServlet {
 			if (continuation.isInitial()) {
 				continuation.suspend();
 				String channel = request.getParameter("channel");
-				wph.addContinuation(channel, continuation);
+				String lastheard = request.getParameter("lastheard");
+				wph.addContinuation(channel, continuation, Integer.parseInt(lastheard));
 				continuation.undispatch();
 			}
 		} else {

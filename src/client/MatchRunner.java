@@ -3,13 +3,14 @@ package client;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import common.Config;
 import common.Match;
@@ -52,13 +53,17 @@ public class MatchRunner implements Runnable {
 	public void run() {
 		String status = null;
 		int winner = 0;
+		int win_condition = 0;
+		int a_points = 0;
+		int b_points = 0;
 		byte[] data = null;
 		// Clean out old data
 		File f = new File(config.repo + "/" + match.map + ".rms");
 		f.delete();
 
 		try {
-			_log.info("Running: " + match.map);
+			_log.info("Running: " + match);
+			String output_file = config.repo + match.reverse + match.map + ".out";
 			Runtime run = Runtime.getRuntime();
 			try {
 				repoLock.lock();
@@ -71,43 +76,48 @@ public class MatchRunner implements Runnable {
 				if (stop)
 					return;
 				// Get the appropriate teams for the match
-				curProcess = run.exec(new String[] {config.cmd_grabole, match.team_a, match.team_b});
+				String[] args = new String[3];
+				args[0] = config.cmd_grabole;
+				args[1] = (match.reverse == 0 ? match.team_a : match.team_b);
+				args[2] = (match.reverse == 0 ? match.team_b : match.team_a);
+				curProcess = run.exec(args);
 				curProcess.waitFor();
 				if (stop)
 					return;
 				// Generate the bc.conf file
-				curProcess = run.exec(new String[] {config.cmd_gen_conf, match.map});
+				curProcess = run.exec(new String[] {config.cmd_gen_conf, match.map.map, ""+match.reverse});
 				curProcess.waitFor();
 				if (stop)
 					return;
 				// Run the match
-				curProcess = run.exec(new String[] {"ant", "file", "-f", config.repo + "/build.xml"});
+				curProcess = run.exec(new String[] {config.cmd_run_match, config.repo, output_file});
 				Thread.sleep(10000);
 			} finally {
 				repoLock.unlock();
 			}
-//			curProcess.waitFor();
 			new Thread(new Callback(Thread.currentThread(), curProcess)).start();
 			try {
-			Thread.sleep(config.timeout);
+				Thread.sleep(config.timeout);
 			} catch (InterruptedException e) {
 			}
 
-			Writer writer = new StringWriter();
-			BufferedReader read = new BufferedReader(new InputStreamReader(curProcess.getInputStream()));
-			char[] buffer = new char[1024];
-			int n;
-			while ((n = read.read(buffer)) != -1) {
-				writer.write(buffer, 0, n);
+			// Read in the output file
+			BufferedReader reader = new BufferedReader(new FileReader(config.repo + "/" + output_file));
+			StringBuilder sb = new StringBuilder();
+			for (String line = null; (line = reader.readLine()) != null; ) {
+				sb.append(line);
 			}
-			String output = writer.toString();
+			String output = sb.toString();
+			File of = new File(config.repo + "/" + output_file);
+			of.delete();
 
+			// Check to see if there were any errors
 			if (stop)
 				return;
 			if (curProcess.exitValue() != 0) {
 				_log.severe("Error running match\n" + output);
 				status = "error";
-				client.matchFinish(this, match, status, winner, data);
+				client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 				return;
 			}
 
@@ -120,38 +130,56 @@ public class MatchRunner implements Runnable {
 					_log.warning("Unknown error running match\n" + output);
 					_log.warning("^ error: a_index: " + a_index + " b_index: " + b_index);
 					if (!stop) 
-						client.matchFinish(this, match, status, winner, data);
+						client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 					return;
 				}
-				winner = 0;
+				// If teams not reversed and A loses, winner = 0
+				// If teams are reversed and A loses, winner = 1
+				winner = match.reverse; 
 			} else {
-				winner = 1;
+				winner = (1+match.reverse)%2;
 			}
+
+			// Detect how the match was finished
+			if (output.indexOf("Reason: The losing team was destroyed easily.") >= 0) {
+				win_condition = 0;
+			} else if (output.indexOf("ending the match early") >= 0) {
+				win_condition = 1;
+			} else {
+				win_condition = 2;
+			}
+			String a_points_str = getMatch(output, "Team A had [0-9]+");
+			if (!"".equals(a_points_str))
+				a_points = Integer.parseInt(a_points_str.substring("Team A had ".length()));
+			String b_points_str = getMatch(output, "Team B had [0-9]+");
+			if (!"".equals(b_points_str))
+				b_points = Integer.parseInt(b_points_str.substring("Team B had ".length()));
 
 			_log.info("Finished: " + match.map);
 		} catch (Exception e) {
 			if (!stop) {
 				_log.log(Level.SEVERE, "Failed to run match", e);
 				status = "error";
-				client.matchFinish(this, match, status, winner, data);
+				client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 			}
 			return;
 		}
 
-		String matchFile = config.repo + "/" + match.map + ".rms";
+		// Read in the replay file
+		String matchFile = config.repo + "/" + match.reverse + match.map + ".rms";
 		try {
 			data = getMatchData(matchFile);
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
 			status = "error";
 			if (!stop)
-				client.matchFinish(this, match, status, winner, data);
+				client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 			return;
 		}
 
 		status = "ok";
 		if (!stop)
-			client.matchFinish(this, match, status, winner, data);
+			client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 	}
 
 	/**
@@ -188,6 +216,38 @@ public class MatchRunner implements Runnable {
 		return data;
 	}
 
+	/**
+	 * Finds the first instance of a pattern in a regex and returns that
+	 * @param contents
+	 * @param regex
+	 * @return
+	 */
+	private static String getMatch(String contents, String regex){
+		return getAllMatches(contents, regex).get(0);
+	}
+
+	/**
+	 * Finds all patterns matching a regex and returns them in an array.
+	 * @param contents
+	 * @param regex
+	 * @return an array of the patterns in the contents String
+	 */
+	private static ArrayList<String> getAllMatches(String contents, String regex){
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(contents);
+		ArrayList<String> patterns = new ArrayList<String>();
+		while(matcher.find()){
+			String match = matcher.group();
+			if (!"".equals(match)){
+				patterns.add(matcher.group());
+			}
+		}
+		if (patterns.size() == 0){
+			patterns.add("");
+		}
+		return patterns;
+	}
+
 	@Override
 	public String toString() {
 		return match.toString();
@@ -203,7 +263,7 @@ class Callback implements Runnable {
 		this.parent = parent;
 		this.proc = proc;
 	}
-	
+
 	@Override
 	public void run() {
 		try {
@@ -212,5 +272,5 @@ class Callback implements Runnable {
 		} catch (InterruptedException e) {
 		}
 	}
-	
+
 }

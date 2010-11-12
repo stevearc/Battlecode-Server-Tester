@@ -63,7 +63,9 @@ public class Config {
 	/** The path to the script that will retrieve the appropriate teams from repository history */
 	public String cmd_grabole = "";
 	/** The path to the script that will generate the proper bc.conf file */
-	public String cmd_gen_conf = "";
+	public String cmd_gen_conf = "./scripts/gen_conf.sh";
+	/** The path to the script that runs the battlecode match */
+	public String cmd_run_match = "./scripts/run_match.sh";
 	/** The version control program being used (currently supports git and svn) */
 	public String version_control = "";
 	/** CLIENT ONLY: The number of simultaneous matches to run at a time */
@@ -201,7 +203,6 @@ public class Config {
 		}
 		else if (option.equals("version_control")) {
 			version_control = value.toLowerCase();
-			cmd_gen_conf = "./scripts/" + value + "/gen_conf.sh";
 			cmd_grabole = "./scripts/" + value + "/grabole.sh";
 			cmd_update = "./scripts/" + value + "/update.sh";
 		}

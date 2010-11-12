@@ -28,16 +28,27 @@ set_param() {
 
 setup_client() {
   source etc/bs-tester.conf
-  # Generate an ssh key
-  if [ ! -e $HOME/.ssh/id_rsa ]; then
-    ssh-keygen -N '' -f $HOME/.ssh/id_rsa -q
-    ./scripts/$VERSION_CONTROL/copy_keys.sh $REPO_ADDR
-  fi
+  INSTALL_DIR=`pwd`
 
-  sudo -u $SUDO_USER ./scripts/$VERSION_CONTROL/init.sh $REPO_ADDR
+  # Specify number of cores
+  VALID=0
+  while [ $VALID == 0 ]; do
+    echo -n "Number of cores? "
+    read CORES
+    if [ "`echo $CORES | egrep ^[[:digit:]]+$`" == "" ]; then
+      VALID=0;
+    else
+      VALID=1;
+    fi
+  done
+  
+  sudo -u $SUDO_USER ./scripts/generate_ssh_keys.sh $VERSION_CONTROL $REPO_ADDR
+
   if [ ! -e repo ]; then
     echo "WARNING: Failed to initialize repository.  Either try again with ./setup.sh -f or manually clone your repository into $INSTALL_DIR/repo"
   fi
+  set_param INSTALL_DIR $INSTALL_DIR
+  set_param CORES $CORES
 
   cp etc/bs-tester.conf /etc
 }
@@ -64,13 +75,8 @@ setup_server() {
     VALID=`./scripts/$VERSION_CONTROL/check_url_format.sh $REPO_ADDR`
   done
 
-  # Generate an ssh key
-  if [ ! -e $HOME/.ssh/id_rsa ]; then
-    ssh-keygen -N '' -f $HOME/.ssh/id_rsa -q
-    ./scripts/$VERSION_CONTROL/copy_keys.sh $REPO_ADDR
-  fi
+  sudo -u $SUDO_USER ./scripts/generate_ssh_keys.sh $VERSION_CONTROL $REPO_ADDR
 
-  sudo -u $SUDO_USER ./scripts/$VERSION_CONTROL/init.sh $REPO_ADDR
   if [ ! -e repo ]; then
     echo "WARNING: Failed to initialize repository.  Either try again with ./setup.sh -f or manually clone your repository into $INSTALL_DIR/repo"
   fi
@@ -101,21 +107,29 @@ setup_server() {
   # Generate bs-client.tar.gz
   DIR=`pwd | sed -e 's/.*\///'`
   cd ..
-  cp /etc/bs-tester.conf $DIR/etc/
   tar -cf $DIR/bs-client.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README.txt $DIR/run.sh $DIR/setup.sh $DIR/scripts
   gzip $DIR/bs-client.tar
 }
 
+SERVER=0
+if [ -e bs-client.tar.gz ]; then
+  SERVER=1
+elif [ ! -e keystore ]; then
+  SERVER=1
+fi
+
 # if the -f option is passed, remove the current repo
 if [ "$1" == "-f" ]; then
   rm -rf repo > /dev/null 2> /dev/null
-  rm keystore > /dev/null 2> /dev/null
-  rm bs-client.tar > /dev/null 2> /dev/null
-  rm bs-client.tar.gz > /dev/null 2> /dev/null
+  if [ "$SERVER" == "1" ]; then
+    rm keystore > /dev/null 2> /dev/null
+    rm bs-client.tar > /dev/null 2> /dev/null
+    rm bs-client.tar.gz > /dev/null 2> /dev/null
+  fi
 fi
 
-if [ -e keystore ]; then
-  setup_client
-else
+if [ "$SERVER" == "1" ]; then
   setup_server
+else
+  setup_client
 fi

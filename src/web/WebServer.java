@@ -8,7 +8,6 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -24,24 +23,20 @@ public class WebServer implements Runnable {
 			new DeleteServlet(),
 			new MatchesServlet(),
 			new RunServlet(),
-			new FileServlet(),
+			new MatchDownloadServlet(),
 			new DebugServlet(),
+			new MapAnalysisServlet(),
 			};
 
 	public WebServer() {
 		config = Config.getConfig();
 		_log = config.getLogger();
 	}
-
+	
 	public void run() {
 		try {
 			Server server = new Server();
 			
-			SelectChannelConnector connector0 = new SelectChannelConnector();
-	        connector0.setPort(config.http_port);
-	        connector0.setMaxIdleTime(30000);
-	        connector0.setRequestHeaderSize(8192);
-	        
 	        // Add the servlets
 			ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 			context.setContextPath("/");
@@ -66,7 +61,7 @@ public class WebServer implements Runnable {
 			
 			// Add the img path
 			ContextHandler imgContext = new ContextHandler();
-			imgContext.setContextPath("/img");
+			imgContext.setContextPath("/images");
 			imgContext.setHandler(new ImageHandler());
 			
 			// Add contexts
@@ -78,9 +73,8 @@ public class WebServer implements Runnable {
 			ssl_connector.setPort(config.https_port);
 			ssl_connector.setKeystore(config.keystore);
 			ssl_connector.setPassword(config.keystore_pass);
-//			ssl_connector.setSslContext(Config.getSSLContext());
 			
-			server.setConnectors(new Connector[]{ connector0, ssl_connector});
+			server.setConnectors(new Connector[]{ssl_connector});
 			server.start();
 			server.join();
 		} catch (Exception e) {

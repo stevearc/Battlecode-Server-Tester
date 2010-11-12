@@ -11,18 +11,16 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class FileServlet extends AbstractServlet {
+public class MatchDownloadServlet extends AbstractServlet {
 	private static final long serialVersionUID = 1535716853886006962L;
 	public static final String NAME = "file.html";
 	
-	public FileServlet() {
+	public MatchDownloadServlet() {
 		super(NAME);
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		response.setContentType("application/octet-stream");
-		response.setHeader("Content-Disposition", "attachment; filename=\"" + request.getParameter("run_id") + 
-				request.getParameter("map") + ".rms\"");
 
 		response.setStatus(HttpServletResponse.SC_OK);
 		try {
@@ -33,7 +31,7 @@ public class FileServlet extends AbstractServlet {
 
 			int id = Integer.parseInt(strId);
 
-			PreparedStatement st = db.prepare("SELECT data FROM matches WHERE id = ?");
+			PreparedStatement st = db.prepare("SELECT * FROM matches WHERE id = ?");
 			st.setInt(1, id);
 			ResultSet rs = db.query(st);
 			// If the run has finished
@@ -41,6 +39,8 @@ public class FileServlet extends AbstractServlet {
 				response.getWriter().print("Match has no data");
 				return;
 			} 
+		response.setHeader("Content-Disposition", "attachment; filename=\"" + rs.getInt("run_id") + 
+				rs.getString("map") + (rs.getInt("reverse") == 0 ? "" : " (reverse)") + ".rms\"");
 			Blob b = rs.getBlob("data");
 			response.getOutputStream().write(b.getBytes((long) 1, (int) b.length()));
 			st.close();

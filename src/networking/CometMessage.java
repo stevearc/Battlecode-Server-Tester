@@ -2,6 +2,7 @@ package networking;
 
 public class CometMessage {
 	private CometCmd cmd;
+	public int id;
 	private Object[] args;
 	
 	
@@ -22,6 +23,8 @@ public class CometMessage {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(cmd);
+		sb.append(",");
+		sb.append(id);
 		sb.append(",");
 		for (Object o: args) {
 			sb.append(o);

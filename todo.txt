@@ -1,28 +1,18 @@
-Allow buffer of most recent publications to channel
-redirect 80 to 443
-make pretty interface
-add data aggregation
+add data aggregation (win types)
+Change data aggregation format (#/#/#)
+Allow specifying maps AND changing map seeds
+  (requires db reformatting)
+fix mysql create statements
 test install process thoroughly (& fix svn scripts)
-migrate gen_conf script up
-
-
-sort by map metadata (size)
-analysis on map metadata
-allow running on select maps
+users register/login
 allow resume
+svn aliasing
+
 
 Interface:
-FXN
 	Start new run (autocomplete)
-		view old run
-		delete old run
-	compare two runs
-		filter by name
-	view connections
   manage aliases
 	
-team A | team B | wins/wins | status | time (x)
-
 
 tooltip over aliased rows to display actual name
 progress bar

@@ -60,8 +60,9 @@ public class Client implements Controller, Runnable {
 		sf = context.getSocketFactory();
 	}
 
-	public synchronized void matchFinish(MatchRunner mr, Match match, String status, int winner, byte[] data) {
-		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, data});
+	public synchronized void matchFinish(MatchRunner mr, Match match, String status, int winner, 
+			int win_condition, int a_points, int b_points, byte[] data) {
+		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, win_condition, a_points, b_points, data});
 		network.send(p);
 		mr.stop();
 		running.remove(mr);

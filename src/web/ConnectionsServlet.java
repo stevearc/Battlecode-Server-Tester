@@ -15,7 +15,7 @@ import common.Match;
 public class ConnectionsServlet extends AbstractServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
 	public static final String NAME = "connections.html";
-	
+
 	public ConnectionsServlet() {
 		super(NAME);
 	}
@@ -28,9 +28,13 @@ public class ConnectionsServlet extends AbstractServlet {
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
 		out.println("<meta http-equiv=\"refresh\" content=\"10\">");
+		out.println("<link rel=\"stylesheet\" href=\"css/tinytable.css\" />");
+		out.println("<link rel=\"stylesheet\" href=\"css/tabs.css\" />");
 		out.println("</head>");
 		out.println("<body>");
-		out.println("<a href=\"" + response.encodeURL(IndexServlet.NAME) + "\">back</a><br /><br />");
+
+		WebUtil.writeTabs(response, out);
+
 		out.println("<table border=\"1\">");
 		out.println("<tr>" +
 				"<th>Client</th>" +

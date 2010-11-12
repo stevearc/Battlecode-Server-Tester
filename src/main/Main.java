@@ -7,6 +7,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import web.ProxyServer;
 import web.WebServer;
 import backend.Server;
 import backend.ServerMethodCaller;
@@ -57,7 +58,6 @@ public class Main {
 			return;
 		}
 
-
 		try {
 			if (cmd.hasOption('s')) {
 				Config config = new Config(true);
@@ -83,6 +83,7 @@ public class Main {
 				Server s = new Server();
 				Config.setServer(s);
 				ServerMethodCaller.pokeServer();
+				new Thread(new ProxyServer()).start();
 				new Thread(new WebServer()).start();
 			}
 			else {
