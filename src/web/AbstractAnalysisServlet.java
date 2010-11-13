@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -72,21 +71,24 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 					"document.getElementById('selector').selectedIndex=" + index + 
 			"</script>");
 			r.close();
+			out.println("<h1><font color='blue'>" + version + "</font></h1>");
 
 			PreparedStatement stmt = db.prepare("SELECT * FROM runs WHERE (team_a LIKE ? OR team_b LIKE ?) AND status = 2");
 			stmt.setString(1, version);
 			stmt.setString(2, version);
 			ResultSet rs = db.query(stmt);
 
-			out.println("<div id=\"tableheader\" class='removed'>" +
+			out.println("<div id=\"tableheader\">" +
 					"<div class=\"search\">" +
-			"<select id=\"coldid\" onchange=\"analysis_sorter.search('analysis_query')\"></select>");
-			out.println("<input type=\"text\" id=\"analysis_query\" onkeyup=\"analysis_sorter.search('analysis_query')\" />");
+			"<select id=\"coldid\" onchange=\"analysis_sorter.search('query')\"></select>");
+			out.println("<input type=\"text\" id=\"query\" onkeyup=\"analysis_sorter.search('query')\" />");
 			out.println("</div>");
+			out.println("<span class=\"details\">" +
+					"<div>Records <span id=\"startrecord\"></span>-<span id=\"endrecord\"></span> of " +
+			"<span id=\"totalrecords\"></span></div>");
 			out.println("<div><a href=\"javascript:analysis_sorter.reset()\">reset</a></div>" +
 			"</span>");
 			out.println("</div>");
-			out.println("<h1>" + version + "</h1><br />");
 			out.println("<table id=\"analysis_table\" class=\"tinytable\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">");
 			out.println("<thead>");
 			writeTableHead(out);
@@ -104,7 +106,37 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 			rs.close();
 			out.println("</tbody>");
 			out.println("</table>");
+			out.println("<div id=\"tablefooter\">");
+			out.println("<div id=\"tablenav\">");
+			out.println("<div>");
+			out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" " +
+			"onclick=\"analysis_sorter.move(-1,true)\" />");
+			out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" " +
+			"onclick=\"analysis_sorter.move(-1)\" />");
+			out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" " +
+			"onclick=\"analysis_sorter.move(1)\" />");
+			out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" " +
+			"onclick=\"analysis_sorter.move(1,true)\" />");
 			out.println("</div>");
+			out.println("<div>");
+			out.println("<select id=\"pagedropdown\"></select>");
+			out.println("</div>");
+			out.println("<div>");
+			out.println("<a href=\"javascript:analysis_sorter.showall()\">view all</a>");
+			out.println("</div>");
+			out.println("</div>");
+			out.println("<div id=\"tablelocation\">");
+			out.println("<div>");
+			out.println("<select onchange=\"analysis_sorter.size(this.value)\">");
+			out.println("<option value=\"5\">5</option>");
+			out.println("<option value=\"10\" selected=\"selected\">10</option>");
+			out.println("<option value=\"20\">20</option>");
+			out.println("<option value=\"50\">50</option>");
+			out.println("</select>");
+			out.println("<span>Entries Per Page</span>");
+			out.println("</div>");
+			out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
+			out.println("</div></div></div>");
 
 			out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
 			out.println("<script type=\"text/javascript\" src=\"js/analysis_init_table.js\"></script>");
@@ -118,32 +150,4 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 
 	protected abstract void writeTableRow(PrintWriter out, int runid, String row_team, boolean reverse) throws Exception;
 
-	protected String getFormattedMapResults(int[] results) {
-		return "<font color='red'>" + results[0] + "</font>/<font color='blue'>" + results[1] + 
-		"</font>/<font color='green'>" + results[2] + "</font>";
-	}
-
-	protected int[] getMapResults(int runid, HashSet<String> maps, boolean reverse) throws SQLException {
-		int[] results = new int[3];
-		for (String m: maps) {
-			results[getMapResult(runid, m)]++;
-		}
-		if (reverse) {
-			int swap = results[0];
-			results[0] = results[2];
-			results[2] = swap;
-		}
-		return results;
-	}
-
-	protected int getMapResult(int runid, String map) throws SQLException {
-		PreparedStatement stmt = db.prepare("SELECT SUM(win) as wins FROM matches WHERE run_id = ? AND map LIKE ?");
-		stmt.setInt(1, runid);
-		stmt.setString(2, map);
-		ResultSet rs = db.query(stmt);
-		rs.next();
-		int wins = rs.getInt("wins");
-		rs.close();
-		return wins;
-	}
 }

@@ -7,12 +7,12 @@ import common.MatchSet;
 
 public class ServerMethodCaller {
 
-	public static void queueRun(final MatchSet run) {
+	public static void queueRun(final MatchSet run, final String[] seeds, final String[] maps) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getServer().queueRun(run);
+				Config.getServer().queueRun(run, seeds, maps);
 			}
 
 		}).start();

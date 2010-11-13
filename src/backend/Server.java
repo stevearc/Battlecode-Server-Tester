@@ -58,7 +58,7 @@ public class Server {
 		}
 	}
 
-	public synchronized void queueRun(MatchSet run) {
+	public synchronized void queueRun(MatchSet run, String[] seeds, String[] mapNames) {
 		try {
 			PreparedStatement st = db.prepare("INSERT INTO runs (team_a, team_b) VALUES (?, ?)");
 			st.setString(1, run.getTeam_a());
@@ -67,6 +67,23 @@ public class Server {
 			ResultSet rs = db.query("SELECT MAX(id) as newest FROM runs"); 
 			rs.next();
 			int id = rs.getInt("newest");
+
+			HashSet<BattlecodeMap> runMaps = getMapsByName(mapNames);
+			for (String seed: seeds) {
+				int seed_int = Integer.parseInt(seed);
+				for (BattlecodeMap map: runMaps) {
+					PreparedStatement stmt = db.prepare("INSERT INTO matches (run_id, map, height, width, rounds, points, seed)" +
+							" VALUES (?, ?, ?, ?, ?, ?, ?)");
+					stmt.setInt(1, id);
+					stmt.setString(2, map.map);
+					stmt.setInt(3, map.height);
+					stmt.setInt(4, map.width);
+					stmt.setInt(5, map.rounds);
+					stmt.setInt(6, map.points);
+					stmt.setInt(7, seed_int);
+					db.update(stmt, true);
+				}
+			}
 			wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new Object[] {id, 
 					run.getTeam_a(), run.getTeam_b()}));
 			startRun();
@@ -116,19 +133,13 @@ public class Server {
 				}
 				_log.info("Match finished: " + m + " winner: " + (winner == 1 ? "A" : "B"));
 				PreparedStatement stmt = null;
-				stmt = db.prepare("INSERT INTO matches (run_id, map, reverse, win, win_condition, height, width, rounds, points, a_points, b_points, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-				stmt.setInt(1, m.run_id);
-				stmt.setString(2, m.map.map);
-				stmt.setInt(3, m.reverse);
-				stmt.setInt(4, winner);
-				stmt.setInt(5, win_condition);
-				stmt.setInt(6, m.map.height);
-				stmt.setInt(7, m.map.width);
-				stmt.setInt(8, m.map.rounds);
-				stmt.setInt(9, m.map.points);
-				stmt.setInt(10, a_points);
-				stmt.setInt(11, b_points);
-				stmt.setBinaryStream(12, new ByteArrayInputStream(data), data.length);
+				stmt = db.prepare("UPDATE matches SET win = ?, win_condition = ?, a_points = ?, b_points = ?, data = ? WHERE id = ?");
+				stmt.setInt(1, winner);
+				stmt.setInt(2, win_condition);
+				stmt.setInt(3, a_points);
+				stmt.setInt(4, b_points);
+				stmt.setBinaryStream(5, new ByteArrayInputStream(data), data.length);
+				stmt.setInt(6, m.id);
 				db.update(stmt, true);
 				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new Object[] {m.run_id, winner}));
 
@@ -209,7 +220,10 @@ public class Server {
 			wph.broadcastMsg("matches", new CometMessage(CometCmd.RUN_ERROR, new Object[] {rs.getInt("id")}));
 			startRun();
 		} else {
-			wph.broadcastMsg("matches", new CometMessage(CometCmd.START_RUN, new Object[] {rs.getInt("id")}));
+			int runid = rs.getInt("id");
+			ResultSet r = db.query("SELECT COUNT(*) AS num_matches FROM matches WHERE run_id = " + runid);
+			r.next();
+			wph.broadcastMsg("matches", new CometMessage(CometCmd.START_RUN, new Object[] {runid, r.getInt("num_matches")}));
 			for (ClientRepr c: clients) {
 				sendClientMatches(c);
 			}
@@ -242,25 +256,14 @@ public class Server {
 		String team_a = rs.getString("team_a");
 		String team_b = rs.getString("team_b");
 		rs.close();
-		PreparedStatement st = db.prepare("SELECT map, reverse FROM matches WHERE run_id = ?");
+		PreparedStatement st = db.prepare("SELECT * FROM matches WHERE run_id = ? AND win is NULL");
 		st.setInt(1, run);
 		rs = db.query(st);
-		HashSet<Match> finishedMatches = new HashSet<Match>();
+		HashSet<Match> unfinishedMatches = new HashSet<Match>();
 		while (rs.next()) {
-			finishedMatches.add(new Match(run, team_a, team_b, new BattlecodeMap(rs.getString("map"), 0, 0, 0, 0), rs.getInt("reverse")));
+			unfinishedMatches.add(new Match(run, rs.getInt("id"), team_a, team_b, new BattlecodeMap(rs.getString("map"), 0, 0, 0, 0), rs.getInt("seed")));
 		}
-		HashSet<Match> matchesLeft = new HashSet<Match>();
-		for (BattlecodeMap map: maps) {
-			Match m1 = new Match(run, team_a, team_b, map, 0);
-			if (!finishedMatches.contains(m1)){
-				matchesLeft.add(m1);
-			}
-			Match m2 = new Match(run, team_a, team_b, map, 1);
-			if (!finishedMatches.contains(m2)){
-				matchesLeft.add(m2);
-			}
-		}
-		return matchesLeft;
+		return unfinishedMatches;
 	}
 
 	private HashSet<Match> getMatchesLeftAndNotRunning() throws SQLException {
@@ -340,15 +343,26 @@ public class Server {
 		return clients;
 	}
 
-	public double getProgress() throws SQLException {
-		double left = getMatchesLeft().size();
-		double total = maps.size();
-		double progress = total - left;
+	public float getProgress() throws SQLException {
+		float left = getMatchesLeft().size();
+		float total = maps.size();
+		float progress = total - left;
 		return progress/total;
 	}
-	
+
 	public HashSet<BattlecodeMap> getMaps() {
 		return maps;
+	}
+
+	private HashSet<BattlecodeMap> getMapsByName(String[] mapNames) {
+		HashSet<BattlecodeMap> result = new HashSet<BattlecodeMap>();
+		HashSet<String> mapNameSet = new HashSet<String>();
+		for (String m: mapNames)
+			mapNameSet.add(m);
+		for (BattlecodeMap m: maps)
+			if (mapNameSet.contains(m.map))
+				result.add(m);
+		return result;
 	}
 
 }

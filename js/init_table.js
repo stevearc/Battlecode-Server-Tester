@@ -21,3 +21,19 @@ var sorter = new TINY.table.sorter('sorter','table',{
 	sortdir:-1, // Sort Direction (1 or -1) //
 	init:true // Init Now? (true or false) //
 });
+
+var maps_sorter = new TINY.table.sorter('maps_sorter','map_table',{
+	headclass:'head', // Header Class //
+	ascclass:'asc', // Ascending Class //
+	descclass:'desc', // Descending Class //
+	evenclass:'evenrow', // Even Row Class //
+	oddclass:'oddrow', // Odd Row Class //
+	evenselclass:'evenselected', // Even Selected Column Class //
+	oddselclass:'oddselected', // Odd Selected Column Class //
+	paginate:true, // Paginate? (true or false) //
+	size:1000, // Initial Page Size //
+	hoverid:'selectedrow', // Hover Row ID (optional) //
+	sortcolumn:1, // Index of Initial Column to Sort (optional) //
+	sortdir:1, // Sort Direction (1 or -1) //
+	init:true // Init Now? (true or false) //
+});

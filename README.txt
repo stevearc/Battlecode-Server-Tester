@@ -5,31 +5,26 @@ You need two things in order for this system to work properly:
 	* Git or SVN
 	* Java and Ant (to run the battlecode client)
 
-#####################
-## VERSION CONTROL ##
-#####################
-To run a client or server you need to set up a copy of your repository that will be dedicated to the client/server (no user access).  
-You will need to set up ssh keys such that the repository can update without entering a password.  The simplest way to do this is:
-  ssh-keygen # don't enter a passphrase
-  ssh-copy-id [server_with_repo]
-I would not recommend having a client and server share the same repository if you are running both on the same computer.
+#######################
+## INSTALLING SERVER ##
+#######################
+To install the server, simply run
+sudo ./setup.sh
+It should prompt you for a few parameters and automatically set up the /etc/bs-tester.conf file.
 
-############
-## CONFIG ##
-############
-The java client/server first tries to read from /etc/battlecode.conf and if that fails it will attempt to read from ./etc/battlecode.conf.  The web interface can only read from /etc/battlecode.conf.  Make sure the file you are using has all the appropriate information.
+########################
+## INSTALLING CLIENTS ##
+########################
+After running setup.sh, the script should have generated a bs-client.tar.gz file.  Copy this file
+to the client computer (using scp or some other tool).  Then unzip it on the client and run
+sudo ./setup.sh
+It should prompt you for just a couple fields and generate the client config file.  
 
 #############
 ## RUNNING ##
 #############
-To run the client do:
-sudo ./run.sh
-To run the server do:
-sudo ./run.sh -s
-
-################
-## INSTALLING ##
-################
-To run on bootup, configure the parameters at the top of the etc/init.d/battlecode file and place it in your /etc/init.d directory.  Then do:
-  sudo update-rc.d battlecode defaults
-Now it will start on bootup and you can manage it with invoke-rc.d
+The server and client can be run with the run.sh file.  Type
+./run.sh -h
+to display the available commandline arguments.  
+If you installed the daemon in the setup script, you can start the service with 
+sudo invoke-rc.d bs-tester start

@@ -11,6 +11,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import common.BattlecodeMap;
+import common.Config;
 import common.Timer;
 
 public class IndexServlet extends AbstractServlet {
@@ -32,30 +34,55 @@ public class IndexServlet extends AbstractServlet {
 		out.println("<link rel=\"stylesheet\" href=\"/css/tabs.css\" />");
 		out.println("</head>");
 		out.println("<body>");
-		
+
 		WebUtil.writeTabs(response, out);
-		
+
 		out.println("<div id=\"tablewrapper\">");
-		// Run a new match
+		// Begin new run form
+		String background = "#CEFFFC";
 		out.println("<div class='tabbutton'>");
 		out.println("<a onClick='toggleNewRun()' " +
-				"style='cursor:pointer;'><span>New Run</span></a>");
+		"style='cursor:pointer;'><span>New Run</span></a>");
 		out.println("<p>&nbsp;</p>");
 		out.println("<p>&nbsp;</p>");
-		out.println("<p>&nbsp;</p>");
+		out.println("<p style='background:" + background + "'>&nbsp;</p>");
 		out.println("<form id='add_run' class=\"removed\" action=\"" + response.encodeURL(RunServlet.NAME) + "\" " +
-				"style='background:#6CC0FF'>" +
+				"style='background:" + background + "'>" +
 				"<p>" +
-				"<label for=\"team_a\">Team A</label>" +
-				"<input type=\"text\" name=\"team_a\" id=\"team_a_button\" size=\"15\"><br />" +
-				"<label for=\"team_b\">Team B</label>" +
-				"<input type=\"text\" name=\"team_b\" id=\"team_b_button\" size=\"15\"><br />" +
-				"<input type=\"button\" value=\"Run\" onclick=\"newRun(team_a.value, team_b.value)\"><br />" +
-				"</p>" +
+				"<p><label for=\"team_a\">Team A</label>" +
+				"<input type=\"text\" name=\"team_a\" id=\"team_a_button\" size=\"15\"></p>" +
+				"<p><label for=\"team_b\">Team B</label>" +
+				"<input type=\"text\" name=\"team_b\" id=\"team_b_button\" size=\"15\"></p>" +
+				"Matches per map:" +
+		"<select id='seed_selector' onChange='numSeedsChange()'>");
+		for (int i = 1; i < 11; i++) 
+			out.println("<option name='" + i + "'>" + i + "</option>");
+		out.println("</select>");
+		out.println("<div id='seeds'>");
+		out.println("<p id='seed1' class=''>Seed 1: <input id='seed_txt1' type='text' size='15' value='1'></p>");
+		for (int i = 2; i < 11; i++)
+			out.println("<p id='seed" + i + "' class='removed'>Seed " + i + ": <input id='seed_txt" + i + 
+					"' type='text' size='15' value='" + i + "'></p>");
+		out.println("</div>");
+		out.println("<input type=\"button\" value=\"Start\" onclick=\"newRun()\"><br /></p>");
+
+		// Table of maps
+		out.println("<table style='width:50%;margin:0 auto' cellpadding='0' cellspacing='0' border='0' id='map_table' class='tinytable'>");
+		out.println("<thead>");
+		out.println("<tr><th class='nosort' style='text-align:center'><input id='maps_checkbox' " +
+				"onClick='toggleMapsCheckbox()' type='checkbox'></th>" +
+				"<th class='desc'><h3>Map</h3></th>" +
+				"<th class='desc'><h3>Size</h3></th></tr>");
+		out.println("</thead><tbody>");
+		for (BattlecodeMap m: Config.getServer().getMaps())
+			out.println("<tr><td><input type='checkbox' name='" + m.map + "'></td><td>" + m.map + "</td><td>" + m.getSize() + "</td></tr>");
+		out.println("</tbody></table>");
+		out.println("<input type=\"button\" value=\"Start\" onclick=\"newRun()\"><br /></p>");
+
+		out.println("<p style='background:" + background + "'>&nbsp;</p>" +
 		"</form>");
 		out.println("</div>");
-
-		
+		// End new run form
 
 		out.println("<div id=\"tableheader\">" +
 				"<div class=\"search\">" +
@@ -63,7 +90,8 @@ public class IndexServlet extends AbstractServlet {
 		out.println("<input type=\"text\" id=\"query\" onkeyup=\"sorter.search('query')\" />");
 		out.println("</div>");
 		out.println("<span class=\"details\">" +
-		"<div>Records <span id=\"startrecord\"></span>-<span id=\"endrecord\"></span> of <span id=\"totalrecords\"></span></div>");
+				"<div>Records <span id=\"startrecord\"></span>-<span id=\"endrecord\"></span> of " +
+		"<span id=\"totalrecords\"></span></div>");
 		out.println("<div><a href=\"javascript:sorter.reset()\">reset</a></div>" +
 		"</span>");
 		out.println("</div>");
@@ -71,8 +99,8 @@ public class IndexServlet extends AbstractServlet {
 				"<thead>" + 
 				"<tr>" +
 				"<th class='desc'><h3>Run ID</h3></th>" +
-				"<th class='nosort'><h3>Team A</h3></th>" +
-				"<th class='nosort'><h3>Team B</h3></th>" +
+				"<th class='desc'><h3>Team A</h3></th>" +
+				"<th class='desc'><h3>Team B</h3></th>" +
 				"<th class='nosort'><h3>Wins</h3></th>" +
 				"<th class='nosort'><h3>Status</h3></th>" +
 				"<th class='nosort'><h3>Time</h3></th>" +
@@ -92,7 +120,8 @@ public class IndexServlet extends AbstractServlet {
 			long startTime = 0;
 			while (rs.next()) {
 				int status = rs.getInt("status");
-				ResultSet mapsQuery = db.query("SELECT COUNT(*) AS maps, SUM(win) AS wins FROM matches WHERE run_id = " + rs.getInt("id"));
+				ResultSet mapsQuery = db.query("SELECT COUNT(*) AS maps, SUM(win) AS wins FROM matches WHERE run_id = " + 
+						rs.getInt("id") + " AND win IS NOT NULL");
 				mapsQuery.next();
 				String td;
 				if (status == 1 || status == 2)
@@ -147,10 +176,14 @@ public class IndexServlet extends AbstractServlet {
 			out.println("<div id=\"tablefooter\">");
 			out.println("<div id=\"tablenav\">");
 			out.println("<div>");
-			out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" onclick=\"sorter.move(-1,true)\" />");
-			out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" onclick=\"sorter.move(-1)\" />");
-			out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" onclick=\"sorter.move(1)\" />");
-			out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" onclick=\"sorter.move(1,true)\" />");
+			out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" " +
+			"onclick=\"sorter.move(-1,true)\" />");
+			out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" " +
+			"onclick=\"sorter.move(-1)\" />");
+			out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" " +
+			"onclick=\"sorter.move(1)\" />");
+			out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" " +
+			"onclick=\"sorter.move(1,true)\" />");
 			out.println("</div>");
 			out.println("<div>");
 			out.println("<select id=\"pagedropdown\"></select>");
@@ -172,6 +205,18 @@ public class IndexServlet extends AbstractServlet {
 			out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
 			out.println("</div></div></div>");
 
+			ResultSet r = db.query("SELECT COUNT(*) AS total FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = 1");
+			r.next();
+			out.println("<script type=\"text/javascript\">");
+			out.println("var total_num_matches = " + r.getInt("total"));
+			out.println("</script>");
+			r.close();
+			r = db.query("SELECT COUNT(*) AS current FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = 1 AND m.win IS NOT NULL");
+			r.next();
+			out.println("<script type=\"text/javascript\">");
+			out.println("var current_num_matches = " + r.getInt("current"));
+			out.println("</script>");
+			r.close();
 			out.println("<script type=\"text/javascript\" src=\"js/countdown.js\"></script>");
 			out.println("<script type=\"text/javascript\" src=\"js/async.js\"></script>");
 			out.println("<script type=\"text/javascript\" src=\"js/index.js\"></script>");

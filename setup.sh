@@ -88,7 +88,7 @@ setup_server() {
   done
   SERVER=""
   while [ "$SERVER" == "" ]; do
-    echo -n "IP address of this machine? "
+    echo -n "IP address/hostname of this machine? "
     read SERVER
   done
 
@@ -107,8 +107,10 @@ setup_server() {
   # Generate bs-client.tar.gz
   DIR=`pwd | sed -e 's/.*\///'`
   cd ..
-  tar -cf $DIR/bs-client.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README.txt $DIR/run.sh $DIR/setup.sh $DIR/scripts
+  tar -cf $DIR/bs-client.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README.txt $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
   gzip $DIR/bs-client.tar
+
+  # TODO: install daemon
 }
 
 SERVER=0

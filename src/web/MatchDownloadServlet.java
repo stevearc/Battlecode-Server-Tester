@@ -40,7 +40,7 @@ public class MatchDownloadServlet extends AbstractServlet {
 				return;
 			} 
 		response.setHeader("Content-Disposition", "attachment; filename=\"" + rs.getInt("run_id") + 
-				rs.getString("map") + (rs.getInt("reverse") == 0 ? "" : " (reverse)") + ".rms\"");
+				rs.getString("map") + rs.getInt("seed") + ".rms\"");
 			Blob b = rs.getBlob("data");
 			response.getOutputStream().write(b.getBytes((long) 1, (int) b.length()));
 			st.close();

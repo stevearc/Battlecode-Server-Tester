@@ -2,10 +2,11 @@
 
 ###########################################################
 ###########################################################
-#
+# This file was modified from a script in the Sockso project
+# owned by Rod at http://sockso.pu-gh.com
 
-# The directory that the Battlecode.jar file is stored in
-use constant BATTLECODE_DIR => "/home/steven/battlecode";
+# The directory that the bs-tester.jar file is stored in
+use constant BS_TESTER_DIR => "/home/steven/bs-tester";
 # Affects the behavior of start and stop.  If 1, start will
 # do start-server.  If 0, start will do start-client.  Same
 # for stop
@@ -20,11 +21,7 @@ use strict;
 my $cmd = shift();
 
 if ( $cmd eq "start" ) { start(); }
-elsif ( $cmd eq "start-server" ) { start_server(); }
-elsif ( $cmd eq "start-client" ) { start_client(); }
 elsif ( $cmd eq "stop" ) { stop(); }
-elsif ( $cmd eq "stop-server" ) { stop_server(); }
-elsif ( $cmd eq "stop-client" ) { stop_client(); }
 elsif ( $cmd eq "status" ) { status(); }
 else { usage(); }
 
@@ -45,17 +42,17 @@ sub stop {
 }
 
 sub start_server {
-	chdir( BATTLECODE_DIR );
+	chdir( BS_TESTER_DIR );
 	system( './run.sh -s > /dev/null 2>/dev/null &' );
 }
 
 sub start_client {
-	chdir( BATTLECODE_DIR );
+	chdir( BS_TESTER_DIR );
 	system( './run.sh > /dev/null 2>/dev/null &' );
 }
 
 sub stop_server {
-	my $pid = `ps x | grep Battlecode.jar -s | grep -v grep | egrep ".+\-s\$"`;
+	my $pid = `ps x | grep bs-tester.jar -s | grep -v grep | egrep ".+\-s\$"`;
 	$pid =~ s/^\s*(\d+) .*/$1/;
 
 	if ( $pid ) {
@@ -64,7 +61,7 @@ sub stop_server {
 }
 
 sub stop_client {
-	my $pid = `ps x | grep Battlecode.jar | grep -v grep | egrep -v ".+\-s\$"`;
+	my $pid = `ps x | grep bs-tester.jar | grep -v grep | egrep -v ".+\-s\$"`;
 	$pid =~ s/^\s*(\d+) .*/$1/;
 
 	if ( $pid ) {
@@ -74,7 +71,7 @@ sub stop_client {
 
 sub status {
 
-	my $pid = `ps x | grep Battlecode.jar | grep -v grep | egrep -v ".+\-s\$"`;
+	my $pid = `ps x | grep bs-tester.jar | grep -v grep | egrep -v ".+\-s\$"`;
 	$pid =~ s/^\s*(\d+) .*/$1/;
 
 	if ( $pid ) {
@@ -83,7 +80,7 @@ sub status {
 		print "Client not running\n"
 	}
 	
-	$pid = `ps x | grep Battlecode.jar | grep -v grep | egrep ".+\-s\$"`;
+	$pid = `ps x | grep bs-tester.jar | grep -v grep | egrep ".+\-s\$"`;
 	$pid =~ s/^\s*(\d+) .*/$1/;
 
 	if ( $pid ) {
@@ -97,7 +94,7 @@ sub status {
 sub usage {
 	print <<EOF;
 
-Usage: battlecode (start|stop|start-server|start-client|stop-server|stop-client|status)
+Usage: bs-tester (start|stop|status)
 
 EOF
 }

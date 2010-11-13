@@ -1,20 +1,70 @@
 var row_map = {'ID' : 0, 'TEAM_A' : 1, 'TEAM_B' : 2, 'WINS' : 3, 'STATUS' : 4, 'TIME' : 5, 'CONTROL' : 6};
 var lastheard = -1;
+document.getElementById('seed_selector').selectedIndex=0;
+document.getElementById("maps_checkbox").checked=false;
+table = document.getElementById("table");
+for (var i = 1; i < table.rows.length; i++) {
+  var status_row = table.rows[i].cells[row_map['STATUS']];
+  if (status_row.innerHTML == 'Running') {
+    status_row.innerHTML = (100*current_num_matches/total_num_matches) + "%";
+    break;
+  }
+}
 
 function doNavMatches(id) {
   document.location="matches.html?id="+id;
+}
+
+function toggleMapsCheckbox() {
+  var maps_checkbox = document.getElementById("maps_checkbox");
+  var checked = maps_checkbox.checked;
+  var table = document.getElementById("map_table");
+  for (var i = 1; i < table.rows.length; i++) {
+    var cell = table.rows[i].cells[0];
+    cell.getElementsByTagName("input")[0].checked = checked;
+  }
+}
+
+function numSeedsChange() {
+  var num_seeds = parseInt(document.getElementById('seed_selector').value);
+  for(var i = 1; i < 11; i++) {
+    var seed = document.getElementById('seed' + i);
+    if (i <= num_seeds) {
+      seed.className = '';
+    } else {
+      seed.className = 'removed';
+    }
+  }
 }
 
 function toggleNewRun() {
   var form = document.getElementById("add_run");
   if (form.className == "removed") {
     form.className = "";
+    document.getElementById("team_a_button").focus();
   } else {
     form.className = "removed";
   }
 }
 
-function newRun(team_a, team_b) {
+function newRun() {
+  var team_a = document.getElementById("team_a_button").value;
+  var team_b = document.getElementById("team_b_button").value;
+  var num_matches = parseInt(document.getElementById("seed_selector").value);
+  var seeds = [];
+  for (var i = 1; i <= num_matches; i++) {
+    seeds.push(document.getElementById("seed" + i).getElementsByTagName("input")[0].value);
+  }
+  var maps = [];
+  var table = document.getElementById("map_table");
+  for (var i = 1; i < table.rows.length; i++) {
+    var cell = table.rows[i].cells[0];
+    if (cell.getElementsByTagName("input")[0].checked) {
+      maps.push(table.rows[i].cells[1].innerHTML);
+    }
+  }
+  var url = "run.html?team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
+
 	if (team_a.length==0 || team_b.length==0) {
 		alert("Must have a non-empty team name");
 		return;
@@ -26,6 +76,10 @@ function newRun(team_a, team_b) {
 				alert("Must have a valid name for Team A");
 			} else if (xmlhttp1.responseText == "err team_b") {
 				alert("Must have a valid name for Team B");
+			} else if (xmlhttp1.responseText == "err seed") {
+				alert("Seeds must either be an integer");
+			} else if (xmlhttp1.responseText == "err maps") {
+				alert("Must select at least one map");
 			} else if (xmlhttp1.responseText != "success") {
 				alert(xmlhttp1.responseText);
 			} else {
@@ -34,7 +88,7 @@ function newRun(team_a, team_b) {
 			}
 		}
 	}
-	xmlhttp1.open("GET","run.html?team_a="+team_a+"&team_b="+team_b,true);
+	xmlhttp1.open("GET",url,true);
 	xmlhttp1.send();
 }
 
@@ -65,13 +119,23 @@ function deleteTableRow(rowid) {
   }
 }
 
-function startRun(rowid) {
+function startRun(rowid, num_matches) {
+  total_num_matches = num_matches;
+  current_num_matches = 0;
+  var clickEvent = 'doNavMatches("' + rowid + '")';
+  var style = 'cursor:pointer';
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
     id = table.rows[i].cells[0].innerHTML;
     if (id == rowid) {
+      for (key in row_map) {
+        if (key == 'CONTROL')
+          continue;
+        table.rows[i].cells[row_map[key]].setAttribute('onClick', clickEvent);
+        table.rows[i].cells[row_map[key]].setAttribute('style', style);
+      }
       var status_row = table.rows[i].cells[row_map['STATUS']];
-      status_row.innerHTML = "Running";
+      status_row.innerHTML = "0%";
       var time_row = table.rows[i].cells[row_map['TIME']];
       time_row.innerHTML = "<a id=\"cntdwn\" name=\"0\"></a>";
       var control_row = table.rows[i].cells[row_map['CONTROL']];
@@ -97,6 +161,7 @@ function finishRun(rowid) {
     }
   }
 }
+
 function insertTableRow(rowid, team_a, team_b) {
   table = document.getElementById("table");
   var row = table.insertRow(1);
@@ -117,6 +182,7 @@ function insertTableRow(rowid, team_a, team_b) {
 }
 
 function matchFinished(rowid, win) {
+  current_num_matches += 1;
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
     id = table.rows[i].cells[0].innerHTML;
@@ -130,6 +196,8 @@ function matchFinished(rowid, win) {
       else
         losses += 1;
       wins_row.innerHTML = wins + "/" + losses;
+      var status_row = table.rows[i].cells[row_map['STATUS']];
+      status_row.innerHTML = (100*current_num_matches/total_num_matches) + "%";
       break;
     }
   }
@@ -163,7 +231,7 @@ function handleServerResponse(response) {
       sorter.init();
       sorter.search('query');
     } else if (cmd == "START_RUN") {
-      startRun(args[2]);
+      startRun(args[2], args[3]);
     } else if (cmd == "FINISH_RUN") {
       finishRun(args[2]);
     } else if (cmd == "MATCH_FINISHED") {

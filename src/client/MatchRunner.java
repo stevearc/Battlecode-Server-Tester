@@ -63,7 +63,7 @@ public class MatchRunner implements Runnable {
 
 		try {
 			_log.info("Running: " + match);
-			String output_file = config.repo + match.reverse + match.map + ".out";
+			String output_file = config.repo + "/" + match.map + ".out";
 			Runtime run = Runtime.getRuntime();
 			try {
 				repoLock.lock();
@@ -78,14 +78,14 @@ public class MatchRunner implements Runnable {
 				// Get the appropriate teams for the match
 				String[] args = new String[3];
 				args[0] = config.cmd_grabole;
-				args[1] = (match.reverse == 0 ? match.team_a : match.team_b);
-				args[2] = (match.reverse == 0 ? match.team_b : match.team_a);
+				args[1] = match.team_a;
+				args[2] = match.team_b;
 				curProcess = run.exec(args);
 				curProcess.waitFor();
 				if (stop)
 					return;
 				// Generate the bc.conf file
-				curProcess = run.exec(new String[] {config.cmd_gen_conf, match.map.map, ""+match.reverse});
+				curProcess = run.exec(new String[] {config.cmd_gen_conf, match.map.map, ""+match.seed});
 				curProcess.waitFor();
 				if (stop)
 					return;
@@ -102,7 +102,7 @@ public class MatchRunner implements Runnable {
 			}
 
 			// Read in the output file
-			BufferedReader reader = new BufferedReader(new FileReader(config.repo + "/" + output_file));
+			BufferedReader reader = new BufferedReader(new FileReader(output_file));
 			StringBuilder sb = new StringBuilder();
 			for (String line = null; (line = reader.readLine()) != null; ) {
 				sb.append(line);
@@ -135,9 +135,9 @@ public class MatchRunner implements Runnable {
 				}
 				// If teams not reversed and A loses, winner = 0
 				// If teams are reversed and A loses, winner = 1
-				winner = match.reverse; 
+				winner = 0;
 			} else {
-				winner = (1+match.reverse)%2;
+				winner = 1;
 			}
 
 			// Detect how the match was finished
@@ -166,7 +166,7 @@ public class MatchRunner implements Runnable {
 		}
 
 		// Read in the replay file
-		String matchFile = config.repo + "/" + match.reverse + match.map + ".rms";
+		String matchFile = config.repo + "/" + match.map + ".rms";
 		try {
 			data = getMatchData(matchFile);
 		} catch (IOException e) {

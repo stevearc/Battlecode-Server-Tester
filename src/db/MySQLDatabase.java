@@ -6,8 +6,11 @@ import java.sql.SQLException;
 public class MySQLDatabase extends JDBCDatabase {
 
 	private static String[] createStmts = {
-		"CREATE TABLE IF NOT EXISTS `matches` (`id` int(11) NOT NULL AUTO_INCREMENT, `run_id` int(11) NOT NULL,`map` varchar(30) NOT NULL, `reverse` int(1) NOT NULL, `win` int(1) NOT NULL, `data` mediumblob NOT NULL, PRIMARY KEY (`id`))",
-		"CREATE TABLE IF NOT EXISTS `runs` (`id` int(11) NOT NULL AUTO_INCREMENT,`team_a` varchar(45) NOT NULL,`team_b` varchar(45) NOT NULL,`status` int(11) DEFAULT '0',`started` timestamp,`ended` timestamp,PRIMARY KEY (`id`))",
+		"CREATE TABLE IF NOT EXISTS `matches` (`id` int(11) NOT NULL AUTO_INCREMENT, `run_id` int(11) NOT NULL,`map` varchar(30) NOT NULL, " +
+		"`seed` int(11) NOT NULL, `win` int(1), `win_condition` int(11), `height` int(11) NOT NULL, `width` int(11) NOT NULL, `rounds` int(11) NOT NULL, " +
+		"`points` int(11) NOT NULL, `a_points` int(11), `b_points` int(11), `data` mediumblob, PRIMARY KEY (`id`))",
+		"CREATE TABLE IF NOT EXISTS `runs` (`id` int(11) NOT NULL AUTO_INCREMENT,`team_a` varchar(45) NOT NULL,`team_b` varchar(45) NOT NULL," +
+		"`status` int(11) DEFAULT '0',`started` timestamp DEFAULT 0,`ended` timestamp ON UPDATE current_timestamp,PRIMARY KEY (`id`))",
 		"CREATE TABLE IF NOT EXISTS `tags` (`tag` varchar(45) NOT NULL,`alias` varchar(20) DEFAULT NULL,UNIQUE KEY `tag` (`tag`))"
 	};
 	

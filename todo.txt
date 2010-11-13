@@ -1,19 +1,11 @@
-add data aggregation (win types)
-Change data aggregation format (#/#/#)
-Allow specifying maps AND changing map seeds
-  (requires db reformatting)
-fix mysql create statements
+Clean up interface more. (connections tab)
+Auto install the daemon
+
 test install process thoroughly (& fix svn scripts)
 users register/login
 allow resume
 svn aliasing
+detect how long matches last
 
-
-Interface:
-	Start new run (autocomplete)
-  manage aliases
-	
 
 tooltip over aliased rows to display actual name
-progress bar
-login/register

@@ -37,9 +37,9 @@ public class MatchesServlet extends AbstractServlet {
 		out.println("</script>");
 		out.println("</head>");
 		out.println("<body>");
-		
+
 		WebUtil.writeTabs(response, out);
-		
+
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
 			out.println("Invalid id</body></html>");
@@ -56,19 +56,27 @@ public class MatchesServlet extends AbstractServlet {
 			rs.next();
 			String team_a = rs.getString("team_a");
 			String team_b = rs.getString("team_b");
-			out.println("<h2>" + team_a + " vs. " + team_b + "</h2>");
-			int[] results = getMapResults(id);
-			out.println("<h3>" + results[2] + "/" + results[1] + "/" + results[0] + "</h3>");
+			out.println("<h2><font color='red'>" + team_a + "</font> vs. <font color='blue'>" + team_b + "</font></h2>");
+			out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
+			out.println("<br />");
+			out.println("<div class='tabbutton'>");
+			out.println("<a onClick='document.location=\"" + response.encodeURL(MapAnalysisServlet.NAME) + "?id=" + id + "\"' " +
+			"style='cursor:pointer;'><span>View by map</span></a>");
+			out.println("<p>&nbsp;</p>");
+			out.println("<p>&nbsp;</p>");
+			out.println("<p>&nbsp;</p>");
+			out.println("</div>");
 
-			out.println("<table border=\"0\">" +
-			"<tr>");
 			st.close();
 
 			out.println("<div id=\"tableheader\">" +
 					"<div class=\"search\">" +
-			"<select id=\"coldid\" onchange=\"matches_sorter.search('matches_query')\"></select>");
-			out.println("<input type=\"text\" id=\"matches_query\" onkeyup=\"matches_sorter.search('matches_query')\" />");
+			"<select id=\"coldid\" onchange=\"matches_sorter.search('query')\"></select>");
+			out.println("<input type=\"text\" id=\"query\" onkeyup=\"matches_sorter.search('query')\" />");
 			out.println("</div>");
+			out.println("<span class=\"details\">" +
+					"<div>Records <span id=\"startrecord\"></span>-<span id=\"endrecord\"></span> of " +
+			"<span id=\"totalrecords\"></span></div>");
 			out.println("<div><a href=\"javascript:matches_sorter.reset()\">reset</a></div>" +
 			"</span>");
 			out.println("</div>");
@@ -76,6 +84,7 @@ public class MatchesServlet extends AbstractServlet {
 					"<thead>" + 
 					"<tr>" +
 					"<th class='desc'><h3>Map</h3></th>" +
+					"<th class='desc'><h3>Seed</h3></th>" +
 					"<th class='desc'><h3>Winner</h3></th>" +
 					"<th class='desc'><h3>Size</h3></th>" +
 					"<th class='desc'><h3>Win condition</h3></th>" +
@@ -84,22 +93,22 @@ public class MatchesServlet extends AbstractServlet {
 					"</tr>" +
 					"</thead>" +
 			"<tbody>");
-			PreparedStatement st3 = db.prepare("SELECT * FROM matches WHERE run_id = ? ORDER BY map");
+			PreparedStatement st3 = db.prepare("SELECT * FROM matches WHERE run_id = ? AND win IS NOT NULL ORDER BY map");
 			st3.setInt(1, id);
 			ResultSet rs3 = db.query(st3);
 			while (rs3.next()) {
 				int a_points = rs3.getInt("a_points");
 				int b_points = rs3.getInt("b_points");
-				int reverse = rs3.getInt("reverse");
 				BattlecodeMap map = new BattlecodeMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
 						rs3.getInt("rounds"), rs3.getInt("points"));
 				out.println("<tr>");
-				out.println("<td>" + map.map + (reverse == 0 ? "" : " (reverse)") + "</td>");
+				out.println("<td>" + map.map + "</td>");
+				out.println("<td>" + rs3.getInt("seed") + "</td>");
 				out.println("<td><font color='" + (rs3.getInt("win") == 1 ? "red'>" + team_a : "blue'>" + team_b) + "</font></td>");
 				out.println("<td>" + map.getSize() + "</td>");
 				out.println("<td>" + win_conditions[rs3.getInt("win_condition")] + "</td>");
-				out.println("<td><font color='red'>" + (reverse == 0 ? a_points : b_points ) + "</font>/<font color='blue'>" + 
-						(reverse == 0 ? b_points : a_points) + "</font></td>");
+				out.println("<td><font color='red'>" + a_points + "</font>/<font color='blue'>" + 
+						b_points + "</font></td>");
 				out.println("<td><input type=button value=\"download\" onclick=\"downloadMatch(" + 
 						rs3.getString("id") + ")\"></td>");
 				out.println("</tr>");
@@ -107,8 +116,38 @@ public class MatchesServlet extends AbstractServlet {
 			st3.close();
 			out.println("</tbody>");
 			out.println("</table>");
+			out.println("<div id=\"tablefooter\">");
+			out.println("<div id=\"tablenav\">");
+			out.println("<div>");
+			out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" " +
+			"onclick=\"matches_sorter.move(-1,true)\" />");
+			out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" " +
+			"onclick=\"matches_sorter.move(-1)\" />");
+			out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" " +
+			"onclick=\"matches_sorter.move(1)\" />");
+			out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" " +
+			"onclick=\"matches_sorter.move(1,true)\" />");
 			out.println("</div>");
-			
+			out.println("<div>");
+			out.println("<select id=\"pagedropdown\"></select>");
+			out.println("</div>");
+			out.println("<div>");
+			out.println("<a href=\"javascript:matches_sorter.showall()\">view all</a>");
+			out.println("</div>");
+			out.println("</div>");
+			out.println("<div id=\"tablelocation\">");
+			out.println("<div>");
+			out.println("<select onchange=\"matches_sorter.size(this.value)\">");
+			out.println("<option value=\"5\">5</option>");
+			out.println("<option value=\"10\" selected=\"selected\">10</option>");
+			out.println("<option value=\"20\">20</option>");
+			out.println("<option value=\"50\">50</option>");
+			out.println("</select>");
+			out.println("<span>Entries Per Page</span>");
+			out.println("</div>");
+			out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
+			out.println("</div></div></div>");
+
 			out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
 			out.println("<script type=\"text/javascript\" src=\"js/matches_init_table.js\"></script>");
 			out.println("</body></html>");
@@ -116,23 +155,5 @@ public class MatchesServlet extends AbstractServlet {
 			e.printStackTrace(out);
 		}
 	}
-	
-	private int[] getMapResults(int runid) throws SQLException {
-		int[] results = new int[3];
-		ResultSet rs = db.query("SELECT map FROM matches WHERE run_id = " + runid + " GROUP BY map");
-		while (rs.next())
-			results[getMapResult(runid, rs.getString("map"))]++;
-		return results;
-	}
-	
-	private int getMapResult(int runid, String map) throws SQLException {
-		PreparedStatement stmt = db.prepare("SELECT SUM(win) as wins FROM matches WHERE run_id = ? AND map LIKE ?");
-		stmt.setInt(1, runid);
-		stmt.setString(2, map);
-		ResultSet rs = db.query(stmt);
-		rs.next();
-		int wins = rs.getInt("wins");
-		rs.close();
-		return wins;
-	}
+
 }

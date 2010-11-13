@@ -3,7 +3,7 @@ package common;
 public class MatchSet {
 	private String team_a;
 	private String team_b;
-	
+
 	public MatchSet(String team_a, String team_b) {
 		this.team_a = team_a;
 		this.team_b = team_b;
@@ -16,12 +16,12 @@ public class MatchSet {
 	public String getTeam_b() {
 		return team_b;
 	}
-
+	
 	@Override
 	public int hashCode() {
 		return team_a.hashCode() + team_b.hashCode();
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof MatchSet) {
@@ -30,4 +30,5 @@ public class MatchSet {
 		}
 		return false;
 	}
+
 }
