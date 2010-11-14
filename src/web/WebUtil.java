@@ -84,4 +84,52 @@ public class WebUtil {
 		else 
 			return "<font color='red'>" + (int) (100*percent) + "</font>";
 	}
+	
+	public static void printTableHeader(PrintWriter out, String sorter) {
+		out.println("<div id=\"tableheader\">" +
+				"<div class=\"search\">" +
+		"<select id=\"columns\" onchange=\"" + sorter + ".search('query')\"></select>");
+		out.println("<input type=\"text\" id=\"query\" onkeyup=\"" + sorter + ".search('query')\" />");
+		out.println("</div>");
+		out.println("<span class=\"details\">" +
+				"<div>Records <span id=\"startrecord\"></span>-<span id=\"endrecord\"></span> of " +
+		"<span id=\"totalrecords\"></span></div>");
+		out.println("<div><a href=\"javascript:" + sorter + ".reset()\">reset</a></div>" +
+		"</span>");
+		out.println("</div>");
+	}
+	
+	public static void printTableFooter(PrintWriter out, String sorter) {
+		out.println("<div id=\"tablefooter\">");
+		out.println("<div id=\"tablenav\">");
+		out.println("<div>");
+		out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" " +
+		"onclick=\"" + sorter + ".move(-1,true)\" />");
+		out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" " +
+		"onclick=\"" + sorter + ".move(-1)\" />");
+		out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" " +
+		"onclick=\"" + sorter + ".move(1)\" />");
+		out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" " +
+		"onclick=\"" + sorter + ".move(1,true)\" />");
+		out.println("</div>");
+		out.println("<div>");
+		out.println("<select id=\"pagedropdown\"></select>");
+		out.println("</div>");
+		out.println("<div>");
+		out.println("<a href=\"javascript:" + sorter + ".showall()\">view all</a>");
+		out.println("</div>");
+		out.println("</div>");
+		out.println("<div id=\"tablelocation\">");
+		out.println("<div>");
+		out.println("<select onchange=\"" + sorter + ".size(this.value)\">");
+		out.println("<option value=\"5\">5</option>");
+		out.println("<option value=\"10\" selected=\"selected\">10</option>");
+		out.println("<option value=\"20\">20</option>");
+		out.println("<option value=\"50\">50</option>");
+		out.println("</select>");
+		out.println("<span>Entries Per Page</span>");
+		out.println("</div>");
+		out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
+		out.println("</div></div>");
+	}
 }

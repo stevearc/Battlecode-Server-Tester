@@ -78,17 +78,7 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 			stmt.setString(2, version);
 			ResultSet rs = db.query(stmt);
 
-			out.println("<div id=\"tableheader\">" +
-					"<div class=\"search\">" +
-			"<select id=\"coldid\" onchange=\"analysis_sorter.search('query')\"></select>");
-			out.println("<input type=\"text\" id=\"query\" onkeyup=\"analysis_sorter.search('query')\" />");
-			out.println("</div>");
-			out.println("<span class=\"details\">" +
-					"<div>Records <span id=\"startrecord\"></span>-<span id=\"endrecord\"></span> of " +
-			"<span id=\"totalrecords\"></span></div>");
-			out.println("<div><a href=\"javascript:analysis_sorter.reset()\">reset</a></div>" +
-			"</span>");
-			out.println("</div>");
+			WebUtil.printTableHeader(out, "analysis_sorter");
 			out.println("<table id=\"analysis_table\" class=\"tinytable\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">");
 			out.println("<thead>");
 			writeTableHead(out);
@@ -106,37 +96,8 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 			rs.close();
 			out.println("</tbody>");
 			out.println("</table>");
-			out.println("<div id=\"tablefooter\">");
-			out.println("<div id=\"tablenav\">");
-			out.println("<div>");
-			out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" " +
-			"onclick=\"analysis_sorter.move(-1,true)\" />");
-			out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" " +
-			"onclick=\"analysis_sorter.move(-1)\" />");
-			out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" " +
-			"onclick=\"analysis_sorter.move(1)\" />");
-			out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" " +
-			"onclick=\"analysis_sorter.move(1,true)\" />");
+			WebUtil.printTableFooter(out, "analysis_sorter");
 			out.println("</div>");
-			out.println("<div>");
-			out.println("<select id=\"pagedropdown\"></select>");
-			out.println("</div>");
-			out.println("<div>");
-			out.println("<a href=\"javascript:analysis_sorter.showall()\">view all</a>");
-			out.println("</div>");
-			out.println("</div>");
-			out.println("<div id=\"tablelocation\">");
-			out.println("<div>");
-			out.println("<select onchange=\"analysis_sorter.size(this.value)\">");
-			out.println("<option value=\"5\">5</option>");
-			out.println("<option value=\"10\" selected=\"selected\">10</option>");
-			out.println("<option value=\"20\">20</option>");
-			out.println("<option value=\"50\">50</option>");
-			out.println("</select>");
-			out.println("<span>Entries Per Page</span>");
-			out.println("</div>");
-			out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
-			out.println("</div></div></div>");
 
 			out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
 			out.println("<script type=\"text/javascript\" src=\"js/analysis_init_table.js\"></script>");

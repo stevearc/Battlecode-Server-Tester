@@ -8,7 +8,7 @@ var analysis_sorter = new TINY.table.sorter('analysis_sorter','analysis_table',{
 	oddselclass:'oddselected', // Odd Selected Column Class //
 	paginate:true, // Paginate? (true or false) //
 	size:1000, // Initial Page Size //
-	colddid:'coldid', // Columns Dropdown ID (optional) //
+	colddid:'columns', // Columns Dropdown ID (optional) //
   currentid:'currentpage', // Current Page ID (optional) //
 	totalid:'totalpages', // Current Page ID (optional) //
 	startingrecid:'startrecord', // Starting Record ID (optional) //

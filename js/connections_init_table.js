@@ -8,7 +8,7 @@ var conn_sorter = new TINY.table.sorter('conn_sorter','conn_table',{
 	oddselclass:'oddselected', // Odd Selected Column Class //
 	paginate:true, // Paginate? (true or false) //
 	size:10, // Initial Page Size //
-	colddid:'coldid', // Columns Dropdown ID (optional) //
+	colddid:'columns', // Columns Dropdown ID (optional) //
 	currentid:'currentpage', // Current Page ID (optional) //
 	totalid:'totalpages', // Current Page ID (optional) //
 	startingrecid:'startrecord', // Starting Record ID (optional) //

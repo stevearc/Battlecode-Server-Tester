@@ -1,11 +1,8 @@
 Set up comet with connections
 
-put table header/footer into WebUtil
 test install process thoroughly (& fix svn scripts)
-users register/login
 allow resume
 svn aliasing
+  tooltip over aliased rows to display actual name
 detect how long matches last
-
-
-tooltip over aliased rows to display actual name
+users register/login

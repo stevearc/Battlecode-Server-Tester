@@ -84,17 +84,7 @@ public class IndexServlet extends AbstractServlet {
 		out.println("</div>");
 		// End new run form
 
-		out.println("<div id=\"tableheader\">" +
-				"<div class=\"search\">" +
-		"<select id=\"columns\" onchange=\"sorter.search('query')\"></select>");
-		out.println("<input type=\"text\" id=\"query\" onkeyup=\"sorter.search('query')\" />");
-		out.println("</div>");
-		out.println("<span class=\"details\">" +
-				"<div>Records <span id=\"startrecord\"></span>-<span id=\"endrecord\"></span> of " +
-		"<span id=\"totalrecords\"></span></div>");
-		out.println("<div><a href=\"javascript:sorter.reset()\">reset</a></div>" +
-		"</span>");
-		out.println("</div>");
+		WebUtil.printTableHeader(out, "sorter");
 		out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"table\" class=\"tinytable\">" +
 				"<thead>" + 
 				"<tr>" +
@@ -173,37 +163,8 @@ public class IndexServlet extends AbstractServlet {
 			rs.close();
 			out.println("</tbody>");
 			out.println("</table>");
-			out.println("<div id=\"tablefooter\">");
-			out.println("<div id=\"tablenav\">");
-			out.println("<div>");
-			out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" " +
-			"onclick=\"sorter.move(-1,true)\" />");
-			out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" " +
-			"onclick=\"sorter.move(-1)\" />");
-			out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" " +
-			"onclick=\"sorter.move(1)\" />");
-			out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" " +
-			"onclick=\"sorter.move(1,true)\" />");
+			WebUtil.printTableFooter(out, "sorter");
 			out.println("</div>");
-			out.println("<div>");
-			out.println("<select id=\"pagedropdown\"></select>");
-			out.println("</div>");
-			out.println("<div>");
-			out.println("<a href=\"javascript:sorter.showall()\">view all</a>");
-			out.println("</div>");
-			out.println("</div>");
-			out.println("<div id=\"tablelocation\">");
-			out.println("<div>");
-			out.println("<select onchange=\"sorter.size(this.value)\">");
-			out.println("<option value=\"5\">5</option>");
-			out.println("<option value=\"10\" selected=\"selected\">10</option>");
-			out.println("<option value=\"20\">20</option>");
-			out.println("<option value=\"50\">50</option>");
-			out.println("</select>");
-			out.println("<span>Entries Per Page</span>");
-			out.println("</div>");
-			out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
-			out.println("</div></div></div>");
 
 			ResultSet r = db.query("SELECT COUNT(*) AS total FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = 1");
 			r.next();
