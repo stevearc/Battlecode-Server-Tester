@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Sat Nov 13 16:07:56 EST 2010
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=bs-tester.jar
+manifest.mergeall=true
+manifest.mainclass=main.Main
+manifest.file=<createnew>
+jarname.isextern=false
+onejar.expand=
+excludes=
+includes=<inc|DistributedBattlecode/js>;<inc|DistributedBattlecode/css>;<inc|DistributedBattlecode/images>

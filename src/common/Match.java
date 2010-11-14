@@ -39,4 +39,8 @@ public class Match implements Serializable {
 	public String toString() {
 		return map + " (" + seed + "): " + team_a + " vs. " + team_b;
 	}
+	
+	public String toMapString() {
+		return map + " (" + seed + ")";
+	}
 }

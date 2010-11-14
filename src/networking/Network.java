@@ -93,10 +93,8 @@ public class Network implements Runnable{
 	
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
 		if (socket != null) {
-			sb.append(socket.getInetAddress().toString());
-			return sb.toString();
+			return socket.getInetAddress().toString();
 		} else
 			return "Null Network";
 	}

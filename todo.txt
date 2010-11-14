@@ -1,6 +1,6 @@
-Clean up interface more. (connections tab)
-Auto install the daemon
+Set up comet with connections
 
+put table header/footer into WebUtil
 test install process thoroughly (& fix svn scripts)
 users register/login
 allow resume

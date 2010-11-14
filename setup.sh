@@ -5,6 +5,21 @@ if [ $ID != 0 ]; then
   exit 1
 fi
 
+if [[ `which git` == "" && `which svn` == "" ]]; then
+  echo "version control not found.  Install git or svn."
+  exit 1
+fi
+
+if [[ `which ant` == "" ]]; then
+  echo "ant not found"
+  exit 1
+fi
+
+if [[ `which java` == "" ]]; then
+  echo "java not found"
+  exit 1
+fi
+
 if [ -e /etc/bs-tester.conf ]; then
   if [ "$1" != "-f" ]; then
     echo "Setup completed.  To reconfigure type ./setup.sh -f"
@@ -18,6 +33,13 @@ if [ ! -e ./run.sh ]; then
 fi
 
 INSTALL_DIR=`pwd`
+
+if [ -e "$INSTALL_DIR/repo" ]; then
+  if [ "$1" != "-f" ]; then
+    echo "Setup completed.  To reconfigure type ./setup.sh -f"
+    exit 0
+  fi
+fi
 
 set_param() {
   KEY=$1
@@ -42,6 +64,24 @@ setup_client() {
     fi
   done
   
+  INSTALL_DAEMON=1
+  DAEMON="w"
+  while [[ 1 ]]; do
+    echo -ne "Would you like to install the daemon?\nbs-tester will start when you boot your computer [Y/n] "
+    read DAEMON
+    if [[ "$DAEMON" == "n" || "$DAEMON" == "N" || "$DAEMON" == "no" || "$DAEMON" == "No" || "$DAEMON" == "NO" ]]; then
+      INSTALL_DAEMON=0
+      break
+    fi
+    if [[ "$DAEMON" == "" || "$DAEMON" == "y" || "$DAEMON" == "Y" || "$DAEMON" == "yes" || "$DAEMON" == "Yes" || "$DAEMON" == "YES" ]]; then
+      INSTALL_DAEMON=1
+      break
+    fi
+  done
+  if [ "$INSTALL_DAEMON" == "1" ]; then
+    ./scripts/install_daemon.sh 0 $INSTALL_DIR
+  fi
+
   sudo -u $SUDO_USER ./scripts/generate_ssh_keys.sh $VERSION_CONTROL $REPO_ADDR
 
   if [ ! -e repo ]; then
@@ -51,6 +91,7 @@ setup_client() {
   set_param CORES $CORES
 
   cp etc/bs-tester.conf /etc
+  
 }
 
 setup_server() {
@@ -59,6 +100,43 @@ setup_server() {
     VERSION_OPTIONS=$VERSION_OPTIONS"/"$DIR
   done
 
+    # Specify team name
+  TEAM=""
+  while [ "$TEAM" == "" ]; do
+    echo -n "Team id (ex team049)? "
+    read TEAM
+  done
+
+  # Specify server address
+  SERVER=""
+  while [ "$SERVER" == "" ]; do
+    echo -n "IP address/hostname of this machine? "
+    read SERVER
+  done
+
+  KEYSTORE_PASS=`uuidgen | cut -c-8`
+  # Generate keystore
+  echo -e "$KEYSTORE_PASS\n$KEYSTORE_PASS\nname\norg_unit\norg\ncity\nst\nus\nyes\n" | keytool -keystore keystore -selfcert -validity 300 -genkey > /dev/null 2> /dev/null
+
+  # Specify to install daemon or not
+  INSTALL_DAEMON=1
+  DAEMON="w"
+  while [[ 1 ]]; do
+    echo -ne "Would you like to install the daemon?\nbs-tester will start when you boot your computer [Y/n] "
+    read DAEMON
+    if [[ "$DAEMON" == "n" || "$DAEMON" == "N" || "$DAEMON" == "no" || "$DAEMON" == "No" || "$DAEMON" == "NO" ]]; then
+      INSTALL_DAEMON=0
+      break
+    fi
+    if [[ "$DAEMON" == "" || "$DAEMON" == "y" || "$DAEMON" == "Y" || "$DAEMON" == "yes" || "$DAEMON" == "Yes" || "$DAEMON" == "YES" ]]; then
+      INSTALL_DAEMON=1
+      break
+    fi
+  done
+  if [ "$INSTALL_DAEMON" == "1" ]; then
+    ./scripts/install_daemon.sh 1 $INSTALL_DIR
+  fi
+  
   # Specify version control
   VALID=0
   while [ $VALID == 0 ]; do
@@ -81,21 +159,6 @@ setup_server() {
     echo "WARNING: Failed to initialize repository.  Either try again with ./setup.sh -f or manually clone your repository into $INSTALL_DIR/repo"
   fi
 
-  TEAM=""
-  while [ "$TEAM" == "" ]; do
-    echo -n "Team id (ex team049)? "
-    read TEAM
-  done
-  SERVER=""
-  while [ "$SERVER" == "" ]; do
-    echo -n "IP address/hostname of this machine? "
-    read SERVER
-  done
-
-  KEYSTORE_PASS=`uuidgen | cut -c-8`
-  # Generate keystore
-  echo -e "$KEYSTORE_PASS\n$KEYSTORE_PASS\nname\norg_unit\norg\ncity\nst\nus\nyes\n" | keytool -keystore keystore -selfcert -validity 300 -genkey > /dev/null 2> /dev/null
-
   set_param INSTALL_DIR $INSTALL_DIR
   set_param VERSION_CONTROL $VERSION_CONTROL
   set_param REPO_ADDR $REPO_ADDR
@@ -109,8 +172,6 @@ setup_server() {
   cd ..
   tar -cf $DIR/bs-client.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README.txt $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
   gzip $DIR/bs-client.tar
-
-  # TODO: install daemon
 }
 
 SERVER=0
