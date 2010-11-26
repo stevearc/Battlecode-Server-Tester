@@ -22,6 +22,11 @@ public class RunServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String username = checkLogin(request, response);
+		if (username == null) {
+			redirect(response);
+			return;
+		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();

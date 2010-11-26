@@ -19,7 +19,12 @@ public class MatchDownloadServlet extends AbstractServlet {
 		super(NAME);
 	}
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String username = checkLogin(request, response);
+		if (username == null) {
+			redirect(response);
+			return;
+		}
 		response.setContentType("application/octet-stream");
 
 		response.setStatus(HttpServletResponse.SC_OK);

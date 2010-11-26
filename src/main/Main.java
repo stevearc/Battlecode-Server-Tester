@@ -1,5 +1,11 @@
 package main;
 
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -14,6 +20,7 @@ import backend.ServerMethodCaller;
 import client.Client;
 
 import common.Config;
+import common.Util;
 
 import db.Database;
 import db.HSQLDatabase;
@@ -79,6 +86,7 @@ public class Main {
 				}
 				db.connect();
 				Config.setDB(db);
+				createWebAdmin();
 
 				Server s = new Server();
 				Config.setServer(s);
@@ -94,6 +102,23 @@ public class Main {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private static void createWebAdmin() throws SQLException, NoSuchAlgorithmException, UnsupportedEncodingException {
+		Database db = Config.getDB();
+		Config config = Config.getConfig();
+		ResultSet rs = db.query("SELECT * FROM users WHERE status = 2");
+		if (rs.next())
+			return;
+		String salt = Util.SHA1(""+Math.random());
+		String hashed_password = Util.SHA1(config.admin_pass + salt);
+		PreparedStatement st = db.prepare("INSERT INTO users (username, password, salt, status) " +
+		"VALUES (?, ?, ?, ?)");
+		st.setString(1, config.admin);
+		st.setString(2, hashed_password);
+		st.setString(3, salt);
+		st.setInt(4, 2);
+		db.update(st, true);
 	}
 
 }

@@ -25,7 +25,7 @@ public class Config {
 	private static Database rootDB;
 	private static Server rootServer;
 	private static WebPollHandler webPollHandler;
-	
+
 	private boolean isServer;
 	private String log_dir = "/var/log";
 	public String keystore_pass = "";
@@ -35,7 +35,7 @@ public class Config {
 	public boolean reset_db = false;
 	public String client_tar = "";
 	public String keystore = "";
-	
+
 	/* These options are specified in the battlecode.conf file */
 	/** The directory the application is installed into */
 	public String install_dir = "";
@@ -46,6 +46,8 @@ public class Config {
 	public String server = "";
 	/** The address of the repository */
 	public String repo_addr;
+	public String admin;
+	public String admin_pass;
 	/** The port number of the server to connect to (or listen on, if running as server) */
 	public int port = 8888;
 	/** SERVER ONLY: The type of database to use */
@@ -91,46 +93,46 @@ public class Config {
 		validate();
 		setWebPollHandler(new WebPollHandler());
 	}
-	
+
 	public static Config getConfig() {
 		return rootConfig;
 	}
-	
+
 	public static void setConfig(Config c) {
 		rootConfig = c;
 	}
-	
+
 	public static Database getDB() {
 		return rootDB;
 	}
-	
+
 	public static void setDB(Database db) {
 		rootDB = db;
 	}
-	
+
 	public static Server getServer() {
 		return rootServer;
 	}
-	
+
 	public static void setServer(Server s) {
 		rootServer = s;
 	}
-	
+
 	public static WebPollHandler getWebPollHandler() {
 		return webPollHandler;
 	}
-	
+
 	private static void setWebPollHandler(WebPollHandler wph) {
 		webPollHandler = wph;
 	}
-	
+
 	public Logger getLogger() {
 		if (isServer) {
 			Logger logger = Logger.getLogger("Server");
 			logger.setLevel(Level.ALL);
 			try {
 				if (logger.getHandlers().length < 2) {
-					FileHandler server_handler = new FileHandler(log_dir + "/bs-tester.txt");
+					FileHandler server_handler = new FileHandler(log_dir + "/bs-tester.log");
 					server_handler.setFormatter(new SimpleFormatter());
 					logger.addHandler(server_handler);
 				}
@@ -145,7 +147,7 @@ public class Config {
 			logger.setLevel(Level.ALL);
 			try {
 				if (logger.getHandlers().length < 2) {
-					FileHandler client_handler = new FileHandler(log_dir + "/bs-client.txt");
+					FileHandler client_handler = new FileHandler(log_dir + "/bs-client.log");
 					client_handler.setFormatter(new SimpleFormatter());
 					logger.addHandler(client_handler);
 				}
@@ -157,7 +159,7 @@ public class Config {
 			return logger;
 		}
 	}
-	
+
 	/**
 	 * Assigns the values of a parameter in the conf file to variables in Config
 	 * @param option
@@ -173,6 +175,12 @@ public class Config {
 		}
 		else if (option.equals("keystore_pass")) {
 			keystore_pass = value;
+		}
+		else if (option.equals("admin")) {
+			admin = value;
+		}
+		else if (option.equals("admin_pass")) {
+			admin_pass = value;
 		}
 		else if (option.equals("repo_addr")) {
 			repo_addr = value;
@@ -228,16 +236,16 @@ public class Config {
 
 		if (!new File(repo).exists())
 			throw new InvalidConfigException("Invalid repository location " + repo);
-		
+
 		if ("".equals(keystore_pass))
 			throw new InvalidConfigException("Keystore password cannot be blank");
-		
+
 		if (!new File(install_dir).exists())
 			throw new InvalidConfigException("Invalid install directory " + install_dir);
 
 		if (port < 1 || port > 65535)
 			throw new InvalidConfigException("Invalid port number " + port);
-		
+
 		if (!version_control.equals("svn") && !version_control.equals("git"))
 			throw new InvalidConfigException("Invalid version control " + version_control);
 
@@ -252,18 +260,24 @@ public class Config {
 
 		// Check the server values
 		if (isServer) {
+			if ("".equals(admin))
+				throw new InvalidConfigException("Admin name cannot be blank");
+
+			if ("".equals(admin_pass))
+				throw new InvalidConfigException("Admin password cannot be blank");
+
 			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
 				throw new InvalidConfigException("Invalid database type: " + db_type);
-			
+
 			if (db_user.equals(""))
 				throw new InvalidConfigException("Invalid database user");
 
 			if (db_pass.equals(""))
 				throw new InvalidConfigException("Must have a non-blank database password");
-			
+
 			if (db_name.equals(""))
 				throw new InvalidConfigException("Must have a non-blank database name");
-			
+
 			if (db_host.equals(""))
 				throw new InvalidConfigException("Must have a valid database host");
 		}

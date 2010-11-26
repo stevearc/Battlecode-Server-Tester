@@ -155,7 +155,7 @@ public class MatchRunner implements Runnable {
 			if (!"".equals(b_points_str))
 				b_points = Integer.parseInt(b_points_str.substring("Team B had ".length()));
 
-			_log.info("Finished: " + match.map);
+			_log.info("Finished: " + match);
 		} catch (Exception e) {
 			if (!stop) {
 				_log.log(Level.SEVERE, "Failed to run match", e);

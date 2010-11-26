@@ -1,5 +1,7 @@
 package backend;
 
+import java.sql.SQLException;
+
 import networking.Packet;
 
 import common.Config;
@@ -57,6 +59,21 @@ public class ServerMethodCaller {
 			@Override
 			public void run() {
 				Config.getServer().sendClientMatches(client);
+			}
+
+		}).start();
+	}
+	
+	public static void updateRepo() {
+		new Thread(new Runnable(){
+
+			@Override
+			public void run() {
+				try {
+					Config.getServer().updateRepo();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
 
 		}).start();

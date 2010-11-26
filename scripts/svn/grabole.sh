@@ -1,13 +1,14 @@
 #!/bin/bash
 source /etc/bs-tester.conf
 
+REPO=$INSTALL_DIR/repo
 USER=`ls -l $REPO | awk '{split($0,a," ")} END{print a[3]}'`
 CMD_PREFIX="sudo -u $USER"
 
 pushd $REPO
 TEAM_A=$1
 TEAM_B=$2
-$CMD_PREFIX svn revert .
+$CMD_PREFIX svn revert -R .
 
 # Get team a
 rm -rf teams/old_team_a

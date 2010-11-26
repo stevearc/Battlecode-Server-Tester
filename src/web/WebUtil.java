@@ -13,15 +13,19 @@ import common.Config;
 import db.Database;
 
 public class WebUtil {
-	private static Database db;
 
 	public static void writeTabs(HttpServletResponse response, PrintWriter out) {
+		out.println("<a href='" + LogoutServlet.NAME + "'>logout</a>");
 		// Header with tabs
 		out.println("<div id=\"tabs\"><h2>");
 		out.println("<ul>" +
-				"<li><a href='" + response.encodeURL(IndexServlet.NAME) + "'><span>Home</span></a></li>" +
-				"<li><a href='" + response.encodeURL(ConnectionsServlet.NAME) + "'><span>Connections</span></a></li>" +
+				"<li><a href='" + response.encodeURL(IndexServlet.NAME) + "'><span>Home</span></a></li>");
+		if (Config.getConfig().version_control.equals("svn")) {
+			out.println("<li><a href='" + response.encodeURL(TagServlet.NAME) + "'><span>Tags</span></a></li>");
+		}
+		out.println("<li><a href='" + response.encodeURL(ConnectionsServlet.NAME) + "'><span>Connections</span></a></li>" +
 				"<li><a href='" + response.encodeURL(SizeAnalysisServlet.NAME) + "'><span>Size Analysis</span></a></li>" +
+				"<li><a href='" + response.encodeURL(AdminServlet.NAME) + "'><span>Admin</span></a></li>" +
 		"</ul>");
 		out.println("</h2></div>");
 		out.println("<p>&nbsp;</p>");
@@ -34,12 +38,10 @@ public class WebUtil {
 	}
 
 	public static int[] getMapResults(int runid, HashSet<String> maps, boolean reverse) throws SQLException {
-		if (db == null)
-			db = Config.getDB();
 		int[] results = new int[3];
 		if (maps == null) {
 			maps = new HashSet<String>();
-			ResultSet mapSet = db.query("SELECT map FROM matches WHERE run_id = " + runid + " AND win IS NOT NULL GROUP BY map");
+			ResultSet mapSet = Config.getDB().query("SELECT map FROM matches WHERE run_id = " + runid + " AND win IS NOT NULL GROUP BY map");
 			while (mapSet.next())
 				maps.add(mapSet.getString("map"));
 		}
@@ -65,6 +67,7 @@ public class WebUtil {
 	}
 
 	public static float getWinPercentage(int runid, String map) throws SQLException {
+		Database db = Config.getDB();
 		PreparedStatement stmt = db.prepare("SELECT SUM(win) AS wins, COUNT(*) AS total FROM matches WHERE run_id = ? AND win IS NOT NULL AND map LIKE ?");
 		stmt.setInt(1, runid);
 		stmt.setString(2, map);
@@ -84,11 +87,11 @@ public class WebUtil {
 		else 
 			return "<font color='red'>" + (int) (100*percent) + "</font>";
 	}
-	
+
 	public static void printTableHeader(PrintWriter out, String sorter) {
 		out.println("<div id=\"tableheader\">" +
 				"<div class=\"search\">" +
-		"<select id=\"columns\" onchange=\"" + sorter + ".search('query')\"></select>");
+				"<select id=\"columns\" onchange=\"" + sorter + ".search('query')\"></select>");
 		out.println("<input type=\"text\" id=\"query\" onkeyup=\"" + sorter + ".search('query')\" />");
 		out.println("</div>");
 		out.println("<span class=\"details\">" +
@@ -98,19 +101,19 @@ public class WebUtil {
 		"</span>");
 		out.println("</div>");
 	}
-	
+
 	public static void printTableFooter(PrintWriter out, String sorter) {
 		out.println("<div id=\"tablefooter\">");
 		out.println("<div id=\"tablenav\">");
 		out.println("<div>");
 		out.println("<img src=\"images/first.gif\" width=\"16\" height=\"16\" alt=\"First Page\" " +
-		"onclick=\"" + sorter + ".move(-1,true)\" />");
+				"onclick=\"" + sorter + ".move(-1,true)\" />");
 		out.println("<img src=\"images/previous.gif\" width=\"16\" height=\"16\" alt=\"Previous Page\" " +
-		"onclick=\"" + sorter + ".move(-1)\" />");
+				"onclick=\"" + sorter + ".move(-1)\" />");
 		out.println("<img src=\"images/next.gif\" width=\"16\" height=\"16\" alt=\"Next Page\" " +
-		"onclick=\"" + sorter + ".move(1)\" />");
+				"onclick=\"" + sorter + ".move(1)\" />");
 		out.println("<img src=\"images/last.gif\" width=\"16\" height=\"16\" alt=\"Last Page\" " +
-		"onclick=\"" + sorter + ".move(1,true)\" />");
+				"onclick=\"" + sorter + ".move(1,true)\" />");
 		out.println("</div>");
 		out.println("<div>");
 		out.println("<select id=\"pagedropdown\"></select>");
@@ -132,4 +135,5 @@ public class WebUtil {
 		out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
 		out.println("</div></div>");
 	}
+
 }

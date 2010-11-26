@@ -78,10 +78,7 @@ public class ClientRepr implements Controller {
 
 	public String toHTML() {
 		String[] addrs = net.toString().split("/");
-		if (addrs[0].trim().equals(""))
 			return "<a>" + addrs[1] + "</a>";
-		else
-			return "<a title='" + addrs[1] + "'>" + addrs[0] + "</a>";
 	}
 
 	@Override

@@ -22,6 +22,11 @@ public class MatchesServlet extends AbstractServlet {
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String username = checkLogin(request, response);
+		if (username == null) {
+			redirect(response);
+			return;
+		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -54,8 +59,10 @@ public class MatchesServlet extends AbstractServlet {
 			st.setInt(1, id);
 			ResultSet rs = db.query(st);
 			rs.next();
-			String team_a = rs.getString("team_a");
-			String team_b = rs.getString("team_b");
+			String team_a = rs.getString("a_nick");
+			team_a = (team_a == null ? rs.getString("team_a") : "<a title='" + rs.getString("team_a") + "'>" + team_a + "</a>");
+			String team_b = rs.getString("b_nick");
+			team_b = (team_b == null ? rs.getString("team_b") : "<a title='" + rs.getString("team_b") + "'>" + team_b + "</a>");
 			out.println("<h2><font color='red'>" + team_a + "</font> vs. <font color='blue'>" + team_b + "</font></h2>");
 			out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
 			out.println("<br />");

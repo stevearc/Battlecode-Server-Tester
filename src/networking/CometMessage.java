@@ -3,10 +3,10 @@ package networking;
 public class CometMessage {
 	private CometCmd cmd;
 	public int id;
-	private Object[] args;
+	private String[] args;
 	
 	
-	public CometMessage(CometCmd cmd, Object[] args) {
+	public CometMessage(CometCmd cmd, String[] args) {
 		this.cmd = cmd;
 		this.args = args;
 	}
@@ -15,7 +15,7 @@ public class CometMessage {
 		return cmd;
 	}
 	
-	public Object get(int index) {
+	public String get(int index) {
 		return args[index];
 	}
 	

@@ -23,21 +23,36 @@ my $cmd = shift();
 if ( $cmd eq "start" ) { start(); }
 elsif ( $cmd eq "stop" ) { stop(); }
 elsif ( $cmd eq "status" ) { status(); }
+elsif ( $cmd eq "restart" ) { restart(); }
 else { usage(); }
 
+sub restart {
+  stop();
+  sleep 5;
+  start();
+}
+
 sub start {
-	if (SERVER) {
-		start_server();
+  my $pid = `ps ax | grep bs-tester.jar | grep -v grep`;
+	$pid =~ s/^\s*(\d+) .*/$1/;
+
+	if ( $pid ) {
+		print "Already running\n"
 	} else {
-		start_client();
+    if (SERVER) {
+      start_server();
+    } else {
+      start_client();
+    }
 	}
 }
 
 sub stop {
-	if (SERVER) {
-		stop_server();
-	} else {
-		stop_client();
+	my $pid = `ps x | grep bs-tester.jar | grep -v grep`;
+	$pid =~ s/^\s*(\d+) .*/$1/;
+
+	if ( $pid ) {
+		`kill $pid`;
 	}
 }
 
@@ -51,42 +66,14 @@ sub start_client {
 	system( './run.sh > /dev/null 2>/dev/null &' );
 }
 
-sub stop_server {
-	my $pid = `ps x | grep bs-tester.jar -s | grep -v grep | egrep ".+\-s\$"`;
-	$pid =~ s/^\s*(\d+) .*/$1/;
-
-	if ( $pid ) {
-		`kill $pid`;
-	}
-}
-
-sub stop_client {
-	my $pid = `ps x | grep bs-tester.jar | grep -v grep | egrep -v ".+\-s\$"`;
-	$pid =~ s/^\s*(\d+) .*/$1/;
-
-	if ( $pid ) {
-		`kill $pid`;
-	}
-}
-
 sub status {
-
-	my $pid = `ps x | grep bs-tester.jar | grep -v grep | egrep -v ".+\-s\$"`;
+	my $pid = `ps ax | grep bs-tester.jar | grep -v grep`;
 	$pid =~ s/^\s*(\d+) .*/$1/;
 
 	if ( $pid ) {
-		print "Client running\n"
+		print "Running\n"
 	} else {
-		print "Client not running\n"
-	}
-	
-	$pid = `ps x | grep bs-tester.jar | grep -v grep | egrep ".+\-s\$"`;
-	$pid =~ s/^\s*(\d+) .*/$1/;
-
-	if ( $pid ) {
-		print "Server running\n"
-	} else {
-		print "Server not running\n"
+		print "Not running\n"
 	}
 }
 
@@ -94,7 +81,7 @@ sub status {
 sub usage {
 	print <<EOF;
 
-Usage: bs-tester (start|stop|status)
+Usage: bs-tester (start|stop|restart|status)
 
 EOF
 }

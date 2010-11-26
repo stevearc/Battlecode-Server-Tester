@@ -11,13 +11,16 @@ public class MySQLDatabase extends JDBCDatabase {
 		"`points` int(11) NOT NULL, `a_points` int(11), `b_points` int(11), `data` mediumblob, PRIMARY KEY (`id`))",
 		"CREATE TABLE IF NOT EXISTS `runs` (`id` int(11) NOT NULL AUTO_INCREMENT,`team_a` varchar(45) NOT NULL,`team_b` varchar(45) NOT NULL," +
 		"`status` int(11) DEFAULT '0',`started` timestamp DEFAULT 0,`ended` timestamp ON UPDATE current_timestamp,PRIMARY KEY (`id`))",
-		"CREATE TABLE IF NOT EXISTS `tags` (`tag` varchar(45) NOT NULL,`alias` varchar(20) DEFAULT NULL,UNIQUE KEY `tag` (`tag`))"
+		"CREATE TABLE IF NOT EXISTS `tags` (`tag` varchar(45) NOT NULL,`alias` varchar(20) DEFAULT NULL,UNIQUE KEY `tag` (`tag`))", 
+		"CREATE TABLE IF NOT EXISTS `users` (`username` varchar(20) NOT NULL,`password` varchar(40) NOT NULL,`salt` varchar(40) NOT NULL,`session` varchar(40)," +
+		"`status` int(1) NOT NULL,UNIQUE KEY `username` (`username`))", 
 	};
 	
 	private static String[] dropStmts = {
 		"DROP TABLE IF EXISTS matches",
 		"DROP TABLE IF EXISTS runs",
-		"DROP TABLE IF EXISTS tags"
+		"DROP TABLE IF EXISTS tags",
+		"DROP TABLE IF EXISTS users",
 	};
 
 	@Override

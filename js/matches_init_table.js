@@ -14,7 +14,6 @@ var matches_sorter = new TINY.table.sorter('matches_sorter','matches_table',{
 	startingrecid:'startrecord', // Starting Record ID (optional) //
 	endingrecid:'endrecord', // Ending Record ID (optional) //
 	totalrecid:'totalrecords', // Total Records ID (optional) //
-  hoverid:'selectedrow',
 	pageddid:'pagedropdown', // Page Dropdown ID (optional) //
 	navid:'tablenav', // Table Navigation ID (optional) //
 	sortcolumn:0, // Index of Initial Column to Sort (optional) //

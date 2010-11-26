@@ -26,6 +26,11 @@ public class CometServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String username = checkLogin(request, response);
+		if (username == null){
+			redirect(response);
+			return;
+		}
 		poll(request, response);
 	}
 

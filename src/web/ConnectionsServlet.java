@@ -22,6 +22,11 @@ public class ConnectionsServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String username = checkLogin(request, response);
+		if (username == null){
+			redirect(response);
+			return;
+		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -47,13 +52,15 @@ public class ConnectionsServlet extends AbstractServlet {
 		for (ClientRepr c: Config.getServer().getConnections()) {
 			out.println("<tr>");
 			out.println("<td>" + c.toHTML() + "</td>");
-			out.println("<td>&nbsp;");
+			out.print("<td>");
 			StringBuilder sb = new StringBuilder();
 			for (Match m: c.getRunningMatches()) {
 				sb.append(m.toMapString() + ", ");
 			}
-			if (sb.length() > 2)
-			out.println(sb.substring(0, sb.length() - 2));
+			if (sb.length() > 2) 
+				out.print(sb.substring(0, sb.length() - 2));
+			else
+				out.print("&nbsp;");
 			out.println("</td>");
 			out.println("</tr>");
 		}
@@ -64,6 +71,8 @@ public class ConnectionsServlet extends AbstractServlet {
 
 		out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/connections_init_table.js\"></script>");
+		out.println("<script type=\"text/javascript\" src=\"js/async.js\"></script>");
+		out.println("<script type=\"text/javascript\" src=\"js/connections.js\"></script>");
 		out.println("</body>" +
 		"</html>");
 	}

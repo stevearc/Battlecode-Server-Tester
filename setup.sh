@@ -100,7 +100,22 @@ setup_server() {
     VERSION_OPTIONS=$VERSION_OPTIONS"/"$DIR
   done
 
-    # Specify team name
+  # Get admin name
+  ADMIN=""
+  while [ "$ADMIN" == "" ]; do
+    echo -n "Admin username? "
+    read ADMIN
+  done
+
+  # Get admin password
+  ADMIN_PASS=""
+  while [ "$ADMIN_PASS" == "" ]; do
+    echo -n "Admin password? "
+    read -s ADMIN_PASS
+  done
+  echo ""
+
+  # Specify team name
   TEAM=""
   while [ "$TEAM" == "" ]; do
     echo -n "Team id (ex team049)? "
@@ -148,7 +163,11 @@ setup_server() {
   # Specify version control URL
   VALID=0
   while [ "$VALID" == "0" ]; do
-    echo -n "URL of repo (ex steven@server.mit.edu:/var/git/repo): "
+    if [ "$VERSION_CONTROL" == "git" ]; then
+      echo -n "URL of repo (ex steven@server.mit.edu:/var/git/repo): "
+    elif [ "$VERSION_CONTROL" == "svn" ]; then
+      echo -n "URL of repo (ex svn+ssh://steven@server.mit.edu/var/git/repo): "
+    fi
     read REPO_ADDR
     VALID=`./scripts/$VERSION_CONTROL/check_url_format.sh $REPO_ADDR`
   done
@@ -164,6 +183,8 @@ setup_server() {
   set_param REPO_ADDR $REPO_ADDR
   set_param TEAM $TEAM
   set_param SERVER $SERVER
+  set_param ADMIN $ADMIN
+  set_param ADMIN_PASS $ADMIN_PASS
   set_param KEYSTORE_PASS $KEYSTORE_PASS
   cp etc/bs-tester.conf /etc
 

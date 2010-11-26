@@ -27,6 +27,11 @@ public class WebServer implements Runnable {
 			new DebugServlet(),
 			new SizeAnalysisServlet(),
 			new MapAnalysisServlet(),
+			new LoginServlet(),
+			new AdminServlet(),
+			new LogoutServlet(),
+			new AdminActionServlet(),
+			new TagServlet(),
 			};
 
 	public WebServer() {

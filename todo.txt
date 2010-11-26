@@ -1,8 +1,1 @@
-Set up comet with connections
-
-test install process thoroughly (& fix svn scripts)
-allow resume
-svn aliasing
-  tooltip over aliased rows to display actual name
-detect how long matches last
-users register/login
+document code

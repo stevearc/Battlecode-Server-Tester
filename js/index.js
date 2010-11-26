@@ -1,13 +1,23 @@
 var row_map = {'ID' : 0, 'TEAM_A' : 1, 'TEAM_B' : 2, 'WINS' : 3, 'STATUS' : 4, 'TIME' : 5, 'CONTROL' : 6};
 var lastheard = -1;
+var lastheard_update = -1;
 document.getElementById('seed_selector').selectedIndex=0;
 document.getElementById("maps_checkbox").checked=false;
-table = document.getElementById("table");
-for (var i = 1; i < table.rows.length; i++) {
-  var status_row = table.rows[i].cells[row_map['STATUS']];
-  if (status_row.innerHTML == 'Running') {
-    status_row.innerHTML = (100*current_num_matches/total_num_matches) + "%";
-    break;
+
+function roundNumber(number, digits) {
+  var multiple = Math.pow(10, digits);
+  var rndedNum = Math.round(number * multiple) / multiple;
+  return rndedNum;
+}
+
+function init() {
+  table = document.getElementById("table");
+  for (var i = 1; i < table.rows.length; i++) {
+    var status_row = table.rows[i].cells[row_map['STATUS']];
+    if (status_row.innerHTML == 'Running') {
+      status_row.innerHTML = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
+      break;
+    }
   }
 }
 
@@ -197,7 +207,7 @@ function matchFinished(rowid, win) {
         losses += 1;
       wins_row.innerHTML = wins + "/" + losses;
       var status_row = table.rows[i].cells[row_map['STATUS']];
-      status_row.innerHTML = (100*current_num_matches/total_num_matches) + "%";
+      status_row.innerHTML = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
       break;
     }
   }
@@ -239,11 +249,32 @@ function handleServerResponse(response) {
     } else if (cmd == "RUN_ERROR") {
       runError(args[2]);
     } else {
-      alert(response);
+      //alert(response);
     }
   }
 
   setTimeout("poll(handleServerResponse, \"matches\", lastheard);",100);
 }
 
+function doRepoUpdate() {
+  listenForTeamsUpdate("");
+  query("GET", "admin_action", "cmd=update", null);
+}
+
+function listenForTeamsUpdate(response) {
+  if (response != "") {
+    args = response.split(",");
+    cmd = args[0];
+    lastheard_update = args[1];
+    if (cmd == "RELOAD") {
+      document.location.reload(true);
+    } else {
+      //alert(response);
+    }
+  }
+
+  setTimeout("poll(listenForTeamsUpdate, \"teams_update\", lastheard_update);",100);
+}
+
+init();
 handleServerResponse("");
