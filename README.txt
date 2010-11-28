@@ -1,3 +1,6 @@
+# Battlecode Server Tester
+# created by Steven Arcangeli
+
 ##################
 ## REQUIREMENTS ##
 ##################
@@ -28,3 +31,9 @@ The server and client can be run with the run.sh file.  Type
 to display the available commandline arguments.  
 If you installed the daemon in the setup script, you can start the service with 
 sudo invoke-rc.d bs-tester start
+
+#####################
+## VERSION CONTROL ##
+#####################
+If you use git you will need to use the `git tag` function to tag versions of your code
+that you want to run with the tester.  
