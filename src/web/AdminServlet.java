@@ -37,11 +37,12 @@ public class AdminServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out);	
+		WebUtil.writeTabs(response, out, name);	
 
 		// TODO: option to change password
 
 		if (getStatus(request, response) != 2) {
+			out.println("<div id='tablewrapper'><h1>You are not an admin</h1></div>");
 			out.println("</body></html>");
 			return;
 		}

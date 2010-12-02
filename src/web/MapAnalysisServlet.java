@@ -37,7 +37,7 @@ public class MapAnalysisServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out);
+		WebUtil.writeTabs(response, out, name);
 
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {

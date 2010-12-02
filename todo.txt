@@ -1,1 +1,5 @@
+Add secondary tab list in match view
+add canceled status
+remove user/pass from bs-tester.conf file
+usability testing
 document code

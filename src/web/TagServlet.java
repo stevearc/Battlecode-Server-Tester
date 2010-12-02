@@ -43,7 +43,7 @@ public class TagServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out);	
+		WebUtil.writeTabs(response, out, name);	
 
 		out.println("<div id='tablewrapper'>");
 		out.println("<table id='tag_table' class='tinytable' style='width:300px'>");
@@ -63,7 +63,9 @@ public class TagServlet extends AbstractServlet {
 				String alias = rs.getString("alias");
 				alias = (alias == null ? " " : alias);
 				out.println("<td><input id='box" + i + "' type='text' width='10' value='" + alias + "' " +
-						"onFocus='document.getElementById(\"box" + i + "\").select()'></td>");
+						"onFocus='document.getElementById(\"box" + i + "\").select()' " +
+						"onClick='setTimeout(\"document.getElementById(\\\"box" + i + "\\\").select()\", 50)' " +
+				"onkeypress='keyDown(" + i + ")'></td>");
 				out.println("</tr>");
 				i++;
 			}
@@ -75,7 +77,8 @@ public class TagServlet extends AbstractServlet {
 		out.println("<p>&nbsp;</p>");
 		out.println("<p>&nbsp;</p>");
 		out.println("<p>&nbsp;</p>");
-		out.println("<input type='button' value='Save changes' onClick='saveTags()'");
+		out.println("<input type='button' value='Reset' onClick='document.location.reload(true)'>&nbsp;&nbsp;&nbsp;");
+		out.println("<input id='save_tags' type='button' value='Save changes' onClick='saveTags()'>");
 		out.println("</div>");
 
 		out.println("</body></html>");

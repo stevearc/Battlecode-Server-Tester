@@ -37,7 +37,7 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 			out.println("</head>");
 			out.println("<body>");
 
-			WebUtil.writeTabs(response, out);
+			WebUtil.writeTabs(response, out, name);
 
 			// Javascript to do HTTP GET
 			out.println("<script type=\"text/Javascript\">\n" +

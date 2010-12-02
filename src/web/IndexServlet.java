@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -42,69 +43,10 @@ public class IndexServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out);
+		WebUtil.writeTabs(response, out, name);
 
 		try {
-			ArrayList<String> tags = new ArrayList<String>();
-			ResultSet tagSet = db.query("SELECT * FROM tags");
-			while (tagSet.next()) {
-				String team = tagSet.getString("alias");
-				team = (team == null ? tagSet.getString("tag") : team);
-				tags.add(team);
-			}
-			String[] sorted_tags = tags.toArray(new String[tags.size()]);
-			Arrays.sort(sorted_tags);
 			out.println("<div id=\"tablewrapper\">");
-			// Begin new run form
-			String background = "#CEFFFC";
-			out.println("<div class='tabbutton'>");
-			out.println("<a onClick='toggleNewRun()' " +
-			"style='cursor:pointer;'><span>New Run</span></a>");
-			out.println("<p>&nbsp;</p>");
-			out.println("<p>&nbsp;</p>");
-			out.println("<p style='background:" + background + "'>&nbsp;</p>");
-			out.println("<form id='add_run' class=\"removed\" action=\"" + response.encodeURL(RunServlet.NAME) + "\" " +
-					"style='background:" + background + "'>");
-			out.println("<select id='team_a_button'>");
-			for (String t: sorted_tags) {
-				out.println("<option name='" + t + "'>" + t + "</option>");
-			}
-			out.println("</select> vs. ");
-			out.println("<select id='team_b_button'>");
-			for (String t: sorted_tags) {
-				out.println("<option name='" + t + "'>" + t + "</option>");
-			}
-			out.println("</select>&nbsp;&nbsp;&nbsp;<input type='button' onclick='doRepoUpdate()' value='update'></p>");
-			out.println("Matches per map:" +
-			"<select id='seed_selector' onChange='numSeedsChange()'>");
-			for (int i = 1; i < 11; i++) 
-				out.println("<option name='" + i + "'>" + i + "</option>");
-			out.println("</select>");
-			out.println("<div id='seeds'>");
-			out.println("<p id='seed1' class=''>Seed 1: <input id='seed_txt1' type='text' size='15' value='1'></p>");
-			for (int i = 2; i < 11; i++)
-				out.println("<p id='seed" + i + "' class='removed'>Seed " + i + ": <input id='seed_txt" + i + 
-						"' type='text' size='15' value='" + i + "'></p>");
-			out.println("</div>");
-			out.println("<input type=\"button\" value=\"Start\" onclick=\"newRun();toggleNewRun()\"><br /></p>");
-
-			// Table of maps
-			out.println("<table style='width:50%;margin:0 auto' cellpadding='0' cellspacing='0' border='0' id='map_table' class='tinytable'>");
-			out.println("<thead>");
-			out.println("<tr><th class='nosort' style='text-align:center'><input id='maps_checkbox' " +
-					"onClick='toggleMapsCheckbox()' type='checkbox'></th>" +
-					"<th class='desc'><h3>Map</h3></th>" +
-			"<th class='desc'><h3>Size</h3></th></tr>");
-			out.println("</thead><tbody>");
-			for (BattlecodeMap m: Config.getServer().getMaps())
-				out.println("<tr><td><input type='checkbox' name='" + m.map + "'></td><td>" + m.map + "</td><td>" + m.getSize() + "</td></tr>");
-			out.println("</tbody></table>");
-			out.println("<input type=\"button\" value=\"Start\" onclick=\"newRun();toggleNewRun()\"><br /></p>");
-
-			out.println("<p style='background:" + background + "'>&nbsp;</p>" +
-			"</form>");
-			out.println("</div>");
-			// End new run form
 
 			WebUtil.printTableHeader(out, "sorter");
 			out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"table\" class=\"tinytable\">" +
@@ -189,6 +131,76 @@ public class IndexServlet extends AbstractServlet {
 			out.println("</tbody>");
 			out.println("</table>");
 			WebUtil.printTableFooter(out, "sorter");
+			
+			// Begin new run form
+			ArrayList<String> tags = new ArrayList<String>();
+			HashMap<String, String> tagMap = new HashMap<String, String>();
+			ResultSet tagSet = db.query("SELECT * FROM tags");
+			while (tagSet.next()) {
+				String team = tagSet.getString("alias");
+				team = (team == null ? tagSet.getString("tag") : team);
+				tags.add(team);
+				tagMap.put(team, tagSet.getString("tag"));
+			}
+			String[] sorted_tags = tags.toArray(new String[tags.size()]);
+			Arrays.sort(sorted_tags);
+			out.println("<br /><br />");
+			String background = "#CEFFFC";
+			out.println("<div class='tabbutton'>");
+			out.println("<a onClick='toggleNewRun()' " +
+			"style='cursor:pointer;'><span>New Run</span></a>");
+			out.println("<p>&nbsp;</p>");
+			out.println("<p>&nbsp;</p>");
+			out.println("<p style='background:" + background + "'>&nbsp;</p>");
+			out.println("<form id='add_run' class=\"removed\" action=\"" + response.encodeURL(RunServlet.NAME) + "\" " +
+					"style='background:" + background + "'>");
+			out.println("<select id='team_a_button'>");
+			for (String t: sorted_tags) {
+				out.println("<option value='" + tagMap.get(t) + "'>" + t + "</option>");
+			}
+			out.println("</select> vs. ");
+			out.println("<select id='team_b_button'>");
+			for (String t: sorted_tags) {
+				out.println("<option value='" + tagMap.get(t) + "'>" + t + "</option>");
+			}
+			out.println("</select>&nbsp;&nbsp;&nbsp;Don't see your version here? " +
+					"<input id='update_button' type='button' onclick='doRepoUpdate()' value='update'></p>");
+			out.println("Matches per map: " +
+			"<select id='seed_selector' onChange='numSeedsChange()'>");
+			for (int i = 1; i < 11; i++) 
+				out.println("<option name='" + i + "'>" + i + "</option>");
+			out.println("</select>");
+			out.println("<div id='seeds'>");
+			out.println("<p id='seed1' class=''>Map Seed 1: " +
+					"<input id='seed_txt1' type='text' size='8' value='1'></p>");
+			for (int i = 2; i < 11; i++)
+				out.println("<p id='seed" + i + "' class='removed'>" +
+						"Map Seed " + i + ": <input id='seed_txt" + i + 
+						"' type='text' size='8' value='" + i + "'></p>");
+			out.println("</div>");
+			out.println("<input type=\"button\" value=\"Start\" onclick=\"if (newRun()) {toggleNewRun()}\"><br /></p>");
+			for (String s: new String[] {"small", "medium", "large"}) {
+				out.println(s + ": <input id='maps_checkbox_" + s + "' onClick='toggleMapsCheckbox(\"" + s + "\")' " +
+						"type='checkbox'>");
+			}
+
+			// Table of maps
+			out.println("<table style='width:50%;margin:0 auto;' cellpadding='0' cellspacing='0' border='0' id='map_table' class='tinytable'>");
+			out.println("<thead>");
+			out.println("<tr><th class='nosort' style='text-align:center'><input id='maps_checkbox' " +
+					"onClick='toggleMapsCheckbox()' type='checkbox'></th>" +
+					"<th class='desc'><h3>Map</h3></th>" +
+			"<th class='desc'><h3>Size</h3></th></tr>");
+			out.println("</thead><tbody>");
+			for (BattlecodeMap m: Config.getServer().getMaps())
+				out.println("<tr><td><input type='checkbox' name='" + m.map + "'></td><td>" + m.map + "</td><td>" + m.getSize() + "</td></tr>");
+			out.println("</tbody></table>");
+			out.println("<input type=\"button\" value=\"Start\" onclick=\"if (newRun()) {toggleNewRun()}\"><br /></p>");
+
+			out.println("<p style='background:" + background + "'>&nbsp;</p>" +
+			"</form>");
+			out.println("</div>");
+			// End new run form
 			out.println("</div>");
 
 			ResultSet r = db.query("SELECT COUNT(*) AS total FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = 1");

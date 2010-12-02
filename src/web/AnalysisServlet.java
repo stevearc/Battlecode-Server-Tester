@@ -9,12 +9,12 @@ import java.util.HashSet;
 import common.BattlecodeMap;
 import common.Config;
 
-public class SizeAnalysisServlet extends AbstractAnalysisServlet {
-	public static final String NAME = "size_analysis.html";
+public class AnalysisServlet extends AbstractAnalysisServlet {
+	public static final String NAME = "analysis.html";
 	private static final long serialVersionUID = 5833958478703546254L;
 	String[] keys;
 
-	public SizeAnalysisServlet(){
+	public AnalysisServlet(){
 		super(NAME);
 	}
 
@@ -27,7 +27,7 @@ public class SizeAnalysisServlet extends AbstractAnalysisServlet {
 				maps.add(size);
 		}
 		out.println("<tr>" +
-		"<th class='desc'><h3>Team</h3></th>");
+		"<th class='desc'><h3>Opponent</h3></th>");
 		keys = maps.toArray(new String[maps.size()]);
 		Arrays.sort(keys);
 		for (String size: keys) {

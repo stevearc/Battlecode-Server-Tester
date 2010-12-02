@@ -37,7 +37,7 @@ public class ConnectionsServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out);
+		WebUtil.writeTabs(response, out, name);
 
 		out.println("<div id=\"tablewrapper\">");
 		WebUtil.printTableHeader(out, "conn_sorter");

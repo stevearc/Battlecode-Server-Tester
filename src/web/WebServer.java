@@ -25,7 +25,7 @@ public class WebServer implements Runnable {
 			new RunServlet(),
 			new MatchDownloadServlet(),
 			new DebugServlet(),
-			new SizeAnalysisServlet(),
+			new AnalysisServlet(),
 			new MapAnalysisServlet(),
 			new LoginServlet(),
 			new AdminServlet(),

@@ -35,6 +35,21 @@ function toggleMapsCheckbox() {
   }
 }
 
+function toggleMapsCheckbox(size) {
+  var maps_checkbox = document.getElementById("maps_checkbox_" + size);
+  var checked = maps_checkbox.checked;
+  var table = document.getElementById("map_table");
+  for (var i = 1; i < table.rows.length; i++) {
+    var toCheck = checked;
+    var cell = table.rows[i].cells[0];
+    var isCellChecked = cell.getElementsByTagName("input")[0].checked;
+    if (table.rows[i].cells[2].innerHTML != size) {
+      toCheck = isCellChecked;
+    }
+    cell.getElementsByTagName("input")[0].checked = toCheck;
+  }
+}
+
 function numSeedsChange() {
   var num_seeds = parseInt(document.getElementById('seed_selector').value);
   for(var i = 1; i < 11; i++) {
@@ -63,7 +78,12 @@ function newRun() {
   var num_matches = parseInt(document.getElementById("seed_selector").value);
   var seeds = [];
   for (var i = 1; i <= num_matches; i++) {
-    seeds.push(document.getElementById("seed" + i).getElementsByTagName("input")[0].value);
+    var seed = document.getElementById("seed" + i).getElementsByTagName("input")[0].value;
+    if (isNaN(seed) || seed <= 0) {
+      alert("Map seeds must be positive integers");
+      return false;
+    }
+    seeds.push(seed);
   }
   var maps = [];
   var table = document.getElementById("map_table");
@@ -73,11 +93,15 @@ function newRun() {
       maps.push(table.rows[i].cells[1].innerHTML);
     }
   }
+  if (maps.length == 0) {
+    alert("Must select at least one map");
+    return false;
+  }
   var url = "run.html?team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
 
 	if (team_a.length==0 || team_b.length==0) {
 		alert("Must have a non-empty team name");
-		return;
+		return false;
 	}
 	xmlhttp1=new XMLHttpRequest();
 	xmlhttp1.onreadystatechange=function() {
@@ -100,6 +124,7 @@ function newRun() {
 	}
 	xmlhttp1.open("GET",url,true);
 	xmlhttp1.send();
+  return true;
 }
 
 function delRun(id, prompt) {
@@ -259,6 +284,9 @@ function handleServerResponse(response) {
 function doRepoUpdate() {
   listenForTeamsUpdate("");
   query("GET", "admin_action", "cmd=update", null);
+  var button = document.getElementById("update_button");
+  button.value = "updating...";
+  button.onclick = "";
 }
 
 function listenForTeamsUpdate(response) {

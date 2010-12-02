@@ -43,7 +43,7 @@ public class MatchesServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out);
+		WebUtil.writeTabs(response, out, name);
 
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
@@ -81,7 +81,7 @@ public class MatchesServlet extends AbstractServlet {
 					"<thead>" + 
 					"<tr>" +
 					"<th class='desc'><h3>Map</h3></th>" +
-					"<th class='desc'><h3>Seed</h3></th>" +
+					"<th class='desc'><h3>Map seed</h3></th>" +
 					"<th class='desc'><h3>Winner</h3></th>" +
 					"<th class='desc'><h3>Size</h3></th>" +
 					"<th class='desc'><h3>Win condition</h3></th>" +

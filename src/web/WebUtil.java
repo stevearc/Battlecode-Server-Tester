@@ -14,22 +14,27 @@ import db.Database;
 
 public class WebUtil {
 
-	public static void writeTabs(HttpServletResponse response, PrintWriter out) {
+	public static void writeTabs(HttpServletResponse response, PrintWriter out, String current) {
 		out.println("<a href='" + LogoutServlet.NAME + "'>logout</a>");
 		// Header with tabs
 		out.println("<div id=\"tabs\"><h2>");
-		out.println("<ul>" +
-				"<li><a href='" + response.encodeURL(IndexServlet.NAME) + "'><span>Home</span></a></li>");
+		out.println("<ul>");
+		writeTab(out, response, current, IndexServlet.NAME, "Home");
 		if (Config.getConfig().version_control.equals("svn")) {
-			out.println("<li><a href='" + response.encodeURL(TagServlet.NAME) + "'><span>Tags</span></a></li>");
+			writeTab(out, response, current, TagServlet.NAME, "Tags");
 		}
-		out.println("<li><a href='" + response.encodeURL(ConnectionsServlet.NAME) + "'><span>Connections</span></a></li>" +
-				"<li><a href='" + response.encodeURL(SizeAnalysisServlet.NAME) + "'><span>Size Analysis</span></a></li>" +
-				"<li><a href='" + response.encodeURL(AdminServlet.NAME) + "'><span>Admin</span></a></li>" +
-		"</ul>");
+		writeTab(out, response, current, ConnectionsServlet.NAME, "Connections");
+		writeTab(out, response, current, AnalysisServlet.NAME, "Analysis");
+		writeTab(out, response, current, AdminServlet.NAME, "Admin");
+		out.println("</ul>");
 		out.println("</h2></div>");
 		out.println("<p>&nbsp;</p>");
 		out.println("<p>&nbsp;</p>");
+	}
+
+	private static void writeTab(PrintWriter out, HttpServletResponse response, String current, String url, String title) {
+		String tabTitle = (current.equals(url) ? "<font color='yellow'>" + title + "</font>" : title);
+		out.println("<li><a href='" + response.encodeURL(url) + "'><span>" + tabTitle + "</span></a></li>");
 	}
 
 	public static String getFormattedMapResults(int[] results) {
