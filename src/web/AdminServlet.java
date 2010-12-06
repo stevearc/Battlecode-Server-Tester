@@ -9,6 +9,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Admin panel for confirming new users
+ * @author stevearc
+ *
+ */
 public class AdminServlet extends AbstractServlet {
 	private static final long serialVersionUID = 1272536670071318079L;
 	public static final String NAME = "admin.html";
@@ -39,9 +44,7 @@ public class AdminServlet extends AbstractServlet {
 
 		WebUtil.writeTabs(response, out, name);	
 
-		// TODO: option to change password
-
-		if (getStatus(request, response) != 2) {
+		if (getUserStatus(request, response) != 2) {
 			out.println("<div id='tablewrapper'><h1>You are not an admin</h1></div>");
 			out.println("</body></html>");
 			return;

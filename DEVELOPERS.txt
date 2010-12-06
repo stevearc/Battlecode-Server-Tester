@@ -1,0 +1,16 @@
+################
+## Devolopers ##
+################
+
+This is a document to aid developers in understanding and adding to the code base.
+
+###########
+## Tools ##
+###########
+  * Java
+  * Eclipse
+  * Eclipse FatJar plugin (for packaging)
+
+##################
+## Architecture ##
+##################

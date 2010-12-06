@@ -44,8 +44,7 @@ fi
 set_param() {
   KEY=$1
   VAL=${2//\//\\\/}
-  sed -e 's/^'"$KEY"'=.*/'"$KEY"'='"$VAL"'/' etc/bs-tester.conf > etc/tmp.conf
-  mv etc/tmp.conf etc/bs-tester.conf
+  sed -i -e 's/^'"$KEY"'=.*/'"$KEY"'='"$VAL"'/' etc/bs-tester.conf
 }
 
 setup_client() {
@@ -180,7 +179,6 @@ setup_server() {
 
   set_param INSTALL_DIR $INSTALL_DIR
   set_param VERSION_CONTROL $VERSION_CONTROL
-  set_param REPO_ADDR $REPO_ADDR
   set_param TEAM $TEAM
   set_param SERVER $SERVER
   set_param ADMIN $ADMIN
@@ -188,10 +186,14 @@ setup_server() {
   set_param KEYSTORE_PASS $KEYSTORE_PASS
   cp etc/bs-tester.conf /etc
 
+  # Remove the ADMIN and ADMIN_PASS fields from bs-tester.conf
+  set_param ADMIN " "
+  set_param ADMIN_PASS " "
+
   # Generate bs-client.tar.gz
   DIR=`pwd | sed -e 's/.*\///'`
   cd ..
-  tar -cf $DIR/bs-client.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README.txt $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
+  tar -cf $DIR/bs-client.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README $DIR/COPYING $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
   gzip $DIR/bs-client.tar
 }
 

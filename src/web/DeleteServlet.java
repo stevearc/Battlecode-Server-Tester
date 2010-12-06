@@ -9,6 +9,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import backend.ServerMethodCaller;
 
+/**
+ * Delete the results of a run
+ * @author stevearc
+ *
+ */
 public class DeleteServlet extends AbstractServlet {
 	private static final long serialVersionUID = 4149519483270976451L;
 	public static final String NAME = "delete.html";

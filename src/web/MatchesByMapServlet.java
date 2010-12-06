@@ -13,11 +13,16 @@ import javax.servlet.http.HttpServletResponse;
 
 import common.BattlecodeMap;
 
-public class MapAnalysisServlet extends AbstractServlet {
+/**
+ * Displays matches for a given run aggregated by map
+ * @author stevearc
+ *
+ */
+public class MatchesByMapServlet extends AbstractServlet {
 	private static final long serialVersionUID = 5352256649398067730L;
-	public static final String NAME = "map_analysis.html";
+	public static final String NAME = "matches_by_map.html";
 	
-	public MapAnalysisServlet() {
+	public MatchesByMapServlet() {
 		super(NAME);
 	}
 
@@ -93,7 +98,7 @@ public class MapAnalysisServlet extends AbstractServlet {
 				out.println("<tr>");
 				out.println("<td>" + map.map + "</td>");
 				out.println("<td>" + WebUtil.getFormattedWinPercentage(WebUtil.getWinPercentage(id, map.map)) + "</td>");
-				out.println("<td>" + map.getSize() + "</td>");
+				out.println("<td>" + map.getSizeClass() + "</td>");
 				out.println("</tr>");
 			}
 			st3.close();

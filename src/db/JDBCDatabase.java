@@ -9,6 +9,11 @@ import java.util.logging.Logger;
 
 import common.Config;
 
+/**
+ * Abstract class that provides all basic methods for database interaction
+ * @author stevearc
+ *
+ */
 public abstract class JDBCDatabase implements Database {
 	protected Connection conn;
 	protected Logger _log;

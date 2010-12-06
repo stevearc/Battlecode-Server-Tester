@@ -17,7 +17,7 @@ import common.Match;
 
 /**
  * This class handles the running of battlecode matches and returning the results
- * @author steven
+ * @author stevearc
  *
  */
 
@@ -133,10 +133,10 @@ public class MatchRunner implements Runnable {
 						client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 					return;
 				}
-				// If teams not reversed and A loses, winner = 0
-				// If teams are reversed and A loses, winner = 1
+				// If A loses, winner = 0
 				winner = 0;
 			} else {
+				// If A wins, winner = 1
 				winner = 1;
 			}
 

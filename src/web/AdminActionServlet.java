@@ -12,6 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import backend.ServerMethodCaller;
 
+/**
+ * Handles queries from admin that modify the database
+ * @author stevearc
+ *
+ */
 public class AdminActionServlet extends AbstractServlet {
 	private static final long serialVersionUID = 46170148422590931L;
 	public static final String NAME = "admin_action";
@@ -33,9 +38,11 @@ public class AdminActionServlet extends AbstractServlet {
 		PrintWriter out = response.getWriter();
 
 		try {
+			// You can update the repo even if not admin
 			if ("update".equals(cmd)) {
 				ServerMethodCaller.updateRepo();
-			} else if (!isUserAdmin(myUsername)) {
+			} // Otherwise, check for admin privs
+			else if (!isUserAdmin(myUsername)) {
 				out.print("Unauthorized access");
 				return;
 			}

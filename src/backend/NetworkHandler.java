@@ -18,9 +18,8 @@ import javax.net.ssl.TrustManagerFactory;
 import common.Config;
 
 /**
- * Listens on the chosen port and adds all new incoming connections
- * to a retrievable queue.
- * @author steven
+ * Listens on the chosen port for clients and spawns threads for new connections
+ * @author stevearc
  *
  */
 public class NetworkHandler implements Runnable {

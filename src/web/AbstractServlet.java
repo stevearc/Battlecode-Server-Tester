@@ -14,6 +14,11 @@ import common.Config;
 
 import db.Database;
 
+/**
+ * Base framework for all servlets
+ * @author stevearc
+ *
+ */
 public abstract class AbstractServlet extends HttpServlet {
 	private static final long serialVersionUID = 7415725707009960270L;
 	protected static final String COOKIE_NAME = "bs-tester";
@@ -21,6 +26,10 @@ public abstract class AbstractServlet extends HttpServlet {
 	protected Database db;
 	protected Config config;
 
+	/**
+	 * 
+	 * @param name URL of servlet
+	 */
 	public AbstractServlet(String name) {
 		this.name = name;
 		config = Config.getConfig();
@@ -64,7 +73,7 @@ public abstract class AbstractServlet extends HttpServlet {
 		return username;
 	}
 	
-	protected int getStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	protected int getUserStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		Cookie auth = null;
 		int status = 0;
 		Cookie[] cookies = request.getCookies();

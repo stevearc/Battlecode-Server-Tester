@@ -11,6 +11,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import common.Config;
+
+/**
+ * Framework for one format of analysis on the match data
+ * @author stevearc
+ *
+ */
 public abstract class AbstractAnalysisServlet extends AbstractServlet {
 	private static final long serialVersionUID = 5929611248935884353L;
 
@@ -88,7 +95,7 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 
 				PreparedStatement stmt = db.prepare("SELECT id, team_a, team_b, t1.alias a_nick, t2.alias b_nick FROM runs r " +
 						"LEFT JOIN tags t1 ON r.team_a = t1.tag " +
-				"LEFT JOIN tags t2 ON r.team_b = t2.tag WHERE (r.team_a LIKE ? OR r.team_b LIKE ? OR t1.alias LIKE ? OR t2.alias LIKE ?) AND status = 2");
+				"LEFT JOIN tags t2 ON r.team_b = t2.tag WHERE (r.team_a LIKE ? OR r.team_b LIKE ? OR t1.alias LIKE ? OR t2.alias LIKE ?) AND status = " + Config.STATUS_COMPLETE);
 				stmt.setString(1, version);
 				stmt.setString(2, version);
 				stmt.setString(3, version);

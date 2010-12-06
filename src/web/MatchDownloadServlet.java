@@ -11,6 +11,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Serves the replay files
+ * @author stevearc
+ *
+ */
 public class MatchDownloadServlet extends AbstractServlet {
 	private static final long serialVersionUID = 1535716853886006962L;
 	public static final String NAME = "file.html";
@@ -32,6 +37,7 @@ public class MatchDownloadServlet extends AbstractServlet {
 			String strId = request.getParameter("id");
 			if (strId == null || !strId.matches("\\d+")) {
 				response.getWriter().println("Invalid id: " + strId);
+				return;
 			}
 
 			int id = Integer.parseInt(strId);
@@ -53,8 +59,6 @@ public class MatchDownloadServlet extends AbstractServlet {
 			config.getLogger().log(Level.WARNING, "Error serving file", e);
 		} catch (IOException e) {
 			config.getLogger().log(Level.WARNING, "Error serving file", e);
-		} catch (NumberFormatException e) {
-			config.getLogger().log(Level.WARNING, "Error with arguments", e);
 		}
 	}
 }

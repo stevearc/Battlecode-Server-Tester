@@ -17,7 +17,7 @@ import db.Database;
 /**
  * Handles the parsing of bs-tester.conf and stores
  * all the data in one convenient container
- * @author steven
+ * @author stevearc
  *
  */
 public class Config {
@@ -25,11 +25,19 @@ public class Config {
 	private static Database rootDB;
 	private static Server rootServer;
 	private static WebPollHandler webPollHandler;
+	
+	/* These constants are for interfacing with the DB */
+	public static final int STATUS_QUEUED = 0;
+	public static final int STATUS_RUNNING = 1;
+	public static final int STATUS_COMPLETE = 2;
+	public static final int STATUS_ERROR = 3;
+	public static final int STATUS_CANCELED = 4;
 
-	private boolean isServer;
-	private String log_dir = "/var/log";
-	public String keystore_pass = "";
+	/* These options must be changed in source */
+	public long timeout = 300000;
+	
 	/* These options are only specified on the command line */
+	private boolean isServer;
 	public int http_port = 80;
 	public int https_port = 443;
 	public boolean reset_db = false;
@@ -37,19 +45,20 @@ public class Config {
 	public String keystore = "";
 
 	/* These options are specified in the battlecode.conf file */
+	/** The password to the keystore */
+	public String keystore_pass = "";
+	/** The directory to place log files */
+	private String log_dir = "/var/log";
 	/** The directory the application is installed into */
 	public String install_dir = "";
-	/** The location of the repository being used */
-	public String repo = "";
-	public long timeout = 300000;
-	/** CLIENT ONLY: The internet address of the server to connect to */
-	public String server = "";
-	/** The address of the repository */
-	public String repo_addr;
-	public String admin;
-	public String admin_pass;
 	/** The port number of the server to connect to (or listen on, if running as server) */
 	public int port = 8888;
+	/** The version control program being used (currently supports git and svn) */
+	public String version_control = "";
+	/** CLIENT ONLY: The internet address of the server to connect to */
+	public String server = "";
+	/** CLIENT ONLY: The number of simultaneous matches to run at a time */
+	public int cores = 1;
 	/** SERVER ONLY: The type of database to use */
 	public String db_type = "hsql";
 	/** SERVER ONLY: The name of the database to use */
@@ -60,6 +69,14 @@ public class Config {
 	public String db_user = "battlecode";
 	/** SERVER ONLY: The password to use when connecting to the database. */
 	public String db_pass = "battlepass";
+	/** SERVER ONLY: The cutoff value for a map's area for the map to be considered "small" */
+	public int map_cutoff_small = 1000;
+	/** SERVER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
+	public int map_cutoff_medium = 2000;
+	
+	/* These options are generated from the above options */
+	/** The location of the repository being used */
+	public String repo = "";
 	/** The path to the script that will update the repository */
 	public String cmd_update = "";
 	/** The path to the script that will retrieve the appropriate teams from repository history */
@@ -68,10 +85,15 @@ public class Config {
 	public String cmd_gen_conf = "./scripts/gen_conf.sh";
 	/** The path to the script that runs the battlecode match */
 	public String cmd_run_match = "./scripts/run_match.sh";
-	/** The version control program being used (currently supports git and svn) */
-	public String version_control = "";
-	/** CLIENT ONLY: The number of simultaneous matches to run at a time */
-	public int cores = 1;
+	/** The path to the script that will remove the ADMIN and ADMIN_PASS fields from the config file */
+	public String cmd_clean_config_file = "./scripts/clean_config_file.sh";
+	
+	/* These are special case options.  They exist initially but are deleted as soon as they are
+	 * put into the database.  They start in the config file to make setup easier */
+	/** The initial web admin username */
+	public String admin = "";
+	/** The initial web admin password */
+	public String admin_pass = "";
 
 	public Config(boolean isServer) throws IOException {
 		this.isServer = isServer;
@@ -88,7 +110,8 @@ public class Config {
 			if ("".equals(line))
 				continue;
 			String[] data = line.split("=");
-			parse(data[0], data[1]);
+			if (data.length == 2)
+				parse(data[0], data[1]);
 		}
 		validate();
 		setWebPollHandler(new WebPollHandler());
@@ -182,9 +205,6 @@ public class Config {
 		else if (option.equals("admin_pass")) {
 			admin_pass = value;
 		}
-		else if (option.equals("repo_addr")) {
-			repo_addr = value;
-		}
 		else if (option.equals("log_dir")) {
 			log_dir = value;
 		}
@@ -193,6 +213,12 @@ public class Config {
 		}
 		else if (option.equals("port")) {
 			port = Integer.parseInt(value);
+		} 
+		else if (option.equals("map_cutoff_small")) {
+			map_cutoff_small = Integer.parseInt(value);
+		} 
+		else if (option.equals("map_cutoff_medium")) {
+			map_cutoff_medium = Integer.parseInt(value);
 		} 
 		else if (option.equals("db_type")) {
 			db_type = value.toLowerCase();
@@ -218,7 +244,7 @@ public class Config {
 			cores = Integer.parseInt(value);
 		}
 		else if (option.equals("team")) {
-			// pass
+			// This is only used in the commandline scripts
 		}
 		else {
 			System.err.println("Unrecognized option: " + option);
@@ -260,12 +286,6 @@ public class Config {
 
 		// Check the server values
 		if (isServer) {
-			if ("".equals(admin))
-				throw new InvalidConfigException("Admin name cannot be blank");
-
-			if ("".equals(admin_pass))
-				throw new InvalidConfigException("Admin password cannot be blank");
-
 			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
 				throw new InvalidConfigException("Invalid database type: " + db_type);
 
@@ -280,6 +300,15 @@ public class Config {
 
 			if (db_host.equals(""))
 				throw new InvalidConfigException("Must have a valid database host");
+			
+			if (map_cutoff_medium < 0)
+				throw new InvalidConfigException("MAP_CUTOFF_MEDIUM must be positive");
+			
+			if (map_cutoff_small < 0)
+				throw new InvalidConfigException("MAP_CUTOFF_SMALL must be positive");
+			
+			if (map_cutoff_medium <= map_cutoff_small)
+				throw new InvalidConfigException("MAP_CUTOFF_SMALL must be less than MAP_CUTOFF_MEDIUM");
 		}
 
 	}

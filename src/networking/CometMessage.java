@@ -1,5 +1,10 @@
 package networking;
 
+/**
+ * Message to pass to and from the CometServlet
+ * @author stevearc
+ *
+ */
 public class CometMessage {
 	private CometCmd cmd;
 	public int id;
@@ -15,6 +20,11 @@ public class CometMessage {
 		return cmd;
 	}
 	
+	/**
+	 * Get argument of index "index"
+	 * @param index
+	 * @return
+	 */
 	public String get(int index) {
 		return args[index];
 	}

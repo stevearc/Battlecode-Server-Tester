@@ -12,6 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+/**
+ * Serves static image files of type png, jpg, tiff, gif, and bmp
+ * @author stevearc
+ *
+ */
 public class ImageHandler extends AbstractHandler {
 	private static final String imageRegex = ".+\\.(png|jpg|jpeg|tiff|gif|bmp)";
 

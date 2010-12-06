@@ -9,8 +9,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import backend.ServerMethodCaller;
 
-import common.MatchSet;
-
+/**
+ * Queue up a new run
+ * @author stevearc
+ *
+ */
 public class RunServlet extends AbstractServlet {
 	private static final long serialVersionUID = -5024779464960322694L;
 	public static final String NAME = "run.html";
@@ -53,8 +56,7 @@ public class RunServlet extends AbstractServlet {
 			}
 		}
 		try {
-			MatchSet ms = new MatchSet(team_a, team_b);
-			ServerMethodCaller.queueRun(ms, seeds.split(","), maps.split(","));
+			ServerMethodCaller.queueRun(team_a, team_b, seeds.split(","), maps.split(","));
 			out.print("success");
 		} catch (Exception e) {
 			e.printStackTrace(out);

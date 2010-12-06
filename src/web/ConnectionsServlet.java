@@ -12,6 +12,11 @@ import backend.ClientRepr;
 import common.Config;
 import common.Match;
 
+/**
+ * Display current connected clients
+ * @author stevearc
+ *
+ */
 public class ConnectionsServlet extends AbstractServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
 	public static final String NAME = "connections.html";

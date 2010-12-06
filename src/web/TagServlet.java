@@ -10,6 +10,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Page that allows svn users to tag revisions of their code
+ * @author stevearc
+ *
+ */
 public class TagServlet extends AbstractServlet {
 	private static final long serialVersionUID = 2078692431361452598L;
 	public static final String NAME="tags.html";
@@ -84,6 +89,12 @@ public class TagServlet extends AbstractServlet {
 		out.println("</body></html>");
 	}
 
+	/**
+	 * When receive the GET request with new info, update the DB
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 */
 	private void doUpdate(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.setContentType("text/json");
 		response.setStatus(HttpServletResponse.SC_OK);

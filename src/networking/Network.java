@@ -11,7 +11,7 @@ import common.Config;
 
 /**
  * Sends and receives packets to and from one other Network at a remote location
- * @author steven
+ * @author stevearc
  *
  */
 public class Network implements Runnable{
@@ -77,7 +77,7 @@ public class Network implements Runnable{
 				try {
 					packet = (Packet) ois.readObject();
 				} catch (ClassNotFoundException e) {
-					_log.log(Level.SEVERE, "Could not find class during packet deserialization", e);
+					_log.log(Level.WARNING, "Could not find class during packet deserialization", e);
 					return;
 				}
 

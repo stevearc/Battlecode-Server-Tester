@@ -13,7 +13,7 @@ import common.Config;
 
 /**
  * Redirect traffic on port 80 to port 443 to enforce SSL
- * @author steven
+ * @author stevearc
  *
  */
 public class ProxyServer implements Runnable {

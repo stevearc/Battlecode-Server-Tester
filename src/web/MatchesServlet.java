@@ -12,6 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import common.BattlecodeMap;
 
+/**
+ * View all the matches from a single run
+ * @author stevearc
+ *
+ */
 public class MatchesServlet extends AbstractServlet {
 	private static final long serialVersionUID = 3122992891626513814L;
 	public static final String NAME = "matches.html";
@@ -67,7 +72,7 @@ public class MatchesServlet extends AbstractServlet {
 			out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
 			out.println("<br />");
 			out.println("<div class='tabbutton'>");
-			out.println("<a onClick='document.location=\"" + response.encodeURL(MapAnalysisServlet.NAME) + "?id=" + id + "\"' " +
+			out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "\"' " +
 			"style='cursor:pointer;'><span>View by map</span></a>");
 			out.println("<p>&nbsp;</p>");
 			out.println("<p>&nbsp;</p>");
@@ -102,7 +107,7 @@ public class MatchesServlet extends AbstractServlet {
 				out.println("<td>" + map.map + "</td>");
 				out.println("<td>" + rs3.getInt("seed") + "</td>");
 				out.println("<td><font color='" + (rs3.getInt("win") == 1 ? "red'>" + team_a : "blue'>" + team_b) + "</font></td>");
-				out.println("<td>" + map.getSize() + "</td>");
+				out.println("<td>" + map.getSizeClass() + "</td>");
 				out.println("<td>" + win_conditions[rs3.getInt("win_condition")] + "</td>");
 				out.println("<td><font color='red'>" + a_points + "</font>/<font color='blue'>" + 
 						b_points + "</font></td>");

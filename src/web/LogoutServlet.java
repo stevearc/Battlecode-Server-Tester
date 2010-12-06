@@ -9,6 +9,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Removes the user's cookies and deletes their session from the DB
+ * @author stevearc
+ *
+ */
 public class LogoutServlet extends AbstractServlet {
 	private static final long serialVersionUID = 2965899260728547098L;
 	public static final String NAME = "logout.html";

@@ -14,9 +14,15 @@ import org.eclipse.jetty.servlet.ServletHolder;
 
 import common.Config;
 
+/**
+ * Starts the threads that run the web server
+ * @author stevearc
+ *
+ */
 public class WebServer implements Runnable {
 	private Config config;
 	private Logger _log;
+	/** Must put any new servlets in this array to load them into the web server */
 	private AbstractServlet[] servlets = {
 			new IndexServlet(),
 			new ConnectionsServlet(),
@@ -24,9 +30,8 @@ public class WebServer implements Runnable {
 			new MatchesServlet(),
 			new RunServlet(),
 			new MatchDownloadServlet(),
-			new DebugServlet(),
 			new AnalysisServlet(),
-			new MapAnalysisServlet(),
+			new MatchesByMapServlet(),
 			new LoginServlet(),
 			new AdminServlet(),
 			new LogoutServlet(),
@@ -55,17 +60,17 @@ public class WebServer implements Runnable {
 			ServletHolder sh = new ServletHolder(new CometServlet());
 			context.addServlet(sh, "/comet/*");
 
-			// Add the javascript path
+			// Serve static javascript files
 			ContextHandler jsContext = new ContextHandler();
 			jsContext.setContextPath("/js");
 			jsContext.setHandler(new StaticFileHandler("text/javascript", ".+\\.js"));
 			
-			// Add the css path
+			// Serve static css files
 			ContextHandler cssContext = new ContextHandler();
 			cssContext.setContextPath("/css");
 			cssContext.setHandler(new StaticFileHandler("text/css", ".+\\.css"));
 			
-			// Add the img path
+			// Serve static image files
 			ContextHandler imgContext = new ContextHandler();
 			imgContext.setContextPath("/images");
 			imgContext.setHandler(new ImageHandler());

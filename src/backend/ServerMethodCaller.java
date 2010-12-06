@@ -5,21 +5,35 @@ import java.sql.SQLException;
 import networking.Packet;
 
 import common.Config;
-import common.MatchSet;
 
+/**
+ * Provides static methods to perform asynchronous calls to the Server
+ * @author stevearc
+ *
+ */
 public class ServerMethodCaller {
 
-	public static void queueRun(final MatchSet run, final String[] seeds, final String[] maps) {
+	/**
+	 * Queues a run
+	 * @param run
+	 * @param seeds
+	 * @param maps
+	 */
+	public static void queueRun(final String team_a, final String team_b, final String[] seeds, final String[] maps) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getServer().queueRun(run, seeds, maps);
+				Config.getServer().queueRun(team_a, team_b, seeds, maps);
 			}
 
 		}).start();
 	}
 
+	/**
+	 * Delete run data
+	 * @param run_id
+	 */
 	public static void deleteRun(final int run_id) {
 		new Thread(new Runnable(){
 
@@ -31,17 +45,25 @@ public class ServerMethodCaller {
 		}).start();
 	}
 
-	public static void pokeServer() {
+	/**
+	 * Start the server if it hasn't been running
+	 */
+	public static void startServer() {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getServer().poke();
+				Config.getServer().start();
 			}
 
 		}).start();
 	}
 
+	/**
+	 * Send the finished match data to the server
+	 * @param client
+	 * @param p
+	 */
 	public static void matchFinished(final ClientRepr client, final Packet p) {
 		new Thread(new Runnable(){
 
@@ -53,6 +75,10 @@ public class ServerMethodCaller {
 		}).start();
 	}
 
+	/**
+	 * Tell the server to send matches to a client
+	 * @param client
+	 */
 	public static void sendClientMatches(final ClientRepr client) {
 		new Thread(new Runnable(){
 
@@ -64,6 +90,9 @@ public class ServerMethodCaller {
 		}).start();
 	}
 	
+	/**
+	 * Update the repository
+	 */
 	public static void updateRepo() {
 		new Thread(new Runnable(){
 

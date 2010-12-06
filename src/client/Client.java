@@ -26,8 +26,8 @@ import common.Config;
 import common.Match;
 
 /**
- * Handles connecting to server and running matches
- * @author steven
+ * Connects to server and runs matches
+ * @author stevearc
  *
  */
 public class Client implements Controller, Runnable {
@@ -43,6 +43,7 @@ public class Client implements Controller, Runnable {
 		config = Config.getConfig();
 		_log = config.getLogger();
 
+		// Connect to the server using the certificate in the keystore
 		KeyStore keystore = KeyStore.getInstance("JKS");
 		keystore.load(new FileInputStream(config.keystore), config.keystore_pass.toCharArray());
 
@@ -60,6 +61,17 @@ public class Client implements Controller, Runnable {
 		sf = context.getSocketFactory();
 	}
 
+	/**
+	 * Send match data to server
+	 * @param mr
+	 * @param match
+	 * @param status
+	 * @param winner
+	 * @param win_condition
+	 * @param a_points
+	 * @param b_points
+	 * @param data
+	 */
 	public synchronized void matchFinish(MatchRunner mr, Match match, String status, int winner, 
 			int win_condition, int a_points, int b_points, byte[] data) {
 		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, win_condition, a_points, b_points, data});

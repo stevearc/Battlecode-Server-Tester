@@ -13,6 +13,11 @@ import networking.PacketCmd;
 import common.Config;
 import common.Match;
 
+/**
+ * Representation of a client that is used by the server
+ * @author stevearc
+ *
+ */
 public class ClientRepr implements Controller {
 	private Config config;
 	private Logger _log;
@@ -27,30 +32,51 @@ public class ClientRepr implements Controller {
 		runningMatches = new ArrayList<Match>();
 	}
 
+	/**
+	 * Messages client telling it to run a Match
+	 * @param m The Match to run
+	 */
 	public synchronized void runMatch(Match m) {
 		runningMatches.add(m);
 		Packet p = new Packet(PacketCmd.RUN, new Object[] {m});
 		net.send(p);
 	}
 
+	/**
+	 * Messages client telling it to stop the matches it's running
+	 */
 	public synchronized void stopAllMatches() {
 		Packet p = new Packet(PacketCmd.STOP, new Object[] {});
 		net.send(p);
 		runningMatches.clear();
 	}
 
+	/**
+	 * 
+	 * @return True if client can accept more matches
+	 */
 	public boolean isFree() {
 		return runningMatches.size() < numCores;
 	}
 
+	/**
+	 * Start running the networking thread
+	 */
 	public void start() {
 		new Thread(net).start();
 	}
 
+	/**
+	 * Close the connection and stop running processes
+	 */
 	public synchronized void stop() {
 		net.close();
 	}
 
+	/**
+	 * 
+	 * @return List of all Matches currently being run on the Client
+	 */
 	public synchronized ArrayList<Match> getRunningMatches() {
 		return runningMatches;
 	}
@@ -76,6 +102,10 @@ public class ClientRepr implements Controller {
 		return net.toString() + ": " + runningMatches;
 	}
 
+	/**
+	 * Formats the ClientRepr for display on the web server
+	 * @return
+	 */
 	public String toHTML() {
 		String[] addrs = net.toString().split("/");
 			return "<a>" + addrs[1] + "</a>";

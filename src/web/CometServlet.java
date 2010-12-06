@@ -14,6 +14,11 @@ import backend.WebPollHandler;
 
 import common.Config;
 
+/**
+ * Handle all Comet requests.  Communicates with Server via WebPollHandler.
+ * @author stevearc
+ *
+ */
 public class CometServlet extends AbstractServlet {
 	private static final long serialVersionUID = 3140389708838079253L;
 	public static final String NAME = "comet";
@@ -34,20 +39,28 @@ public class CometServlet extends AbstractServlet {
 		poll(request, response);
 	}
 
+	/**
+	 * Uses Jetty Continuations to do an HTTP long poll.  When Server has information, it will send response to client
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 */
 	private synchronized void poll(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		PrintWriter out = response.getWriter();
 
 		Object r = request.getAttribute("response");
+		// If this is the request, create a continuation and subscribe the client to a channel
 		if (r == null) {
 			Continuation continuation = ContinuationSupport.getContinuation(request);
 			if (continuation.isInitial()) {
 				continuation.suspend();
 				String channel = request.getParameter("channel");
 				String lastheard = request.getParameter("lastheard");
-				wph.addContinuation(channel, continuation, Integer.parseInt(lastheard));
+				wph.subscribe(channel, continuation, Integer.parseInt(lastheard));
 				continuation.undispatch();
 			}
-		} else {
+		} // Otherwise, this is the Server sending a response.  Send the client data.
+		else {
 			response.setContentType("text/json;charset=utf-8");
 			out.print(r.toString());
 		}

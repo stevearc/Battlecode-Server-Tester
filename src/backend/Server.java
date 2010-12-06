@@ -11,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Random;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,13 +21,12 @@ import networking.Packet;
 import common.BattlecodeMap;
 import common.Config;
 import common.Match;
-import common.MatchSet;
 
 import db.Database;
 
 /**
  * Handles distribution of load to connected Clients
- * @author steven
+ * @author stevearc
  *
  */
 public class Server {
@@ -46,21 +44,30 @@ public class Server {
 		wph = Config.getWebPollHandler();
 		_log = config.getLogger();
 		handler = new NetworkHandler();
-		new Thread(handler).start();
 	}
 
-	public synchronized void poke() {
+	/**
+	 * Start running the server
+	 */
+	public synchronized void start() {
 		try {
+			new Thread(handler).start();
 			startRun();
 		} catch (SQLException e) {
 		}
 	}
 
-	public synchronized void queueRun(MatchSet run, String[] seeds, String[] mapNames) {
+	/**
+	 * Add a run to the queue
+	 * @param run
+	 * @param seeds
+	 * @param mapNames
+	 */
+	public synchronized void queueRun(String team_a, String team_b, String[] seeds, String[] mapNames) {
 		try {
 			PreparedStatement st = db.prepare("INSERT INTO runs (team_a, team_b) VALUES (?, ?)");
-			st.setString(1, run.getTeam_a());
-			st.setString(2, run.getTeam_b());
+			st.setString(1, team_a);
+			st.setString(2, team_b);
 			db.update(st, true);
 			ResultSet rs = db.query("SELECT MAX(id) as newest FROM runs"); 
 			rs.next();
@@ -83,7 +90,7 @@ public class Server {
 				}
 			}
 			wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {""+id, 
-					getTeamNameOrAlias(run.getTeam_a()), getTeamNameOrAlias(run.getTeam_b())}));
+					getTeamNameOrAlias(team_a), getTeamNameOrAlias(team_b)}));
 			startRun();
 		} catch (SQLException e) {
 		}
@@ -100,10 +107,14 @@ public class Server {
 		return team;
 	}
 
+	/**
+	 * Delete run data
+	 * @param runId
+	 */
 	public synchronized void deleteRun(int runId) {
 		try {
 			if (runId == getCurrentId()) {
-				stopCurrentRun();
+				stopCurrentRun(Config.STATUS_CANCELED);
 				startRun();
 			} else {
 				db.update("DELETE FROM matches WHERE run_id = " + runId, true);
@@ -114,6 +125,10 @@ public class Server {
 		}
 	}
 
+	/**
+	 * Process a client connecting
+	 * @param client
+	 */
 	public synchronized void clientConnect(ClientRepr client) {
 		_log.info("Client connected: " + client);
 		clients.add(client);
@@ -121,12 +136,21 @@ public class Server {
 		sendClientMatches(client);
 	}
 
+	/**
+	 * Process a client disconnecting
+	 * @param client
+	 */
 	public synchronized void clientDisconnect(ClientRepr client) {
 		_log.info("Client disconnected: " + client);
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {client.toHTML()}));
 		clients.remove(client);
 	}
 
+	/**
+	 * Save data from a finished match
+	 * @param client
+	 * @param p
+	 */
 	public synchronized void matchFinished(ClientRepr client, Packet p) {
 		Match m = (Match) p.get(0);
 		String status = (String) p.get(1);
@@ -157,7 +181,7 @@ public class Server {
 
 				// If finished, start next run
 				if (getMatchesLeft().isEmpty()) {
-					stopCurrentRun();
+					stopCurrentRun(Config.STATUS_COMPLETE);
 					startRun();
 				}
 
@@ -166,7 +190,7 @@ public class Server {
 			}
 
 			if (getMatchesLeft().isEmpty()) {
-				stopCurrentRun();
+				stopCurrentRun(Config.STATUS_COMPLETE);
 				startRun();
 			} else {
 				sendClientMatches(client);
@@ -175,24 +199,10 @@ public class Server {
 		}
 	}
 
-	public synchronized String debugDump() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Maps: " + maps);
-		sb.append("\n");
-		try {
-			if (getCurrentId() != -1) {
-				sb.append("Matches left: " + getMatchesLeft());
-				sb.append("\n");
-				sb.append("Matches left not running: " + getMatchesLeftAndNotRunning());
-				sb.append("\n");
-			}
-		} catch (SQLException e) {
-		}
-		sb.append("Clients: " + clients);
-		sb.append("\n");
-		return sb.toString();
-	}
-
+	/**
+	 * Send matches to a client until they are saturated
+	 * @param client
+	 */
 	public synchronized void sendClientMatches(ClientRepr client) {
 		try {
 			HashSet<Match> matches = getMatchesLeftAndNotRunning();
@@ -204,7 +214,8 @@ public class Server {
 				client.runMatch(m);
 			}
 
-			// If we are currently running all necessary maps, add some redundancy
+			// If we are currently running all necessary maps, add some redundancy by
+			// Sending this client random maps that other clients are currently running
 			Match[] matchIndex = getMatchesLeft().toArray(new Match[0]);
 			Random r = new Random();
 			if (client.isFree()) {
@@ -219,16 +230,17 @@ public class Server {
 		if (getCurrentId() != -1)
 			return;
 
-		ResultSet rs = db.query("SELECT * FROM runs WHERE status = 0 ORDER BY id");
+		ResultSet rs = db.query("SELECT * FROM runs WHERE status = " + Config.STATUS_QUEUED + " ORDER BY id");
 		if (!rs.next()) {
 			return;
 		}
-		MatchSet run = new MatchSet(rs.getString("team_a"), rs.getString("team_b"));
-		db.update("UPDATE runs SET status = 1, started = NOW() WHERE id = " + rs.getInt("id"), true);
-		if (!validateTeams(run)) {
-			PreparedStatement stmt = db.prepare("UPDATE runs SET status = 3 WHERE team_a LIKE ? AND team_b LIKE ?");
-			stmt.setString(1, run.getTeam_a());
-			stmt.setString(2, run.getTeam_b());
+		String team_a = rs.getString("team_a");
+		String team_b = rs.getString("team_b");
+		db.update("UPDATE runs SET status = " + Config.STATUS_RUNNING + ", started = NOW() WHERE id = " + rs.getInt("id"), true);
+		if (!validateTeams(team_a, team_b)) {
+			PreparedStatement stmt = db.prepare("UPDATE runs SET status = " + Config.STATUS_ERROR + " WHERE team_a LIKE ? AND team_b LIKE ?");
+			stmt.setString(1, team_a);
+			stmt.setString(2, team_b);
 			db.update(stmt, true);
 			wph.broadcastMsg("matches", new CometMessage(CometCmd.RUN_ERROR, new String[] {""+rs.getInt("id")}));
 			startRun();
@@ -244,7 +256,7 @@ public class Server {
 	}
 
 	private int getCurrentId() throws SQLException {
-		ResultSet rs = db.query("SELECT id FROM runs WHERE status = 1");
+		ResultSet rs = db.query("SELECT id FROM runs WHERE status = " + Config.STATUS_RUNNING);
 		if (rs.next()) {
 			return rs.getInt("id");
 		} else {
@@ -252,11 +264,11 @@ public class Server {
 		}
 	}
 
-	private void stopCurrentRun() throws SQLException {
+	private void stopCurrentRun(int status) throws SQLException {
 		_log.info("Stopping current run");
 		int id = getCurrentId();
-		db.update("UPDATE runs SET status = 2, ended = NOW() WHERE id = " + id, true);
-		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+id}));
+		db.update("UPDATE runs SET status = " + status + ", ended = NOW() WHERE id = " + id, true);
+		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+id, ""+status}));
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.FINISH_RUN, new String[] {}));
 		for (ClientRepr c: clients) {
 			c.stopAllMatches();
@@ -264,7 +276,7 @@ public class Server {
 	}
 
 	private HashSet<Match> getMatchesLeft() throws SQLException {
-		ResultSet rs = db.query("SELECT id, team_a, team_b FROM runs WHERE status = 1");
+		ResultSet rs = db.query("SELECT id, team_a, team_b FROM runs WHERE status = " + Config.STATUS_RUNNING);
 		rs.next();
 		int run = rs.getInt("id");
 		String team_a = rs.getString("team_a");
@@ -290,11 +302,9 @@ public class Server {
 		return matchesLeft;
 	}
 
-	private boolean validateTeams(MatchSet run) throws SQLException {
+	private boolean validateTeams(String team_a, String team_b) throws SQLException {
 		updateRepo();
 
-		String team_a = run.getTeam_a();
-		String team_b = run.getTeam_b();
 		PreparedStatement st = db.prepare("SELECT * FROM tags WHERE tag LIKE ? OR alias LIKE ?");
 		st.setString(1, team_a);
 		st.setString(2, team_a);
@@ -317,6 +327,10 @@ public class Server {
 		return true;
 	}
 
+	/**
+	 * Update the repository
+	 * @throws SQLException
+	 */
 	public synchronized void updateRepo() throws SQLException {
 		try {
 			Process p = Runtime.getRuntime().exec(new String[] {config.cmd_update, "server"});
@@ -336,6 +350,9 @@ public class Server {
 		}
 	}
 
+	/**
+	 * Update the list of available maps
+	 */
 	public synchronized void updateMaps() {
 		File file = new File(config.repo + "/maps");
 		File[] mapFiles = file.listFiles(new FilenameFilter() {
@@ -354,10 +371,18 @@ public class Server {
 		}
 	}
 
-	public Set<ClientRepr> getConnections() {
+	/**
+	 * 
+	 * @return Currently connected clients
+	 */
+	public HashSet<ClientRepr> getConnections() {
 		return clients;
 	}
 
+	/**
+	 * 
+	 * @return All known maps
+	 */
 	public HashSet<BattlecodeMap> getMaps() {
 		return maps;
 	}
@@ -374,4 +399,3 @@ public class Server {
 	}
 
 }
-

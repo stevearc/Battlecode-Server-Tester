@@ -2,6 +2,11 @@ package networking;
 
 import java.io.Serializable;
 
+/**
+ * Wrapper object to send data between client and server
+ * @author stevearc
+ *
+ */
 public class Packet implements Serializable {
 	private static final long serialVersionUID = -5973999222662430037L;
 	private PacketCmd cmd;

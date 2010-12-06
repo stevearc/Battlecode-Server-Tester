@@ -180,13 +180,16 @@ function startRun(rowid, num_matches) {
   }
 }
 
-function finishRun(rowid) {
+function finishRun(rowid, run_status) {
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
     id = table.rows[i].cells[0].innerHTML;
     if (id == rowid) {
       var status_row = table.rows[i].cells[row_map['STATUS']];
-      status_row.innerHTML = "Complete";
+      if (run_status == 2)
+        status_row.innerHTML = "Complete";
+      else if (run_status == 4)
+        status_row.innerHTML = "Canceled";
       var time_row = table.rows[i].cells[row_map['TIME']];
       var time = document.getElementById("cntdwn").innerHTML;
       time_row.innerHTML = time;
@@ -268,7 +271,7 @@ function handleServerResponse(response) {
     } else if (cmd == "START_RUN") {
       startRun(args[2], args[3]);
     } else if (cmd == "FINISH_RUN") {
-      finishRun(args[2]);
+      finishRun(args[2], args[3]);
     } else if (cmd == "MATCH_FINISHED") {
       matchFinished(args[2], parseInt(args[3]));
     } else if (cmd == "RUN_ERROR") {

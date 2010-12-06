@@ -1,5 +1,10 @@
 package common;
 
+/**
+ * Simple class for formatting times
+ * @author stevearc
+ *
+ */
 public class Timer {
 	private long millis;
 	

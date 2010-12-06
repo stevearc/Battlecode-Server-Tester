@@ -18,6 +18,11 @@ import common.BattlecodeMap;
 import common.Config;
 import common.Timer;
 
+/**
+ * Displays the list of all runs
+ * @author stevearc
+ *
+ */
 public class IndexServlet extends AbstractServlet {
 	private static final long serialVersionUID = -2587225634870177013L;
 	public static final String NAME = "index.html";
@@ -81,6 +86,7 @@ public class IndexServlet extends AbstractServlet {
 						rs.getInt("id") + " AND win IS NOT NULL");
 				mapsQuery.next();
 				String td;
+				// Make runs with data clickable
 				if (status == 1 || status == 2)
 					td = "<td onClick='doNavMatches(" + rs.getInt("id") + ")' style='cursor:pointer'>";
 				else
@@ -91,12 +97,12 @@ public class IndexServlet extends AbstractServlet {
 						td + team_b + "</td>" +				
 						td + mapsQuery.getInt("wins") + "/" + (mapsQuery.getInt("maps")-mapsQuery.getInt("wins")) + "</td>");
 				switch (status){
-				case 0:
+				case 0: // Run queued
 					out.println("<td>Queued</td>");
 					out.println("<td>&nbsp</td>");
 					out.println("<td><input type=\"button\" value=\"dequeue\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
 					break;
-				case 1:
+				case 1: // Run currently running
 					out.println(td + "Running</td>");
 					Timestamp now = rs.getTimestamp("now");
 					Timestamp started = rs.getTimestamp("started");
@@ -105,7 +111,7 @@ public class IndexServlet extends AbstractServlet {
 					out.println(td + "<a id=\"cntdwn\" name=" + startTime + "></a></td>");
 					out.println("<td><input type=\"button\" value=\"cancel\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
 					break;
-				case 2:
+				case 2: // Run complete
 					out.println(td + "Complete</td>");
 					Timestamp ended = rs.getTimestamp("ended");
 					Timestamp start = rs.getTimestamp("started");
@@ -113,12 +119,20 @@ public class IndexServlet extends AbstractServlet {
 					out.println(td + new Timer(taken) + "</td>");
 					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ", true)\"></td>");
 					break;
-				case 3:
+				case 3: // Run finished with errors
 					out.println("<td>Error</td>");
 					out.println("<td>&nbsp</td>");
 					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
 					break;
-				default:
+				case 4: // Run was canceled
+					out.println(td + "Canceled</td>");
+					Timestamp end = rs.getTimestamp("ended");
+					Timestamp strt = rs.getTimestamp("started");
+					long take = end.getTime() - strt.getTime();
+					out.println(td + new Timer(take) + "</td>");
+					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ", true)\"></td>");
+					break;
+				default: // Run finished with wtf errors
 					out.println("<td>Unknown Error</td>");
 					out.println("<td>&nbsp</td>");
 					out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + rs.getInt("id") + ", false)\"></td>");
@@ -132,7 +146,7 @@ public class IndexServlet extends AbstractServlet {
 			out.println("</table>");
 			WebUtil.printTableFooter(out, "sorter");
 			
-			// Begin new run form
+			// Begin the New Run form
 			ArrayList<String> tags = new ArrayList<String>();
 			HashMap<String, String> tagMap = new HashMap<String, String>();
 			ResultSet tagSet = db.query("SELECT * FROM tags");
@@ -193,7 +207,7 @@ public class IndexServlet extends AbstractServlet {
 			"<th class='desc'><h3>Size</h3></th></tr>");
 			out.println("</thead><tbody>");
 			for (BattlecodeMap m: Config.getServer().getMaps())
-				out.println("<tr><td><input type='checkbox' name='" + m.map + "'></td><td>" + m.map + "</td><td>" + m.getSize() + "</td></tr>");
+				out.println("<tr><td><input type='checkbox' name='" + m.map + "'></td><td>" + m.map + "</td><td>" + m.getSizeClass() + "</td></tr>");
 			out.println("</tbody></table>");
 			out.println("<input type=\"button\" value=\"Start\" onclick=\"if (newRun()) {toggleNewRun()}\"><br /></p>");
 
@@ -203,13 +217,13 @@ public class IndexServlet extends AbstractServlet {
 			// End new run form
 			out.println("</div>");
 
-			ResultSet r = db.query("SELECT COUNT(*) AS total FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = 1");
+			ResultSet r = db.query("SELECT COUNT(*) AS total FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = " + Config.STATUS_RUNNING);
 			r.next();
 			out.println("<script type=\"text/javascript\">");
 			out.println("var total_num_matches = " + r.getInt("total"));
 			out.println("</script>");
 			r.close();
-			r = db.query("SELECT COUNT(*) AS current FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = 1 AND m.win IS NOT NULL");
+			r = db.query("SELECT COUNT(*) AS current FROM matches m JOIN runs r ON m.run_id = r.id WHERE r.status = " + Config.STATUS_RUNNING + " AND m.win IS NOT NULL");
 			r.next();
 			out.println("<script type=\"text/javascript\">");
 			out.println("var current_num_matches = " + r.getInt("current"));

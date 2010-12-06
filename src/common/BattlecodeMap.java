@@ -14,6 +14,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+/**
+ * Representation of map information to be sent over network between Client and Server
+ * @author stevearc
+ *
+ */
 public class BattlecodeMap implements Serializable {
 	private static final long serialVersionUID = -3033262234181516847L;
 	public String map;
@@ -22,6 +27,13 @@ public class BattlecodeMap implements Serializable {
 	public int rounds;
 	public int points;
 
+	/**
+	 * Reads file and parses out necessary information
+	 * @param map
+	 * @throws ParserConfigurationException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
 	public BattlecodeMap(File map) throws ParserConfigurationException, SAXException, IOException {
 		this.map = map.getName().substring(0, map.getName().length() - 4);
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -42,6 +54,14 @@ public class BattlecodeMap implements Serializable {
 		points = Integer.parseInt(nl.getNamedItem("points").getNodeValue());
 	}
 	
+	/**
+	 * Manually specify necessary information
+	 * @param map
+	 * @param height
+	 * @param width
+	 * @param rounds
+	 * @param points
+	 */
 	public BattlecodeMap(String map, int height, int width, int rounds, int points) {
 		this.map = map;
 		this.height = height;
@@ -50,11 +70,23 @@ public class BattlecodeMap implements Serializable {
 		this.points = points;
 	}
 	
-	public String getSize() {
-		int area = width * height;
-		if (area < 1000)
+	/**
+	 * 
+	 * @return The area of the map
+	 */
+	public int getSize() {
+		return width * height;
+	}
+	
+	/**
+	 * 
+	 * @return The size classifier for the map (small, medium, large)
+	 */
+	public String getSizeClass() {
+		int area = getSize();
+		if (area < Config.getConfig().map_cutoff_small)
 			return "small";
-		else if (area < 2000)
+		else if (area < Config.getConfig().map_cutoff_medium)
 			return "medium";
 		else
 			return "large";

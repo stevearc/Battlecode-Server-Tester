@@ -15,6 +15,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import common.Util;
 
+/**
+ * Displays the login form
+ * @author stevearc
+ *
+ */
 public class LoginServlet extends AbstractServlet {
 	private static final long serialVersionUID = 4347939279807133754L;
 	public static final String NAME = "login.html";

@@ -12,8 +12,19 @@ import common.Config;
 
 import db.Database;
 
+/**
+ * Utility class with static methods for common web server functions
+ * @author stevearc
+ *
+ */
 public class WebUtil {
 
+	/**
+	 * Write the HTML for the tabs at the top of the page
+	 * @param response 
+	 * @param out
+	 * @param current Name of the current tab (to be highlighted)
+	 */
 	public static void writeTabs(HttpServletResponse response, PrintWriter out, String current) {
 		out.println("<a href='" + LogoutServlet.NAME + "'>logout</a>");
 		// Header with tabs
@@ -37,11 +48,24 @@ public class WebUtil {
 		out.println("<li><a href='" + response.encodeURL(url) + "'><span>" + tabTitle + "</span></a></li>");
 	}
 
+	/**
+	 * Gets the HTML for the format of the map results
+	 * @param results int[3] of {red team wins, ties, blue team wins}
+	 * @return
+	 */
 	public static String getFormattedMapResults(int[] results) {
 		return "<font color='red'>" + results[0] + "</font>/<font color='gray'>" + results[1] + 
 		"</font>/<font color='blue'>" + results[2] + "</font>";
 	}
 
+	/**
+	 * Get the win/tie/loss results for a particular run
+	 * @param runid
+	 * @param maps List of maps to get results for (null if all maps)
+	 * @param reverse If true, then swap team A and team B
+	 * @return int[3] of {red team wins, ties, blue team wins}
+	 * @throws SQLException
+	 */
 	public static int[] getMapResults(int runid, HashSet<String> maps, boolean reverse) throws SQLException {
 		int[] results = new int[3];
 		if (maps == null) {
@@ -63,6 +87,7 @@ public class WebUtil {
 
 	private static int getMapResult(int runid, String map) throws SQLException {
 		float ratio = getWinPercentage(runid, map);
+		// These are the thresholds for determining which team "won" on a map
 		if (ratio < 0.3)
 			return 2;
 		else if (ratio < 0.7)
@@ -71,6 +96,13 @@ public class WebUtil {
 			return 0;
 	}
 
+	/**
+	 * Get the win percentage of team A on a given map for a given run
+	 * @param runid
+	 * @param map
+	 * @return
+	 * @throws SQLException
+	 */
 	public static float getWinPercentage(int runid, String map) throws SQLException {
 		Database db = Config.getDB();
 		PreparedStatement stmt = db.prepare("SELECT SUM(win) AS wins, COUNT(*) AS total FROM matches WHERE run_id = ? AND win IS NOT NULL AND map LIKE ?");
@@ -84,6 +116,11 @@ public class WebUtil {
 		return (float) wins/ (float) total;
 	}
 
+	/**
+	 * Gets the HTML for displaying the win percentage with appropriate colors
+	 * @param percent
+	 * @return
+	 */
 	public static String getFormattedWinPercentage(float percent) {
 		if (percent < 0.3)
 			return "<font color='blue'>" + (int) (100*percent) + "</font>";
@@ -93,6 +130,11 @@ public class WebUtil {
 			return "<font color='red'>" + (int) (100*percent) + "</font>";
 	}
 
+	/**
+	 * Print the header for the tinytable
+	 * @param out
+	 * @param sorter Name of the sorter initialized in the .js file
+	 */
 	public static void printTableHeader(PrintWriter out, String sorter) {
 		out.println("<div id=\"tableheader\">" +
 				"<div class=\"search\">" +
@@ -107,6 +149,11 @@ public class WebUtil {
 		out.println("</div>");
 	}
 
+	/**
+	 * Print the footer for the tinytable
+	 * @param out
+	 * @param sorter Name of the sorter initialized in the .js file
+	 */
 	public static void printTableFooter(PrintWriter out, String sorter) {
 		out.println("<div id=\"tablefooter\">");
 		out.println("<div id=\"tablenav\">");

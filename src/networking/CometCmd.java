@@ -1,4 +1,9 @@
 package networking;
+/**
+ * Possible commands to pass from server to client
+ * @author stevearc
+ *
+ */
 
 public enum CometCmd {
 DELETE_TABLE_ROW,

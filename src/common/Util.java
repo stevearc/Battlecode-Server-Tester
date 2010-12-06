@@ -4,6 +4,11 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Provides static utility functions
+ * @author stevearc
+ *
+ */
 public class Util {
 	private static String convertToHex(byte[] data) { 
 		StringBuffer buf = new StringBuffer();
@@ -21,6 +26,13 @@ public class Util {
 		return buf.toString();
 	} 
 
+	/**
+	 * 
+	 * @param text
+	 * @return The SHA1 hash of the input string
+	 * @throws NoSuchAlgorithmException
+	 * @throws UnsupportedEncodingException
+	 */
 	public static String SHA1(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException  { 
 		MessageDigest md;
 		md = MessageDigest.getInstance("SHA-1");

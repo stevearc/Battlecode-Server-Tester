@@ -2,7 +2,11 @@ package common;
 
 import java.io.Serializable;
 
-
+/**
+ * Wrapper for Match information to be sent over network between Server and Client
+ * @author stevearc
+ *
+ */
 public class Match implements Serializable {
 	private static final long serialVersionUID = 6673793068304545925L;
 	public int run_id;
