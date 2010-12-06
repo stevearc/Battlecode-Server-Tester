@@ -87,7 +87,7 @@ public class IndexServlet extends AbstractServlet {
 				mapsQuery.next();
 				String td;
 				// Make runs with data clickable
-				if (status == 1 || status == 2)
+				if (status == Config.STATUS_RUNNING || status == Config.STATUS_COMPLETE || status == Config.STATUS_CANCELED)
 					td = "<td onClick='doNavMatches(" + rs.getInt("id") + ")' style='cursor:pointer'>";
 				else
 					td = "<td>";

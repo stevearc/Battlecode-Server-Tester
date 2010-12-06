@@ -383,8 +383,9 @@ public class Server {
 	 * 
 	 * @return All known maps
 	 */
+	@SuppressWarnings("unchecked")
 	public HashSet<BattlecodeMap> getMaps() {
-		return maps;
+		return (HashSet<BattlecodeMap>) maps.clone();
 	}
 
 	private HashSet<BattlecodeMap> getMapsByName(String[] mapNames) {

@@ -95,7 +95,8 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 
 				PreparedStatement stmt = db.prepare("SELECT id, team_a, team_b, t1.alias a_nick, t2.alias b_nick FROM runs r " +
 						"LEFT JOIN tags t1 ON r.team_a = t1.tag " +
-				"LEFT JOIN tags t2 ON r.team_b = t2.tag WHERE (r.team_a LIKE ? OR r.team_b LIKE ? OR t1.alias LIKE ? OR t2.alias LIKE ?) AND status = " + Config.STATUS_COMPLETE);
+				"LEFT JOIN tags t2 ON r.team_b = t2.tag WHERE (r.team_a LIKE ? OR r.team_b LIKE ? OR t1.alias LIKE ? OR t2.alias LIKE ?) " +
+				"AND (status = " + Config.STATUS_COMPLETE + " OR status = " + Config.STATUS_CANCELED + ")");
 				stmt.setString(1, version);
 				stmt.setString(2, version);
 				stmt.setString(3, version);

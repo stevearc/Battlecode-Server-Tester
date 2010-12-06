@@ -1,7 +1,9 @@
+// Makes an asynchronous call to change a user's status
 function manageUser(id, username, cmd) {
   query("GET", "admin_action", "username="+username+"&cmd="+cmd, function(text) {process(id, username, cmd, text);});
 }
 
+// Handle the response of an asynchronous user change
 function process(id, username, cmd, response) {
   var table = document.getElementById(id);
   var row_index = -1;

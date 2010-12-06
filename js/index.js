@@ -1,19 +1,21 @@
-var row_map = {'ID' : 0, 'TEAM_A' : 1, 'TEAM_B' : 2, 'WINS' : 3, 'STATUS' : 4, 'TIME' : 5, 'CONTROL' : 6};
+var column_map = {'ID' : 0, 'TEAM_A' : 1, 'TEAM_B' : 2, 'WINS' : 3, 'STATUS' : 4, 'TIME' : 5, 'CONTROL' : 6};
 var lastheard = -1;
 var lastheard_update = -1;
 document.getElementById('seed_selector').selectedIndex=0;
 document.getElementById("maps_checkbox").checked=false;
 
+// Round a number to "digits" digits
 function roundNumber(number, digits) {
   var multiple = Math.pow(10, digits);
   var rndedNum = Math.round(number * multiple) / multiple;
   return rndedNum;
 }
 
+// Put the progress percentage for the current run in the table
 function init() {
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
-    var status_row = table.rows[i].cells[row_map['STATUS']];
+    var status_row = table.rows[i].cells[column_map['STATUS']];
     if (status_row.innerHTML == 'Running') {
       status_row.innerHTML = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
       break;
@@ -21,10 +23,12 @@ function init() {
   }
 }
 
+// Navigate to view all matches for a run
 function doNavMatches(id) {
   document.location="matches.html?id="+id;
 }
 
+// Toggle all of the checkboxes in the New Run selection
 function toggleMapsCheckbox() {
   var maps_checkbox = document.getElementById("maps_checkbox");
   var checked = maps_checkbox.checked;
@@ -35,6 +39,7 @@ function toggleMapsCheckbox() {
   }
 }
 
+// Toggle all of the checkboxes in the New Run selection for a specific size map
 function toggleMapsCheckbox(size) {
   var maps_checkbox = document.getElementById("maps_checkbox_" + size);
   var checked = maps_checkbox.checked;
@@ -50,6 +55,7 @@ function toggleMapsCheckbox(size) {
   }
 }
 
+// When the number of seeds is changed, make the appropriate seed fields visible
 function numSeedsChange() {
   var num_seeds = parseInt(document.getElementById('seed_selector').value);
   for(var i = 1; i < 11; i++) {
@@ -62,6 +68,7 @@ function numSeedsChange() {
   }
 }
 
+// Toggle display of the New Run fields
 function toggleNewRun() {
   var form = document.getElementById("add_run");
   if (form.className == "removed") {
@@ -72,6 +79,7 @@ function toggleNewRun() {
   }
 }
 
+// Pull form data and send query to server to start a new run
 function newRun() {
   var team_a = document.getElementById("team_a_button").value;
   var team_b = document.getElementById("team_b_button").value;
@@ -127,8 +135,9 @@ function newRun() {
   return true;
 }
 
-function delRun(id, prompt) {
-	if(prompt && !confirm("This will delete the run and all replay files.  Continue?")) {
+// Send query to server to delete a run
+function delRun(id, ask) {
+	if(ask && !confirm("This will delete the run and all replay files.  Continue?")) {
 		return;
 	}
 	xmlhttp2=new XMLHttpRequest();
@@ -143,6 +152,7 @@ function delRun(id, prompt) {
 	xmlhttp2.send();
 }
 
+// Delete selected row of the table
 function deleteTableRow(rowid) {
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
@@ -154,6 +164,7 @@ function deleteTableRow(rowid) {
   }
 }
 
+// Change table to reflect that a new run is starting
 function startRun(rowid, num_matches) {
   total_num_matches = num_matches;
   current_num_matches = 0;
@@ -163,69 +174,73 @@ function startRun(rowid, num_matches) {
   for (var i = 1; i < table.rows.length; i++) {
     id = table.rows[i].cells[0].innerHTML;
     if (id == rowid) {
-      for (key in row_map) {
+      for (key in column_map) {
+        // Don't make the control column clickable, since it contains buttons
         if (key == 'CONTROL')
           continue;
-        table.rows[i].cells[row_map[key]].setAttribute('onClick', clickEvent);
-        table.rows[i].cells[row_map[key]].setAttribute('style', style);
+        table.rows[i].cells[column_map[key]].setAttribute('onClick', clickEvent);
+        table.rows[i].cells[column_map[key]].setAttribute('style', style);
       }
-      var status_row = table.rows[i].cells[row_map['STATUS']];
+      var status_row = table.rows[i].cells[column_map['STATUS']];
       status_row.innerHTML = "0%";
-      var time_row = table.rows[i].cells[row_map['TIME']];
+      var time_row = table.rows[i].cells[column_map['TIME']];
       time_row.innerHTML = "<a id=\"cntdwn\" name=\"0\"></a>";
-      var control_row = table.rows[i].cells[row_map['CONTROL']];
+      var control_row = table.rows[i].cells[column_map['CONTROL']];
       control_row.innerHTML = "<input type=\"button\" value=\"cancel\" onclick=\"delRun(" + rowid + ", false)\">";
       break;
     }
   }
 }
 
+// Change status of running match to finished
 function finishRun(rowid, run_status) {
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
     id = table.rows[i].cells[0].innerHTML;
     if (id == rowid) {
-      var status_row = table.rows[i].cells[row_map['STATUS']];
+      var status_row = table.rows[i].cells[column_map['STATUS']];
       if (run_status == 2)
         status_row.innerHTML = "Complete";
       else if (run_status == 4)
         status_row.innerHTML = "Canceled";
-      var time_row = table.rows[i].cells[row_map['TIME']];
+      var time_row = table.rows[i].cells[column_map['TIME']];
       var time = document.getElementById("cntdwn").innerHTML;
       time_row.innerHTML = time;
-      var control_row = table.rows[i].cells[row_map['CONTROL']];
+      var control_row = table.rows[i].cells[column_map['CONTROL']];
       control_row.innerHTML = "<input type=\"button\" value=\"delete\" onclick=\"delRun(" + rowid + ", true)\">";
       break;
     }
   }
 }
 
+// Create a new row in the table
 function insertTableRow(rowid, team_a, team_b) {
   table = document.getElementById("table");
   var row = table.insertRow(1);
-  var id_row = row.insertCell(row_map['ID']);
+  var id_row = row.insertCell(column_map['ID']);
   id_row.innerHTML = rowid;
-  var team_a_row = row.insertCell(row_map['TEAM_A']);
+  var team_a_row = row.insertCell(column_map['TEAM_A']);
   team_a_row.innerHTML = team_a;
-  var team_b_row = row.insertCell(row_map['TEAM_B']);
+  var team_b_row = row.insertCell(column_map['TEAM_B']);
   team_b_row.innerHTML = team_b;
-  var wins_row = row.insertCell(row_map['WINS']);
+  var wins_row = row.insertCell(column_map['WINS']);
   wins_row.innerHTML = "0/0";
-  var status_row = row.insertCell(row_map['STATUS']);
+  var status_row = row.insertCell(column_map['STATUS']);
   status_row.innerHTML = "Queued";
-  var time_row = row.insertCell(row_map['TIME']);
+  var time_row = row.insertCell(column_map['TIME']);
   time_row.innerHTML="&nbsp;";
-  var control_row = row.insertCell(row_map['CONTROL']);
+  var control_row = row.insertCell(column_map['CONTROL']);
   control_row.innerHTML="<input type=\"button\" value=\"dequeue\" onclick=\"delRun(" + rowid + ", false)\">";
 }
 
+// Update the progress for the current run
 function matchFinished(rowid, win) {
   current_num_matches += 1;
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
     id = table.rows[i].cells[0].innerHTML;
     if (id == rowid) {
-      var wins_row = table.rows[i].cells[row_map['WINS']];
+      var wins_row = table.rows[i].cells[column_map['WINS']];
       split = wins_row.innerHTML.split("/");
       wins = parseInt(split[0]);
       losses = parseInt(split[1]);
@@ -234,27 +249,29 @@ function matchFinished(rowid, win) {
       else
         losses += 1;
       wins_row.innerHTML = wins + "/" + losses;
-      var status_row = table.rows[i].cells[row_map['STATUS']];
+      var status_row = table.rows[i].cells[column_map['STATUS']];
       status_row.innerHTML = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
       break;
     }
   }
 }
 
+// Change the status of the run to an error
 function runError(rowid) {
   table = document.getElementById("table");
   for (var i = 1; i < table.rows.length; i++) {
     id = table.rows[i].cells[0].innerHTML;
     if (id == rowid) {
-      var status_row = table.rows[i].cells[row_map['STATUS']];
+      var status_row = table.rows[i].cells[column_map['STATUS']];
       status_row.innerHTML = "Error";
-      var control_row = table.rows[i].cells[row_map['CONTROL']];
+      var control_row = table.rows[i].cells[column_map['CONTROL']];
       control_row.innerHTML = "<input type=\"button\" value=\"delete\" onclick=\"delRun(" + rowid + ", false)\">";
       break;
     }
   }
 }
 
+// Direct the server's Comet response appropriately
 function handleServerResponse(response) {
   if (response != "") {
     args = response.split(",");
@@ -284,6 +301,7 @@ function handleServerResponse(response) {
   setTimeout("poll(handleServerResponse, \"matches\", lastheard);",100);
 }
 
+// Tell the server to update the repository
 function doRepoUpdate() {
   listenForTeamsUpdate("");
   query("GET", "admin_action", "cmd=update", null);
@@ -292,6 +310,7 @@ function doRepoUpdate() {
   button.onclick = "";
 }
 
+// Poll the server for information
 function listenForTeamsUpdate(response) {
   if (response != "") {
     args = response.split(",");

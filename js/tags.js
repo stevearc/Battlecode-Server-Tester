@@ -1,3 +1,4 @@
+// Save the changes made to the revision tags
 function saveTags() {
   var table = document.getElementById("tag_table");
   var revs = "";
@@ -14,6 +15,7 @@ function saveTags() {
   query("GET", "tags.html", "revs="+encodeURI(revs)+"&aliases="+encodeURI(aliases), function (response) {document.location.reload(true)});
 }
 
+// Change UI to reflect a change to a tag
 function keyDown(i) {
   var box = document.getElementById("box" + i);
   box.className = "changed";

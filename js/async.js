@@ -1,3 +1,4 @@
+// Make a HTTP long poll to the server.  Used with the Comet framework
 function poll(callback, channel, lastheard) {
 	xh = new XMLHttpRequest();
 	xh.onreadystatechange = function() {
@@ -9,6 +10,7 @@ function poll(callback, channel, lastheard) {
 	xh.send();
 }
 
+// Do a regular asychronous query
 function query(method, url, params, callback) {
   xh = new XMLHttpRequest();
   if (callback != null) {
@@ -25,5 +27,4 @@ function query(method, url, params, callback) {
     xh.open(method, url + "?" + params, true);
     xh.send();
   }
-
 }
