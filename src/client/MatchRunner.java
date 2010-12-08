@@ -63,7 +63,7 @@ public class MatchRunner implements Runnable {
 
 		try {
 			_log.info("Running: " + match);
-			String output_file = config.repo + "/" + match.map + ".out";
+			String output_file = config.repo + "/" + match.map + match.seed + ".out";
 			Runtime run = Runtime.getRuntime();
 			try {
 				repoLock.lock();
