@@ -194,7 +194,7 @@ public class IndexServlet extends AbstractServlet {
 			out.println("</div>");
 			out.println("<input type=\"button\" value=\"Start\" onclick=\"if (newRun()) {toggleNewRun()}\"><br /></p>");
 			for (String s: new String[] {"small", "medium", "large"}) {
-				out.println(s + ": <input id='maps_checkbox_" + s + "' onClick='toggleMapsCheckbox(\"" + s + "\")' " +
+				out.println(s + ": <input id='maps_checkbox_" + s + "' onClick='toggleMaps(\"" + s + "\")' " +
 						"type='checkbox'>");
 			}
 
@@ -202,7 +202,7 @@ public class IndexServlet extends AbstractServlet {
 			out.println("<table style='width:50%;margin:0 auto;' cellpadding='0' cellspacing='0' border='0' id='map_table' class='tinytable'>");
 			out.println("<thead>");
 			out.println("<tr><th class='nosort' style='text-align:center'><input id='maps_checkbox' " +
-					"onClick='toggleMapsCheckbox()' type='checkbox'></th>" +
+					"onClick='toggleAllMaps()' type='checkbox'></th>" +
 					"<th class='desc'><h3>Map</h3></th>" +
 			"<th class='desc'><h3>Size</h3></th></tr>");
 			out.println("</thead><tbody>");

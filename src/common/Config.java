@@ -235,6 +235,9 @@ public class Config {
 		else if (option.equals("db_pass")) {
 			db_pass = value;
 		}
+		else if (option.equals("repo_addr")) {
+			// pass
+		}
 		else if (option.equals("version_control")) {
 			version_control = value.toLowerCase();
 			cmd_grabole = "./scripts/" + value + "/grabole.sh";

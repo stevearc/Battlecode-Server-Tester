@@ -37,5 +37,6 @@ Thanks to the following projects for providing me with libraries and tools:
   * Jetty
   * Jakarta Commons
   * MySQL
-  * HyperSQL
+  * HSQLDB
   * tinytable
+  * Fat Jar

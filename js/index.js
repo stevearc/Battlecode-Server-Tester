@@ -29,7 +29,7 @@ function doNavMatches(id) {
 }
 
 // Toggle all of the checkboxes in the New Run selection
-function toggleMapsCheckbox() {
+function toggleAllMaps() {
   var maps_checkbox = document.getElementById("maps_checkbox");
   var checked = maps_checkbox.checked;
   var table = document.getElementById("map_table");
@@ -40,7 +40,7 @@ function toggleMapsCheckbox() {
 }
 
 // Toggle all of the checkboxes in the New Run selection for a specific size map
-function toggleMapsCheckbox(size) {
+function toggleMaps(size) {
   var maps_checkbox = document.getElementById("maps_checkbox_" + size);
   var checked = maps_checkbox.checked;
   var table = document.getElementById("map_table");

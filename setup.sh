@@ -181,6 +181,7 @@ setup_server() {
   set_param VERSION_CONTROL $VERSION_CONTROL
   set_param TEAM $TEAM
   set_param SERVER $SERVER
+  set_param REPO_ADDR $REPO_ADDR
   set_param ADMIN $ADMIN
   set_param ADMIN_PASS $ADMIN_PASS
   set_param KEYSTORE_PASS $KEYSTORE_PASS
