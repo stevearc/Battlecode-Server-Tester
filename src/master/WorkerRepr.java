@@ -1,4 +1,4 @@
-package backend;
+package master;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -14,18 +14,18 @@ import common.Config;
 import common.Match;
 
 /**
- * Representation of a client that is used by the server
+ * Representation of a worker that is used by the server
  * @author stevearc
  *
  */
-public class ClientRepr implements Controller {
+public class WorkerRepr implements Controller {
 	private Config config;
 	private Logger _log;
 	private Network net;
 	private ArrayList<Match> runningMatches;
 	private int numCores = 0;
 
-	public ClientRepr(Socket s) throws IOException {
+	public WorkerRepr(Socket s) throws IOException {
 		config = Config.getConfig();
 		_log = config.getLogger();
 		this.net = new Network(this, s);
@@ -33,7 +33,7 @@ public class ClientRepr implements Controller {
 	}
 
 	/**
-	 * Messages client telling it to run a Match
+	 * Messages worker telling it to run a Match
 	 * @param m The Match to run
 	 */
 	public synchronized void runMatch(Match m) {
@@ -43,7 +43,7 @@ public class ClientRepr implements Controller {
 	}
 
 	/**
-	 * Messages client telling it to stop the matches it's running
+	 * Messages worker telling it to stop the matches it's running
 	 */
 	public synchronized void stopAllMatches() {
 		Packet p = new Packet(PacketCmd.STOP, new Object[] {});
@@ -53,7 +53,7 @@ public class ClientRepr implements Controller {
 
 	/**
 	 * 
-	 * @return True if client can accept more matches
+	 * @return True if worker can accept more matches
 	 */
 	public boolean isFree() {
 		return runningMatches.size() < numCores;
@@ -75,7 +75,7 @@ public class ClientRepr implements Controller {
 
 	/**
 	 * 
-	 * @return List of all Matches currently being run on the Client
+	 * @return List of all Matches currently being run on the worker
 	 */
 	public synchronized ArrayList<Match> getRunningMatches() {
 		return runningMatches;
@@ -86,11 +86,11 @@ public class ClientRepr implements Controller {
 		switch (p.getCmd()) {
 		case RUN_REPLY:
 			runningMatches.remove((Match) p.get(0));
-			ServerMethodCaller.matchFinished(this, p);
+			MasterMethodCaller.matchFinished(this, p);
 			break;
 		case INIT:
 			numCores = (Integer) p.get(0);
-			ServerMethodCaller.sendClientMatches(this);
+			MasterMethodCaller.sendWorkerMatches(this);
 			break;
 		default:
 			_log.warning("Invalid packet command: " + p.getCmd());
@@ -103,7 +103,7 @@ public class ClientRepr implements Controller {
 	}
 
 	/**
-	 * Formats the ClientRepr for display on the web server
+	 * Formats the WorkerRepr for display on the web server
 	 * @return
 	 */
 	public String toHTML() {
@@ -113,7 +113,7 @@ public class ClientRepr implements Controller {
 
 	@Override
 	public void onDisconnect() {
-		Config.getServer().clientDisconnect(this);
+		Config.getMaster().workerDisconnect(this);
 	}
 
 }

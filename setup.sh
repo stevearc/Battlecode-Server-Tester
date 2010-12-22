@@ -47,7 +47,7 @@ set_param() {
   sed -i -e 's/^'"$KEY"'=.*/'"$KEY"'='"$VAL"'/' etc/bs-tester.conf
 }
 
-setup_client() {
+setup_worker() {
   source etc/bs-tester.conf
   INSTALL_DIR=`pwd`
 
@@ -93,7 +93,7 @@ setup_client() {
   
 }
 
-setup_server() {
+setup_master() {
   VERSION_OPTIONS=""
   for DIR in `find scripts/* -type d | sed -e 's/scripts\///'`; do
     VERSION_OPTIONS=$VERSION_OPTIONS"/"$DIR
@@ -121,11 +121,11 @@ setup_server() {
     read TEAM
   done
 
-  # Specify server address
-  SERVER=""
-  while [ "$SERVER" == "" ]; do
+  # Specify master address
+  MASTER=""
+  while [ "$MASTER" == "" ]; do
     echo -n "IP address/hostname of this machine? "
-    read SERVER
+    read MASTER
   done
 
   KEYSTORE_PASS=`uuidgen | cut -c-8`
@@ -180,7 +180,7 @@ setup_server() {
   set_param INSTALL_DIR $INSTALL_DIR
   set_param VERSION_CONTROL $VERSION_CONTROL
   set_param TEAM $TEAM
-  set_param SERVER $SERVER
+  set_param MASTER $MASTER
   set_param REPO_ADDR $REPO_ADDR
   set_param ADMIN $ADMIN
   set_param ADMIN_PASS $ADMIN_PASS
@@ -191,32 +191,32 @@ setup_server() {
   set_param ADMIN " "
   set_param ADMIN_PASS " "
 
-  # Generate bs-client.tar.gz
+  # Generate bs-worker.tar.gz
   DIR=`pwd | sed -e 's/.*\///'`
   cd ..
-  tar -cf $DIR/bs-client.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README $DIR/COPYING $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
-  gzip $DIR/bs-client.tar
+  tar -cf $DIR/bs-worker.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README $DIR/COPYING $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
+  gzip $DIR/bs-worker.tar
 }
 
-SERVER=0
-if [ -e bs-client.tar.gz ]; then
-  SERVER=1
+MASTER=0
+if [ -e bs-worker.tar.gz ]; then
+  MASTER=1
 elif [ ! -e keystore ]; then
-  SERVER=1
+  MASTER=1
 fi
 
 # if the -f option is passed, remove the current repo
 if [ "$1" == "-f" ]; then
   rm -rf repo > /dev/null 2> /dev/null
-  if [ "$SERVER" == "1" ]; then
+  if [ "$MASTER" == "1" ]; then
     rm keystore > /dev/null 2> /dev/null
-    rm bs-client.tar > /dev/null 2> /dev/null
-    rm bs-client.tar.gz > /dev/null 2> /dev/null
+    rm bs-worker.tar > /dev/null 2> /dev/null
+    rm bs-worker.tar.gz > /dev/null 2> /dev/null
   fi
 fi
 
-if [ "$SERVER" == "1" ]; then
-  setup_server
+if [ "$MASTER" == "1" ]; then
+  setup_master
 else
-  setup_client
+  setup_worker
 fi

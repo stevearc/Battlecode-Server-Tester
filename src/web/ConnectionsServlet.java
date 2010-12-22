@@ -7,13 +7,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import backend.ClientRepr;
+import master.WorkerRepr;
+
 
 import common.Config;
 import common.Match;
 
 /**
- * Display current connected clients
+ * Display current connected workers
  * @author stevearc
  *
  */
@@ -49,12 +50,12 @@ public class ConnectionsServlet extends AbstractServlet {
 		out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"conn_table\" class=\"tinytable\">" +
 		"<thead>");
 		out.println("<tr>" +
-				"<th class='desc'><h3>Client</h3></th>" +
+				"<th class='desc'><h3>Worker</h3></th>" +
 				"<th class='desc'><h3>Map</h3></th>" +
 		"</tr>");
 		out.println("</thead>");
 		out.println("<tbody>");
-		for (ClientRepr c: Config.getServer().getConnections()) {
+		for (WorkerRepr c: Config.getMaster().getConnections()) {
 			out.println("<tr>");
 			out.println("<td>" + c.toHTML() + "</td>");
 			out.print("<td>");

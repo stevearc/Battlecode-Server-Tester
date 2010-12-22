@@ -10,8 +10,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import backend.Server;
-import backend.WebPollHandler;
+import master.Master;
+import master.WebPollHandler;
+
 import db.Database;
 
 /**
@@ -23,7 +24,7 @@ import db.Database;
 public class Config {
 	private static Config rootConfig;
 	private static Database rootDB;
-	private static Server rootServer;
+	private static Master rootMaster;
 	private static WebPollHandler webPollHandler;
 	
 	/* These constants are for interfacing with the DB */
@@ -37,11 +38,10 @@ public class Config {
 	public long timeout = 300000;
 	
 	/* These options are only specified on the command line */
-	private boolean isServer;
+	private boolean isMaster;
 	public int http_port = 80;
 	public int https_port = 443;
 	public boolean reset_db = false;
-	public String client_tar = "";
 	public String keystore = "";
 
 	/* These options are specified in the battlecode.conf file */
@@ -51,27 +51,27 @@ public class Config {
 	private String log_dir = "/var/log";
 	/** The directory the application is installed into */
 	public String install_dir = "";
-	/** The port number of the server to connect to (or listen on, if running as server) */
+	/** The port number of the master to connect to (or listen on, if running as server) */
 	public int port = 8888;
 	/** The version control program being used (currently supports git and svn) */
 	public String version_control = "";
-	/** CLIENT ONLY: The internet address of the server to connect to */
-	public String server = "";
-	/** CLIENT ONLY: The number of simultaneous matches to run at a time */
+	/** WORKER ONLY: The internet address of the master to connect to */
+	public String master = "";
+	/** WORKER ONLY: The number of simultaneous matches to run at a time */
 	public int cores = 1;
-	/** SERVER ONLY: The type of database to use */
+	/** MASTER ONLY: The type of database to use */
 	public String db_type = "hsql";
-	/** SERVER ONLY: The name of the database to use */
+	/** MASTER ONLY: The name of the database to use */
 	public String db_name = "battlecode";
-	/** SERVER ONLY: The host of the database */
+	/** MASTER ONLY: The host of the database */
 	public String db_host = "localhost";
-	/** SERVER ONLY: The username to use when connecting to the database. */
+	/** MASTER ONLY: The username to use when connecting to the database. */
 	public String db_user = "battlecode";
-	/** SERVER ONLY: The password to use when connecting to the database. */
+	/** MASTER ONLY: The password to use when connecting to the database. */
 	public String db_pass = "battlepass";
-	/** SERVER ONLY: The cutoff value for a map's area for the map to be considered "small" */
+	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "small" */
 	public int map_cutoff_small = 1000;
-	/** SERVER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
+	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
 	public int map_cutoff_medium = 2000;
 	
 	/* These options are generated from the above options */
@@ -95,8 +95,8 @@ public class Config {
 	/** The initial web admin password */
 	public String admin_pass = "";
 
-	public Config(boolean isServer) throws IOException {
-		this.isServer = isServer;
+	public Config(boolean isMaster) throws IOException {
+		this.isMaster = isMaster;
 		File file = new File("/etc/bs-tester.conf");
 		if (!file.exists()) {
 			throw new IOException("Config file /etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
@@ -133,12 +133,12 @@ public class Config {
 		rootDB = db;
 	}
 
-	public static Server getServer() {
-		return rootServer;
+	public static Master getMaster() {
+		return rootMaster;
 	}
 
-	public static void setServer(Server s) {
-		rootServer = s;
+	public static void setMaster(Master s) {
+		rootMaster = s;
 	}
 
 	public static WebPollHandler getWebPollHandler() {
@@ -150,14 +150,14 @@ public class Config {
 	}
 
 	public Logger getLogger() {
-		if (isServer) {
-			Logger logger = Logger.getLogger("Server");
+		if (isMaster) {
+			Logger logger = Logger.getLogger("Master");
 			logger.setLevel(Level.ALL);
 			try {
 				if (logger.getHandlers().length < 2) {
-					FileHandler server_handler = new FileHandler(log_dir + "/bs-tester.log");
-					server_handler.setFormatter(new SimpleFormatter());
-					logger.addHandler(server_handler);
+					FileHandler master_handler = new FileHandler(log_dir + "/bs-master.log");
+					master_handler.setFormatter(new SimpleFormatter());
+					logger.addHandler(master_handler);
 				}
 			} catch (SecurityException e) {
 				e.printStackTrace();
@@ -166,13 +166,13 @@ public class Config {
 			}
 			return logger;
 		} else {
-			Logger logger = Logger.getLogger("Client");
+			Logger logger = Logger.getLogger("Worker");
 			logger.setLevel(Level.ALL);
 			try {
 				if (logger.getHandlers().length < 2) {
-					FileHandler client_handler = new FileHandler(log_dir + "/bs-client.log");
-					client_handler.setFormatter(new SimpleFormatter());
-					logger.addHandler(client_handler);
+					FileHandler worker_handler = new FileHandler(log_dir + "/bs-worker.log");
+					worker_handler.setFormatter(new SimpleFormatter());
+					logger.addHandler(worker_handler);
 				}
 			} catch (SecurityException e) {
 				e.printStackTrace();
@@ -192,7 +192,6 @@ public class Config {
 		option = option.toLowerCase();
 		if (option.equals("install_dir")) {
 			install_dir = value;
-			client_tar = install_dir + "/client.tar";
 			keystore = install_dir + "/keystore";
 			repo = install_dir + "/repo";
 		}
@@ -209,7 +208,7 @@ public class Config {
 			log_dir = value;
 		}
 		else if (option.equals("server")) {
-			server = value;
+			master = value;
 		}
 		else if (option.equals("port")) {
 			port = Integer.parseInt(value);
@@ -259,7 +258,7 @@ public class Config {
 	 * @throws InvalidConfigException
 	 */
 	private void validate() throws InvalidConfigException {
-		// Check the server and client values
+		// Check the server and worker values
 		if (!new File(log_dir).exists())
 			throw new InvalidConfigException("Invalid log directory " + log_dir);
 
@@ -278,17 +277,17 @@ public class Config {
 		if (!version_control.equals("svn") && !version_control.equals("git"))
 			throw new InvalidConfigException("Invalid version control " + version_control);
 
-		// Check the client values
-		if (!isServer) {
-			if (server.equals(""))
-				throw new InvalidConfigException("Invalid server address " + server);
+		// Check the worker values
+		if (!isMaster) {
+			if (master.equals(""))
+				throw new InvalidConfigException("Invalid server address " + master);
 
 			if (cores < 1) 
 				throw new InvalidConfigException("Invalid number of cores: " + cores);
 		}
 
 		// Check the server values
-		if (isServer) {
+		if (isMaster) {
 			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
 				throw new InvalidConfigException("Invalid database type: " + db_type);
 

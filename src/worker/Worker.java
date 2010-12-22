@@ -1,4 +1,4 @@
-package client;
+package worker;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,24 +26,24 @@ import common.Config;
 import common.Match;
 
 /**
- * Connects to server and runs matches
+ * Connects to master and runs matches
  * @author stevearc
  *
  */
-public class Client implements Controller, Runnable {
+public class Worker implements Controller, Runnable {
 	private Config config;
 	private Logger _log;
 	private Network network;
 	private HashSet<MatchRunner> running = new HashSet<MatchRunner>();
 	private ReentrantLock repoLock = new ReentrantLock();
-	private boolean runClient = true;
+	private boolean runWorker = true;
 	private SSLSocketFactory sf;
 
-	public Client() throws Exception{
+	public Worker() throws Exception{
 		config = Config.getConfig();
 		_log = config.getLogger();
 
-		// Connect to the server using the certificate in the keystore
+		// Connect to the master using the certificate in the keystore
 		KeyStore keystore = KeyStore.getInstance("JKS");
 		keystore.load(new FileInputStream(config.keystore), config.keystore_pass.toCharArray());
 
@@ -62,7 +62,7 @@ public class Client implements Controller, Runnable {
 	}
 
 	/**
-	 * Send match data to server
+	 * Send match data to master
 	 * @param mr
 	 * @param match
 	 * @param status
@@ -82,14 +82,14 @@ public class Client implements Controller, Runnable {
 
 	@Override
 	public void run() {
-		while (runClient) {
+		while (runWorker) {
 			try {
 				if (network == null || !network.isConnected()) {
 					try {
-						Socket socket = sf.createSocket(config.server, config.port);
+						Socket socket = sf.createSocket(config.master, config.port);
 						network = new Network(this, socket);
 						new Thread(network).start();
-						_log.info("Connecting to server");
+						_log.info("Connecting to master");
 						network.send(new Packet(PacketCmd.INIT, new Object[]{config.cores}));
 					} catch (UnknownHostException e) {
 					} catch (IOException e) {
@@ -132,6 +132,6 @@ public class Client implements Controller, Runnable {
 			mr.stop();
 		}
 		running.clear();
-		_log.info("Disconnected from server");
+		_log.info("Disconnected from master");
 	}
 }

@@ -7,10 +7,7 @@
 
 # The directory that the bs-tester.jar file is stored in
 use constant BS_TESTER_DIR => "/home/steven/bs-tester";
-# Affects the behavior of start and stop.  If 1, start will
-# do start-server.  If 0, start will do start-client.  Same
-# for stop
-use constant SERVER => 1;
+use constant MASTER => 1;
 
 #
 ###########################################################
@@ -39,10 +36,10 @@ sub start {
 	if ( $pid ) {
 		print "Already running\n"
 	} else {
-    if (SERVER) {
-      start_server();
+    if (MASTER) {
+      start_master();
     } else {
-      start_client();
+      start_worker();
     }
 	}
 }
@@ -56,12 +53,12 @@ sub stop {
 	}
 }
 
-sub start_server {
+sub start_master {
 	chdir( BS_TESTER_DIR );
 	system( './run.sh -s > /dev/null 2>/dev/null &' );
 }
 
-sub start_client {
+sub start_worker {
 	chdir( BS_TESTER_DIR );
 	system( './run.sh > /dev/null 2>/dev/null &' );
 }

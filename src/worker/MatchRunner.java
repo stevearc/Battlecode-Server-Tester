@@ -1,4 +1,4 @@
-package client;
+package worker;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,16 +24,16 @@ import common.Match;
 public class MatchRunner implements Runnable {
 	private Logger _log;
 	private Config config;
-	private Client client;
+	private Worker worker;
 	private Match match;
 	private boolean stop = false;
 	private ReentrantLock repoLock;
 	private Process curProcess;
 
-	public MatchRunner(Client client, Match match, ReentrantLock repoLock) {
+	public MatchRunner(Worker worker, Match match, ReentrantLock repoLock) {
 		config = Config.getConfig();
 		this.match = match;
-		this.client = client;
+		this.worker = worker;
 		this.repoLock = repoLock;
 		_log = config.getLogger();
 	}
@@ -117,7 +117,7 @@ public class MatchRunner implements Runnable {
 			if (curProcess.exitValue() != 0) {
 				_log.severe("Error running match\n" + output);
 				status = "error";
-				client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 				return;
 			}
 
@@ -130,7 +130,7 @@ public class MatchRunner implements Runnable {
 					_log.warning("Unknown error running match\n" + output);
 					_log.warning("^ error: a_index: " + a_index + " b_index: " + b_index);
 					if (!stop) 
-						client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+						worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 					return;
 				}
 				// If A loses, winner = 0
@@ -160,7 +160,7 @@ public class MatchRunner implements Runnable {
 			if (!stop) {
 				_log.log(Level.SEVERE, "Failed to run match", e);
 				status = "error";
-				client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 			}
 			return;
 		}
@@ -173,13 +173,13 @@ public class MatchRunner implements Runnable {
 			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
 			status = "error";
 			if (!stop)
-				client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 			return;
 		}
 
 		status = "ok";
 		if (!stop)
-			client.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+			worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
 	}
 
 	/**

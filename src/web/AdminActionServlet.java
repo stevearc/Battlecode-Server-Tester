@@ -10,7 +10,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import backend.ServerMethodCaller;
+import master.MasterMethodCaller;
+
 
 /**
  * Handles queries from admin that modify the database
@@ -40,7 +41,7 @@ public class AdminActionServlet extends AbstractServlet {
 		try {
 			// You can update the repo even if not admin
 			if ("update".equals(cmd)) {
-				ServerMethodCaller.updateRepo();
+				MasterMethodCaller.updateRepo();
 			} // Otherwise, check for admin privs
 			else if (!isUserAdmin(myUsername)) {
 				out.print("Unauthorized access");

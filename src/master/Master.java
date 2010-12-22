@@ -1,4 +1,4 @@
-package backend;
+package master;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -25,20 +25,20 @@ import common.Match;
 import db.Database;
 
 /**
- * Handles distribution of load to connected Clients
+ * Handles distribution of load to connected workers
  * @author stevearc
  *
  */
-public class Server {
+public class Master {
 	private Config config;
 	private Database db;
 	private Logger _log;
 	private NetworkHandler handler;
-	private HashSet<ClientRepr> clients = new HashSet<ClientRepr>();
+	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
 	private HashSet<BattlecodeMap> maps = new HashSet<BattlecodeMap>();
 	private WebPollHandler wph;
 
-	public Server() throws Exception {
+	public Master() throws Exception {
 		config = Config.getConfig();
 		db = Config.getDB();
 		wph = Config.getWebPollHandler();
@@ -47,7 +47,7 @@ public class Server {
 	}
 
 	/**
-	 * Start running the server
+	 * Start running the master
 	 */
 	public synchronized void start() {
 		try {
@@ -126,32 +126,32 @@ public class Server {
 	}
 
 	/**
-	 * Process a client connecting
-	 * @param client
+	 * Process a worker connecting
+	 * @param worker
 	 */
-	public synchronized void clientConnect(ClientRepr client) {
-		_log.info("Client connected: " + client);
-		clients.add(client);
-		wph.broadcastMsg("connections", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {client.toHTML()}));
-		sendClientMatches(client);
+	public synchronized void workerConnect(WorkerRepr worker) {
+		_log.info("Worker connected: " + worker);
+		workers.add(worker);
+		wph.broadcastMsg("connections", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {worker.toHTML()}));
+		sendWorkerMatches(worker);
 	}
 
 	/**
-	 * Process a client disconnecting
-	 * @param client
+	 * Process a worker disconnecting
+	 * @param worker
 	 */
-	public synchronized void clientDisconnect(ClientRepr client) {
-		_log.info("Client disconnected: " + client);
-		wph.broadcastMsg("connections", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {client.toHTML()}));
-		clients.remove(client);
+	public synchronized void workerDisconnect(WorkerRepr worker) {
+		_log.info("Worker disconnected: " + worker);
+		wph.broadcastMsg("connections", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {worker.toHTML()}));
+		workers.remove(worker);
 	}
 
 	/**
 	 * Save data from a finished match
-	 * @param client
+	 * @param worker
 	 * @param p
 	 */
-	public synchronized void matchFinished(ClientRepr client, Packet p) {
+	public synchronized void matchFinished(WorkerRepr worker, Packet p) {
 		Match m = (Match) p.get(0);
 		String status = (String) p.get(1);
 		int winner = (Integer) p.get(2);
@@ -159,12 +159,12 @@ public class Server {
 		int a_points = (Integer) p.get(4);
 		int b_points = (Integer) p.get(5);
 		byte[] data = (byte[]) p.get(6);
-		wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {client.toHTML(), m.toMapString()}));
+		wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {worker.toHTML(), m.toMapString()}));
 		try {
 			if ("ok".equals(status) && m.run_id == getCurrentId()) {
 				if (!getMatchesLeft().contains(m)) {
 					_log.info("Received duplicate match: " + m);
-					sendClientMatches(client);
+					sendWorkerMatches(worker);
 					return;
 				}
 				_log.info("Match finished: " + m + " winner: " + (winner == 1 ? "A" : "B"));
@@ -186,40 +186,40 @@ public class Server {
 				}
 
 			} else {
-				_log.warning("Match " + m + " on client " + client + " failed");
+				_log.warning("Match " + m + " on worker " + worker + " failed");
 			}
 
 			if (getMatchesLeft().isEmpty()) {
 				stopCurrentRun(Config.STATUS_COMPLETE);
 				startRun();
 			} else {
-				sendClientMatches(client);
+				sendWorkerMatches(worker);
 			}
 		} catch (SQLException e) {
 		}
 	}
 
 	/**
-	 * Send matches to a client until they are saturated
-	 * @param client
+	 * Send matches to a worker until they are saturated
+	 * @param worker
 	 */
-	public synchronized void sendClientMatches(ClientRepr client) {
+	public synchronized void sendWorkerMatches(WorkerRepr worker) {
 		try {
 			HashSet<Match> matches = getMatchesLeftAndNotRunning();
 			for (Match m: matches) {
-				if (!client.isFree())
+				if (!worker.isFree())
 					break;
-				_log.info("Sending match " + m + " to client " + client);
-				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {client.toHTML(), m.toMapString()}));
-				client.runMatch(m);
+				_log.info("Sending match " + m + " to worker " + worker);
+				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), m.toMapString()}));
+				worker.runMatch(m);
 			}
 
 			// If we are currently running all necessary maps, add some redundancy by
-			// Sending this client random maps that other clients are currently running
+			// Sending this worker random maps that other workers are currently running
 			Match[] matchIndex = getMatchesLeft().toArray(new Match[0]);
 			Random r = new Random();
-			if (client.isFree()) {
-				client.runMatch(matchIndex[r.nextInt(matchIndex.length)]);
+			if (worker.isFree()) {
+				worker.runMatch(matchIndex[r.nextInt(matchIndex.length)]);
 			}
 		} catch (SQLException e) {
 		}
@@ -249,8 +249,8 @@ public class Server {
 			ResultSet r = db.query("SELECT COUNT(*) AS num_matches FROM matches WHERE run_id = " + runid);
 			r.next();
 			wph.broadcastMsg("matches", new CometMessage(CometCmd.START_RUN, new String[] {""+runid, ""+r.getInt("num_matches")}));
-			for (ClientRepr c: clients) {
-				sendClientMatches(c);
+			for (WorkerRepr c: workers) {
+				sendWorkerMatches(c);
 			}
 		}
 	}
@@ -270,7 +270,7 @@ public class Server {
 		db.update("UPDATE runs SET status = " + status + ", ended = NOW() WHERE id = " + id, true);
 		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+id, ""+status}));
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.FINISH_RUN, new String[] {}));
-		for (ClientRepr c: clients) {
+		for (WorkerRepr c: workers) {
 			c.stopAllMatches();
 		}
 	}
@@ -294,7 +294,7 @@ public class Server {
 
 	private HashSet<Match> getMatchesLeftAndNotRunning() throws SQLException {
 		HashSet<Match> matchesLeft = getMatchesLeft();
-		for (ClientRepr c: clients) {
+		for (WorkerRepr c: workers) {
 			for (Match m: c.getRunningMatches()) {
 				matchesLeft.remove(m);
 			}
@@ -333,7 +333,7 @@ public class Server {
 	 */
 	public synchronized void updateRepo() throws SQLException {
 		try {
-			Process p = Runtime.getRuntime().exec(new String[] {config.cmd_update, "server"});
+			Process p = Runtime.getRuntime().exec(new String[] {config.cmd_update});
 
 			p.waitFor();
 			BufferedReader read = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -373,10 +373,10 @@ public class Server {
 
 	/**
 	 * 
-	 * @return Currently connected clients
+	 * @return Currently connected workers
 	 */
-	public HashSet<ClientRepr> getConnections() {
-		return clients;
+	public HashSet<WorkerRepr> getConnections() {
+		return workers;
 	}
 
 	/**

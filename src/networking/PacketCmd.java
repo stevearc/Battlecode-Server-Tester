@@ -1,16 +1,16 @@
 package networking;
 
 /**
- * Types of packets that can be sent to and from Servers and Clients
+ * Types of packets that can be sent to and from Servers and Workers
  * @author stevearc
  *
  */
 public enum PacketCmd { 
-	// Server -> Client
+	// Server -> Worker
 	RUN, // Sends data for running a match
-	STOP, // Tells client to stop running matches
+	STOP, // Tells worker to stop running matches
 	
-	// Client -> Server
-	INIT, // Sends initial client data to server
+	// Worker -> Server
+	INIT, // Sends initial worker data to server
 	RUN_REPLY, // Response with match data
 }

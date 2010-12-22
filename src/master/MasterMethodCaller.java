@@ -1,4 +1,4 @@
-package backend;
+package master;
 
 import java.sql.SQLException;
 
@@ -7,11 +7,11 @@ import networking.Packet;
 import common.Config;
 
 /**
- * Provides static methods to perform asynchronous calls to the Server
+ * Provides static methods to perform asynchronous calls to the master
  * @author stevearc
  *
  */
-public class ServerMethodCaller {
+public class MasterMethodCaller {
 
 	/**
 	 * Queues a run
@@ -24,7 +24,7 @@ public class ServerMethodCaller {
 
 			@Override
 			public void run() {
-				Config.getServer().queueRun(team_a, team_b, seeds, maps);
+				Config.getMaster().queueRun(team_a, team_b, seeds, maps);
 			}
 
 		}).start();
@@ -39,52 +39,52 @@ public class ServerMethodCaller {
 
 			@Override
 			public void run() {
-				Config.getServer().deleteRun(run_id);
+				Config.getMaster().deleteRun(run_id);
 			}
 
 		}).start();
 	}
 
 	/**
-	 * Start the server if it hasn't been running
+	 * Start the master if it hasn't been running
 	 */
-	public static void startServer() {
+	public static void startMaster() {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getServer().start();
+				Config.getMaster().start();
 			}
 
 		}).start();
 	}
 
 	/**
-	 * Send the finished match data to the server
-	 * @param client
+	 * Send the finished match data to the master
+	 * @param worker
 	 * @param p
 	 */
-	public static void matchFinished(final ClientRepr client, final Packet p) {
+	public static void matchFinished(final WorkerRepr worker, final Packet p) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getServer().matchFinished(client, p);
+				Config.getMaster().matchFinished(worker, p);
 			}
 
 		}).start();
 	}
 
 	/**
-	 * Tell the server to send matches to a client
-	 * @param client
+	 * Tell the master to send matches to a worker
+	 * @param worker
 	 */
-	public static void sendClientMatches(final ClientRepr client) {
+	public static void sendWorkerMatches(final WorkerRepr worker) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getServer().sendClientMatches(client);
+				Config.getMaster().sendWorkerMatches(worker);
 			}
 
 		}).start();
@@ -99,7 +99,7 @@ public class ServerMethodCaller {
 			@Override
 			public void run() {
 				try {
-					Config.getServer().updateRepo();
+					Config.getMaster().updateRepo();
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}

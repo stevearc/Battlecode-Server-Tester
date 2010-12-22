@@ -6,6 +6,9 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import master.Master;
+import master.MasterMethodCaller;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -15,9 +18,7 @@ import org.apache.commons.cli.ParseException;
 
 import web.ProxyServer;
 import web.WebServer;
-import backend.Server;
-import backend.ServerMethodCaller;
-import client.Client;
+import worker.Worker;
 
 import common.Config;
 import common.Util;
@@ -87,16 +88,16 @@ public class Main {
 				if (!config.admin.trim().equals(""))
 					createWebAdmin();
 
-				Server s = new Server();
-				Config.setServer(s);
-				ServerMethodCaller.startServer();
+				Master m = new Master();
+				Config.setMaster(m);
+				MasterMethodCaller.startMaster();
 				new Thread(new ProxyServer()).start();
 				new Thread(new WebServer()).start();
-			} // Start the client
+			} // Start the worker
 			else {
 				Config c = new Config(false);
 				Config.setConfig(c);
-				new Thread(new Client()).start();
+				new Thread(new Worker()).start();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

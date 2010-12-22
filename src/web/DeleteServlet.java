@@ -7,7 +7,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import backend.ServerMethodCaller;
+import master.MasterMethodCaller;
+
 
 /**
  * Delete the results of a run
@@ -37,7 +38,7 @@ public class DeleteServlet extends AbstractServlet {
 		}
 
 		int id = Integer.parseInt(strId);
-		ServerMethodCaller.deleteRun(id);
+		MasterMethodCaller.deleteRun(id);
 		out.print("success");
 	}
 }

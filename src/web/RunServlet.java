@@ -7,7 +7,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import backend.ServerMethodCaller;
+import master.MasterMethodCaller;
+
 
 /**
  * Queue up a new run
@@ -56,7 +57,7 @@ public class RunServlet extends AbstractServlet {
 			}
 		}
 		try {
-			ServerMethodCaller.queueRun(team_a, team_b, seeds.split(","), maps.split(","));
+			MasterMethodCaller.queueRun(team_a, team_b, seeds.split(","), maps.split(","));
 			out.print("success");
 		} catch (Exception e) {
 			e.printStackTrace(out);

@@ -15,7 +15,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- * Representation of map information to be sent over network between Client and Server
+ * Representation of map information to be sent over network between Worker and Server
  * @author stevearc
  *
  */

@@ -1,4 +1,4 @@
-package backend;
+package master;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import javax.net.ssl.TrustManagerFactory;
 import common.Config;
 
 /**
- * Listens on the chosen port for clients and spawns threads for new connections
+ * Listens on the chosen port for workers and spawns threads for new connections
  * @author stevearc
  *
  */
@@ -69,9 +69,9 @@ public class NetworkHandler implements Runnable {
 		while (true) {
 			try {
 				Socket socket = serverSocket.accept();
-				ClientRepr client = new ClientRepr(socket);
-				client.start();
-				Config.getServer().clientConnect(client);
+				WorkerRepr worker = new WorkerRepr(socket);
+				worker.start();
+				Config.getMaster().workerConnect(worker);
 			} catch (IOException e) {
 				_log.log(Level.WARNING, "Accept connection failed", e);
 			}

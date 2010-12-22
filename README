@@ -8,6 +8,16 @@ You need two things in order for this system to work properly:
 	* Git or SVN
 	* Java and Ant (to run the battlecode client)
 
+##################
+## ARCHITECTURE ##
+##################
+This tool is designed to have a server run on some computer visible on the internet.  This computer
+acts as the "master" and handles all of the administration.  It runs a web server through which the
+user queues and views matches.  The user can install this software on an arbitrary number of 
+"worker" computers that will actually run the matches.  The master receives the user commands, 
+sends the appropriate matches to the workers, and they send back the results.  The more workers, 
+the faster the results.
+
 #######################
 ## INSTALLING SERVER ##
 #######################
@@ -16,17 +26,17 @@ sudo ./setup.sh
 It should prompt you for a few parameters and automatically set up the /etc/bs-tester.conf file.
 
 ########################
-## INSTALLING CLIENTS ##
+## INSTALLING WORKERS ##
 ########################
-After running setup.sh, the script should have generated a bs-client.tar.gz file.  Copy this file
-to the client computer (using scp or some other tool).  Then unzip it on the client and run
+After running setup.sh, the script should have generated a bs-worker.tar.gz file.  Copy this file
+to the worker computer (using scp or some other tool).  Then unzip it on the worker and run
 sudo ./setup.sh
-It should prompt you for just a couple fields and generate the client config file.  
+It should prompt you for just a couple fields and generate the appropriate config file.  
 
 #############
 ## RUNNING ##
 #############
-The server and client can be run with the run.sh file.  Type
+The server and worker can be run with the run.sh file.  Type
 ./run.sh -h
 to display the available commandline arguments.  
 If you installed the daemon in the setup script, you can start the service with 
@@ -36,4 +46,5 @@ sudo invoke-rc.d bs-tester start
 ## VERSION CONTROL ##
 #####################
 If you use git you will need to use the `git tag` function to tag versions of your code
-that you want to run with the tester.  
+that you want to run with the tester.  If you are using svn then there is a page on the
+website that will allow you to tag different revisions of your code with strings.

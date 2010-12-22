@@ -26,7 +26,7 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 	@Override
 	protected void writeTableHead(PrintWriter out) {
 		HashSet<String> maps = new HashSet<String>();
-		for (BattlecodeMap m: Config.getServer().getMaps()) {
+		for (BattlecodeMap m: Config.getMaster().getMaps()) {
 			String size = m.getSizeClass();
 			if (!maps.contains(size)) 
 				maps.add(size);

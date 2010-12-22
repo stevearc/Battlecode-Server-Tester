@@ -206,7 +206,7 @@ public class IndexServlet extends AbstractServlet {
 					"<th class='desc'><h3>Map</h3></th>" +
 			"<th class='desc'><h3>Size</h3></th></tr>");
 			out.println("</thead><tbody>");
-			for (BattlecodeMap m: Config.getServer().getMaps())
+			for (BattlecodeMap m: Config.getMaster().getMaps())
 				out.println("<tr><td><input type='checkbox' name='" + m.map + "'></td><td>" + m.map + "</td><td>" + m.getSizeClass() + "</td></tr>");
 			out.println("</tbody></table>");
 			out.println("<input type=\"button\" value=\"Start\" onclick=\"if (newRun()) {toggleNewRun()}\"><br /></p>");

@@ -3,7 +3,7 @@ package common;
 import java.io.Serializable;
 
 /**
- * Wrapper for Match information to be sent over network between Server and Client
+ * Wrapper for Match information to be sent over network between Server and Worker
  * @author stevearc
  *
  */

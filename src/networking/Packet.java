@@ -3,7 +3,7 @@ package networking;
 import java.io.Serializable;
 
 /**
- * Wrapper object to send data between client and server
+ * Wrapper object to send data between worker and server
  * @author stevearc
  *
  */
