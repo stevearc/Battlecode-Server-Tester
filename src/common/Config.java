@@ -38,7 +38,7 @@ public class Config {
 	public long timeout = 300000;
 	
 	/* These options are only specified on the command line */
-	private boolean isMaster;
+	private boolean isServer;
 	public int http_port = 80;
 	public int https_port = 443;
 	public boolean reset_db = false;
@@ -51,12 +51,12 @@ public class Config {
 	private String log_dir = "/var/log";
 	/** The directory the application is installed into */
 	public String install_dir = "";
-	/** The port number of the master to connect to (or listen on, if running as server) */
+	/** The port number of the server to connect to (or listen on, if running as server) */
 	public int port = 8888;
 	/** The version control program being used (currently supports git and svn) */
 	public String version_control = "";
 	/** WORKER ONLY: The internet address of the master to connect to */
-	public String master = "";
+	public String server = "";
 	/** WORKER ONLY: The number of simultaneous matches to run at a time */
 	public int cores = 1;
 	/** MASTER ONLY: The type of database to use */
@@ -96,7 +96,7 @@ public class Config {
 	public String admin_pass = "";
 
 	public Config(boolean isMaster) throws IOException {
-		this.isMaster = isMaster;
+		this.isServer = isMaster;
 		File file = new File("/etc/bs-tester.conf");
 		if (!file.exists()) {
 			throw new IOException("Config file /etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
@@ -150,7 +150,7 @@ public class Config {
 	}
 
 	public Logger getLogger() {
-		if (isMaster) {
+		if (isServer) {
 			Logger logger = Logger.getLogger("Master");
 			logger.setLevel(Level.ALL);
 			try {
@@ -208,7 +208,7 @@ public class Config {
 			log_dir = value;
 		}
 		else if (option.equals("server")) {
-			master = value;
+			server = value;
 		}
 		else if (option.equals("port")) {
 			port = Integer.parseInt(value);
@@ -278,16 +278,16 @@ public class Config {
 			throw new InvalidConfigException("Invalid version control " + version_control);
 
 		// Check the worker values
-		if (!isMaster) {
-			if (master.equals(""))
-				throw new InvalidConfigException("Invalid server address " + master);
+		if (!isServer) {
+			if (server.equals(""))
+				throw new InvalidConfigException("Invalid server address " + server);
 
 			if (cores < 1) 
 				throw new InvalidConfigException("Invalid number of cores: " + cores);
 		}
 
 		// Check the server values
-		if (isMaster) {
+		if (isServer) {
 			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
 				throw new InvalidConfigException("Invalid database type: " + db_type);
 

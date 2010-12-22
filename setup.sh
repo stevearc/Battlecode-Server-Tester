@@ -93,7 +93,7 @@ setup_worker() {
   
 }
 
-setup_master() {
+setup_server() {
   VERSION_OPTIONS=""
   for DIR in `find scripts/* -type d | sed -e 's/scripts\///'`; do
     VERSION_OPTIONS=$VERSION_OPTIONS"/"$DIR
@@ -121,11 +121,11 @@ setup_master() {
     read TEAM
   done
 
-  # Specify master address
-  MASTER=""
-  while [ "$MASTER" == "" ]; do
+  # Specify server address
+  SERVER=""
+  while [ "$SERVER" == "" ]; do
     echo -n "IP address/hostname of this machine? "
-    read MASTER
+    read SERVER
   done
 
   KEYSTORE_PASS=`uuidgen | cut -c-8`
@@ -180,7 +180,7 @@ setup_master() {
   set_param INSTALL_DIR $INSTALL_DIR
   set_param VERSION_CONTROL $VERSION_CONTROL
   set_param TEAM $TEAM
-  set_param MASTER $MASTER
+  set_param SERVER $SERVER
   set_param REPO_ADDR $REPO_ADDR
   set_param ADMIN $ADMIN
   set_param ADMIN_PASS $ADMIN_PASS
@@ -198,25 +198,25 @@ setup_master() {
   gzip $DIR/bs-worker.tar
 }
 
-MASTER=0
+SERVER=0
 if [ -e bs-worker.tar.gz ]; then
-  MASTER=1
+  SERVER=1
 elif [ ! -e keystore ]; then
-  MASTER=1
+  SERVER=1
 fi
 
 # if the -f option is passed, remove the current repo
 if [ "$1" == "-f" ]; then
   rm -rf repo > /dev/null 2> /dev/null
-  if [ "$MASTER" == "1" ]; then
+  if [ "$SERVER" == "1" ]; then
     rm keystore > /dev/null 2> /dev/null
     rm bs-worker.tar > /dev/null 2> /dev/null
     rm bs-worker.tar.gz > /dev/null 2> /dev/null
   fi
 fi
 
-if [ "$MASTER" == "1" ]; then
-  setup_master
+if [ "$SERVER" == "1" ]; then
+  setup_server
 else
   setup_worker
 fi

@@ -86,7 +86,7 @@ public class Worker implements Controller, Runnable {
 			try {
 				if (network == null || !network.isConnected()) {
 					try {
-						Socket socket = sf.createSocket(config.master, config.port);
+						Socket socket = sf.createSocket(config.server, config.port);
 						network = new Network(this, socket);
 						new Thread(network).start();
 						_log.info("Connecting to master");
