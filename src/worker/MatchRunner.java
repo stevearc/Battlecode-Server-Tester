@@ -148,10 +148,10 @@ public class MatchRunner implements Runnable {
 			} else {
 				win_condition = 2;
 			}
-			String a_points_str = getMatch(output, "Team A had [0-9]+\\.[0-9]+ production");
+			String a_points_str = getMatch(output, "Team A had [0-9]+\\.[0-9]+");
 			if (!"".equals(a_points_str))
 				a_points = Double.parseDouble(a_points_str.substring("Team A had ".length()));
-			String b_points_str = getMatch(output, "Team B had [0-9]+\\.[0-9]+ production");
+			String b_points_str = getMatch(output, "Team B had [0-9]+\\.[0-9]+");
 			if (!"".equals(b_points_str))
 				b_points = Double.parseDouble(b_points_str.substring("Team B had ".length()));
 
