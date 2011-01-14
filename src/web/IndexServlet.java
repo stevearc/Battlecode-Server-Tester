@@ -169,13 +169,13 @@ public class IndexServlet extends AbstractServlet {
 			out.println("<form id='add_run' class=\"removed\" action=\"" + response.encodeURL(RunServlet.NAME) + "\" " +
 					"style='background:" + background + "'>");
 			out.println("<select id='team_a_button'>");
-			for (String t: sorted_tags) {
-				out.println("<option value='" + tagMap.get(t) + "'>" + t + "</option>");
+			for (int i = sorted_tags.length - 1; i >= 0; i--) {
+				out.println("<option value='" + tagMap.get(sorted_tags[i]) + "'>" + sorted_tags[i] + "</option>");
 			}
 			out.println("</select> vs. ");
 			out.println("<select id='team_b_button'>");
-			for (String t: sorted_tags) {
-				out.println("<option value='" + tagMap.get(t) + "'>" + t + "</option>");
+			for (int i = sorted_tags.length - 1; i >= 0; i--) {
+				out.println("<option value='" + tagMap.get(sorted_tags[i]) + "'>" + sorted_tags[i] + "</option>");
 			}
 			out.println("</select>&nbsp;&nbsp;&nbsp;Don't see your version here? " +
 					"<input id='update_button' type='button' onclick='doRepoUpdate()' value='update'></p>");

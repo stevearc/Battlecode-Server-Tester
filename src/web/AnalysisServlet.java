@@ -50,7 +50,7 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 		ResultSet rs = db.query("SELECT * FROM matches WHERE run_id = " + runid);
 		while (rs.next()) {
 			BattlecodeMap map = new BattlecodeMap(rs.getString("map"), rs.getInt("height"), rs.getInt("width"), 
-					rs.getInt("rounds"), rs.getInt("points"));
+					rs.getInt("rounds"));
 			if (!maps.containsKey(map.getSizeClass()))
 				maps.put(map.getSizeClass(), new HashSet<String>());
 			maps.get(map.getSizeClass()).add(map.map);

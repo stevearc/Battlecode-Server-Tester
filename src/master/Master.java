@@ -77,15 +77,14 @@ public class Master {
 			for (String seed: seeds) {
 				int seed_int = Integer.parseInt(seed);
 				for (BattlecodeMap map: runMaps) {
-					PreparedStatement stmt = db.prepare("INSERT INTO matches (run_id, map, height, width, rounds, points, seed)" +
-							" VALUES (?, ?, ?, ?, ?, ?, ?)");
+					PreparedStatement stmt = db.prepare("INSERT INTO matches (run_id, map, height, width, rounds, seed)" +
+					" VALUES (?, ?, ?, ?, ?, ?)");
 					stmt.setInt(1, id);
 					stmt.setString(2, map.map);
 					stmt.setInt(3, map.height);
 					stmt.setInt(4, map.width);
 					stmt.setInt(5, map.rounds);
-					stmt.setInt(6, map.points);
-					stmt.setInt(7, seed_int);
+					stmt.setInt(6, seed_int);
 					db.update(stmt, true);
 				}
 			}
@@ -95,7 +94,7 @@ public class Master {
 		} catch (SQLException e) {
 		}
 	}
-	
+
 	private String getTeamNameOrAlias(String team) throws SQLException {
 		PreparedStatement st = db.prepare("SELECT * FROM tags WHERE tag LIKE ?");
 		st.setString(1, team);
@@ -156,8 +155,8 @@ public class Master {
 		String status = (String) p.get(1);
 		int winner = (Integer) p.get(2);
 		int win_condition = (Integer) p.get(3);
-		int a_points = (Integer) p.get(4);
-		int b_points = (Integer) p.get(5);
+		double a_points = (Double) p.get(4);
+		double b_points = (Double) p.get(5);
 		byte[] data = (byte[]) p.get(6);
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {worker.toHTML(), m.toMapString()}));
 		try {
@@ -172,8 +171,8 @@ public class Master {
 				stmt = db.prepare("UPDATE matches SET win = ?, win_condition = ?, a_points = ?, b_points = ?, data = ? WHERE id = ?");
 				stmt.setInt(1, winner);
 				stmt.setInt(2, win_condition);
-				stmt.setInt(3, a_points);
-				stmt.setInt(4, b_points);
+				stmt.setDouble(3, a_points);
+				stmt.setDouble(4, b_points);
 				stmt.setBinaryStream(5, new ByteArrayInputStream(data), data.length);
 				stmt.setInt(6, m.id);
 				db.update(stmt, true);
@@ -217,9 +216,11 @@ public class Master {
 			// If we are currently running all necessary maps, add some redundancy by
 			// Sending this worker random maps that other workers are currently running
 			Match[] matchIndex = getMatchesLeft().toArray(new Match[0]);
-			Random r = new Random();
-			if (worker.isFree()) {
-				worker.runMatch(matchIndex[r.nextInt(matchIndex.length)]);
+			if (matchIndex.length > 0) {
+				Random r = new Random();
+				if (worker.isFree()) {
+					worker.runMatch(matchIndex[r.nextInt(matchIndex.length)]);
+				}
 			}
 		} catch (SQLException e) {
 		}
@@ -287,7 +288,7 @@ public class Master {
 		rs = db.query(st);
 		HashSet<Match> unfinishedMatches = new HashSet<Match>();
 		while (rs.next()) {
-			unfinishedMatches.add(new Match(run, rs.getInt("id"), team_a, team_b, new BattlecodeMap(rs.getString("map"), 0, 0, 0, 0), rs.getInt("seed")));
+			unfinishedMatches.add(new Match(run, rs.getInt("id"), team_a, team_b, new BattlecodeMap(rs.getString("map"), 0, 0, 0), rs.getInt("seed")));
 		}
 		return unfinishedMatches;
 	}

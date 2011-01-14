@@ -25,7 +25,6 @@ public class BattlecodeMap implements Serializable {
 	public int height;
 	public int width;
 	public int rounds;
-	public int points;
 
 	/**
 	 * Reads file and parses out necessary information
@@ -51,7 +50,6 @@ public class BattlecodeMap implements Serializable {
 		n = nodeLst.item(0);
 		nl = n.getAttributes();
 		rounds = Integer.parseInt(nl.getNamedItem("rounds").getNodeValue());
-		points = Integer.parseInt(nl.getNamedItem("points").getNodeValue());
 	}
 	
 	/**
@@ -62,12 +60,11 @@ public class BattlecodeMap implements Serializable {
 	 * @param rounds
 	 * @param points
 	 */
-	public BattlecodeMap(String map, int height, int width, int rounds, int points) {
+	public BattlecodeMap(String map, int height, int width, int rounds) {
 		this.map = map;
 		this.height = height;
 		this.width = width;
 		this.rounds = rounds;
-		this.points = points;
 	}
 	
 	/**

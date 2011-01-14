@@ -10,7 +10,7 @@ public class MySQLDatabase extends JDBCDatabase {
 		// height (height of map), width (width of map), rounds (map's hardcoded rounds), points (map's hardcoded points), data (replay file)
 		"CREATE TABLE IF NOT EXISTS `matches` (`id` int(11) NOT NULL AUTO_INCREMENT, `run_id` int(11) NOT NULL,`map` varchar(30) NOT NULL, " +
 		"`seed` int(11) NOT NULL, `win` int(1), `win_condition` int(11), `height` int(11) NOT NULL, `width` int(11) NOT NULL, `rounds` int(11) NOT NULL, " +
-		"`points` int(11) NOT NULL, `a_points` int(11), `b_points` int(11), `data` mediumblob, PRIMARY KEY (`id`))",
+		"`a_points` decimal(6,2), `b_points` decimal(6,2), `data` mediumblob, PRIMARY KEY (`id`))",
 		// status (0 - queued, 1 - running, 2 - complete, 3 - error, 4 - canceled)
 		"CREATE TABLE IF NOT EXISTS `runs` (`id` int(11) NOT NULL AUTO_INCREMENT,`team_a` varchar(45) NOT NULL,`team_b` varchar(45) NOT NULL," +
 		"`status` int(11) DEFAULT '0',`started` timestamp DEFAULT 0,`ended` timestamp ON UPDATE current_timestamp,PRIMARY KEY (`id`))",

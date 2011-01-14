@@ -94,7 +94,7 @@ public class MatchesByMapServlet extends AbstractServlet {
 					continue;
 				seenMaps.add(rs3.getString("map"));
 				BattlecodeMap map = new BattlecodeMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
-						rs3.getInt("rounds"), rs3.getInt("points"));
+						rs3.getInt("rounds"));
 				out.println("<tr>");
 				out.println("<td>" + map.map + "</td>");
 				out.println("<td>" + WebUtil.getFormattedWinPercentage(WebUtil.getWinPercentage(id, map.map)) + "</td>");

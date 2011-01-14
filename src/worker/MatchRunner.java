@@ -54,8 +54,8 @@ public class MatchRunner implements Runnable {
 		String status = null;
 		int winner = 0;
 		int win_condition = 0;
-		int a_points = 0;
-		int b_points = 0;
+		double a_points = 0;
+		double b_points = 0;
 		byte[] data = null;
 		// Clean out old data
 		File f = new File(config.repo + "/" + match.map + ".rms");
@@ -141,19 +141,19 @@ public class MatchRunner implements Runnable {
 			}
 
 			// Detect how the match was finished
-			if (output.indexOf("Reason: The losing team was destroyed easily.") >= 0) {
+			if (output.indexOf("Reason: The losing team was destroyed.") >= 0) {
 				win_condition = 0;
-			} else if (output.indexOf("ending the match early") >= 0) {
+			} else if (output.indexOf("production and Team") >= 0) {
 				win_condition = 1;
 			} else {
 				win_condition = 2;
 			}
-			String a_points_str = getMatch(output, "Team A had [0-9]+");
+			String a_points_str = getMatch(output, "Team A had [0-9]+\\.[0-9]+ production");
 			if (!"".equals(a_points_str))
-				a_points = Integer.parseInt(a_points_str.substring("Team A had ".length()));
-			String b_points_str = getMatch(output, "Team B had [0-9]+");
+				a_points = Double.parseDouble(a_points_str.substring("Team A had ".length()));
+			String b_points_str = getMatch(output, "Team B had [0-9]+\\.[0-9]+ production");
 			if (!"".equals(b_points_str))
-				b_points = Integer.parseInt(b_points_str.substring("Team B had ".length()));
+				b_points = Double.parseDouble(b_points_str.substring("Team B had ".length()));
 
 			_log.info("Finished: " + match);
 		} catch (Exception e) {

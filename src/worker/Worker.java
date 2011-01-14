@@ -73,7 +73,7 @@ public class Worker implements Controller, Runnable {
 	 * @param data
 	 */
 	public synchronized void matchFinish(MatchRunner mr, Match match, String status, int winner, 
-			int win_condition, int a_points, int b_points, byte[] data) {
+			int win_condition, double a_points, double b_points, byte[] data) {
 		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, win_condition, a_points, b_points, data});
 		network.send(p);
 		mr.stop();

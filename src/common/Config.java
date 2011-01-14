@@ -70,9 +70,9 @@ public class Config {
 	/** MASTER ONLY: The password to use when connecting to the database. */
 	public String db_pass = "battlepass";
 	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "small" */
-	public int map_cutoff_small = 1000;
+	public int map_cutoff_small = 1400;
 	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
-	public int map_cutoff_medium = 2000;
+	public int map_cutoff_medium = 2400;
 	
 	/* These options are generated from the above options */
 	/** The location of the repository being used */

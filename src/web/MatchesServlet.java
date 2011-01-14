@@ -99,10 +99,10 @@ public class MatchesServlet extends AbstractServlet {
 			st3.setInt(1, id);
 			ResultSet rs3 = db.query(st3);
 			while (rs3.next()) {
-				int a_points = rs3.getInt("a_points");
-				int b_points = rs3.getInt("b_points");
+				double a_points = rs3.getDouble("a_points");
+				double b_points = rs3.getDouble("b_points");
 				BattlecodeMap map = new BattlecodeMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
-						rs3.getInt("rounds"), rs3.getInt("points"));
+						rs3.getInt("rounds"));
 				out.println("<tr>");
 				out.println("<td>" + map.map + "</td>");
 				out.println("<td>" + rs3.getInt("seed") + "</td>");

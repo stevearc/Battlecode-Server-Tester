@@ -36,7 +36,7 @@ public abstract class JDBCDatabase implements Database {
 			ResultSet rs = stmt.executeQuery();
 			return rs;
 		} catch (SQLException e) {
-			_log.log(Level.SEVERE, "SQL query failed", e);
+			_log.log(Level.SEVERE, "SQL query failed\n" + stmt.toString(), e);
 			throw e;
 		} 
 	}
@@ -54,7 +54,7 @@ public abstract class JDBCDatabase implements Database {
 			stmt.close();
 		} catch (SQLException e) {
 			if (fatal) {
-				_log.log(Level.SEVERE, "SQL update failed", e);
+				_log.log(Level.SEVERE, "SQL update failed\n" + stmt.toString(), e);
 				throw e;
 			}
 		} finally {
