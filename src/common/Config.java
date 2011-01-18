@@ -26,7 +26,7 @@ public class Config {
 	private static Database rootDB;
 	private static Master rootMaster;
 	private static WebPollHandler webPollHandler;
-	
+
 	/* These constants are for interfacing with the DB */
 	public static final int STATUS_QUEUED = 0;
 	public static final int STATUS_RUNNING = 1;
@@ -36,7 +36,7 @@ public class Config {
 
 	/* These options must be changed in source */
 	public long timeout = 300000;
-	
+
 	/* These options are only specified on the command line */
 	private boolean isServer;
 	public int http_port = 80;
@@ -73,7 +73,7 @@ public class Config {
 	public int map_cutoff_small = 1400;
 	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
 	public int map_cutoff_medium = 2400;
-	
+
 	/* These options are generated from the above options */
 	/** The location of the repository being used */
 	public String repo = "";
@@ -87,7 +87,7 @@ public class Config {
 	public String cmd_run_match = "./scripts/run_match.sh";
 	/** The path to the script that will remove the ADMIN and ADMIN_PASS fields from the config file */
 	public String cmd_clean_config_file = "./scripts/clean_config_file.sh";
-	
+
 	/* These are special case options.  They exist initially but are deleted as soon as they are
 	 * put into the database.  They start in the config file to make setup easier */
 	/** The initial web admin username */
@@ -99,7 +99,11 @@ public class Config {
 		this.isServer = isMaster;
 		File file = new File("/etc/bs-tester.conf");
 		if (!file.exists()) {
-			throw new IOException("Config file /etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
+			// First try the hacked config file
+			file = new File("./etc/bs-tester.conf");
+			if (!file.exists()) {
+				throw new IOException("Config file /etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
+			}
 		}
 		FileInputStream f = new FileInputStream(file);
 		BufferedReader read = new BufferedReader(new InputStreamReader(f));
@@ -302,13 +306,13 @@ public class Config {
 
 			if (db_host.equals(""))
 				throw new InvalidConfigException("Must have a valid database host");
-			
+
 			if (map_cutoff_medium < 0)
 				throw new InvalidConfigException("MAP_CUTOFF_MEDIUM must be positive");
-			
+
 			if (map_cutoff_small < 0)
 				throw new InvalidConfigException("MAP_CUTOFF_SMALL must be positive");
-			
+
 			if (map_cutoff_medium <= map_cutoff_small)
 				throw new InvalidConfigException("MAP_CUTOFF_SMALL must be less than MAP_CUTOFF_MEDIUM");
 		}

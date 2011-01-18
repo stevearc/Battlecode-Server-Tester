@@ -27,7 +27,7 @@ The Web Server - is an embedded server courtesy of Jetty that provides a web int
 ##############
 ## Building ##
 ##############
-Build the Jar file using the Fat Jar plugin and the settings provided in settings.fatjar
+Build the Jar file using the Fat Jar plugin.  Just package the source with the necessary libraries.
 Run ./pack.sh to zip up all necessary files into bs-tester.tar.gz file
 
 ############

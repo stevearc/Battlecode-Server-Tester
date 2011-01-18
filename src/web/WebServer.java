@@ -63,17 +63,17 @@ public class WebServer implements Runnable {
 			// Serve static javascript files
 			ContextHandler jsContext = new ContextHandler();
 			jsContext.setContextPath("/js");
-			jsContext.setHandler(new StaticFileHandler("text/javascript", ".+\\.js"));
+			jsContext.setHandler(new StaticFileHandler("text/javascript", ".+\\.js", config.install_dir + "/js"));
 			
 			// Serve static css files
 			ContextHandler cssContext = new ContextHandler();
 			cssContext.setContextPath("/css");
-			cssContext.setHandler(new StaticFileHandler("text/css", ".+\\.css"));
+			cssContext.setHandler(new StaticFileHandler("text/css", ".+\\.css", config.install_dir + "/css"));
 			
 			// Serve static image files
 			ContextHandler imgContext = new ContextHandler();
 			imgContext.setContextPath("/images");
-			imgContext.setHandler(new ImageHandler());
+			imgContext.setHandler(new ImageHandler("images"));
 			
 			// Add contexts
 			ContextHandlerCollection contexts = new ContextHandlerCollection();

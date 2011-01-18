@@ -1,9 +1,10 @@
 package web;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -19,12 +20,18 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
  */
 public class ImageHandler extends AbstractHandler {
 	private static final String imageRegex = ".+\\.(png|jpg|jpeg|tiff|gif|bmp)";
+	private String directory;
+	
+	public ImageHandler(String directory) {
+		this.directory = directory;
+	}
 
 	@Override
 	public void handle(String path, Request baseRequest, HttpServletRequest servletRequest,
 			HttpServletResponse response) throws IOException, ServletException {
-		URL url = getClass().getResource(path);
-		if (url == null || !path.matches(imageRegex)) {
+		String absPath = directory + path;
+		File f = new File(absPath);
+		if (!f.exists() || f.isDirectory() || !path.matches(imageRegex)) {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			baseRequest.setHandled(true);
 			return;
@@ -34,7 +41,8 @@ public class ImageHandler extends AbstractHandler {
 		baseRequest.setHandled(true);
 		response.setContentType("image/" + path.substring(path.lastIndexOf(".")+1).toLowerCase());
 		response.setHeader("Content-Type", "image/" + path.substring(path.lastIndexOf(".")+1).toLowerCase());
-		InputStream istream = url.openStream();
+		
+		InputStream istream = new FileInputStream(absPath);
 		
 		byte[] buffer = new byte[1024];
 		int n;

@@ -203,8 +203,6 @@ TINY.table=function(){
 		var g,h; f=g=f.v.toLowerCase(); c=h=c.v.toLowerCase();
 		var i=parseFloat(f.replace(/(\$|\,)/g,'')), n=parseFloat(c.replace(/(\$|\,)/g,''));
 		if(!isNaN(i)&&!isNaN(n)){g=i,h=n}
-		i=Date.parse(f); n=Date.parse(c);
-		if(!isNaN(i)&&!isNaN(n)){g=i; h=n}
 		return g>h?1:(g<h?-1:0)
 	};
 	return{sorter:sorter}
