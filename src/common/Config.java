@@ -53,7 +53,7 @@ public class Config {
 	public String install_dir = "";
 	/** The port number of the server to connect to (or listen on, if running as server) */
 	public int port = 8888;
-	/** The version control program being used (currently supports git and svn) */
+	/** The version control program being used (currently supports git, hg, and svn) */
 	public String version_control = "";
 	/** WORKER ONLY: The internet address of the master to connect to */
 	public String server = "";
@@ -278,7 +278,7 @@ public class Config {
 		if (port < 1 || port > 65535)
 			throw new InvalidConfigException("Invalid port number " + port);
 
-		if (!version_control.equals("svn") && !version_control.equals("git"))
+		if (!version_control.equals("svn") && !version_control.equals("git") && !version_control.equals("hg"))
 			throw new InvalidConfigException("Invalid version control " + version_control);
 
 		// Check the worker values

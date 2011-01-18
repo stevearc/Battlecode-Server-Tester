@@ -5,8 +5,8 @@ if [ $ID != 0 ]; then
   exit 1
 fi
 
-if [[ `which git` == "" && `which svn` == "" ]]; then
-  echo "version control not found.  Install git or svn."
+if [[ `which git` == "" && `which svn` == "" && `which hg` == "" ]]; then
+  echo "version control not found.  Install git, svn, or hg."
   exit 1
 fi
 
@@ -165,7 +165,9 @@ setup_server() {
     if [ "$VERSION_CONTROL" == "git" ]; then
       echo -n "URL of repo (ex steven@server.mit.edu:/var/git/repo): "
     elif [ "$VERSION_CONTROL" == "svn" ]; then
-      echo -n "URL of repo (ex svn+ssh://steven@server.mit.edu/var/git/repo): "
+      echo -n "URL of repo (ex svn+ssh://steven@server.mit.edu/var/svn/repo): "
+    elif [ "$VERSION_CONTROL" == "hg" ]; then
+      echo -n "URL of repo (ex ssh://steven@server.mit.edu//var/hg/repo): "
     fi
     read REPO_ADDR
     VALID=`./scripts/$VERSION_CONTROL/check_url_format.sh $REPO_ADDR`

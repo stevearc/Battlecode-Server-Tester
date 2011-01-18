@@ -5,7 +5,7 @@
 ## REQUIREMENTS ##
 ##################
 You need two things in order for this system to work properly:
-	* Git or SVN
+	* Git, Mercurial, or SVN
 	* Java and Ant (to run the battlecode client)
 
 ##################
@@ -46,5 +46,7 @@ sudo invoke-rc.d bs-tester start
 ## VERSION CONTROL ##
 #####################
 If you use git you will need to use the `git tag` function to tag versions of your code
-that you want to run with the tester.  If you are using svn then there is a page on the
-website that will allow you to tag different revisions of your code with strings.
+that you want to run with the tester.  Remember to do git push --tags.  The same is true
+with mercurial, you need to use `hg tag` to tag your code.  If you are using svn then 
+there is a page on the website that will allow you to tag different revisions of your 
+code with strings.
