@@ -34,12 +34,10 @@ public class HSQLDatabase extends JDBCDatabase {
 			_log.severe("Cannot connect to database");
 			throw e;
 		}
-		if (config.reset_db) {
-			drop();
-		}
 		init();
 	}
 	
+	@SuppressWarnings("unused")
 	private void drop() throws SQLException {
         for (String stmt: dropStmts) {
 			update(stmt, false);

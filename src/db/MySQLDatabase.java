@@ -38,12 +38,10 @@ public class MySQLDatabase extends JDBCDatabase {
 			throw e;
 		}
 		update("use " + config.db_name, true);
-		if (config.reset_db) {
-			drop();
-		}
 		init();
 	}
 	
+	@SuppressWarnings("unused")
 	private void drop() throws SQLException {
         for (String stmt: dropStmts) {
 			update(stmt, true);

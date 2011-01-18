@@ -334,7 +334,7 @@ public class Master {
 	 */
 	public synchronized void updateRepo() throws SQLException {
 		try {
-			Process p = Runtime.getRuntime().exec(new String[] {config.cmd_update});
+			Process p = Runtime.getRuntime().exec(new String[] {config.cmd_update, config.repo});
 
 			p.waitFor();
 			BufferedReader read = new BufferedReader(new InputStreamReader(p.getInputStream()));

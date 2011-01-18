@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -27,14 +26,14 @@ public class MatchRunner implements Runnable {
 	private Worker worker;
 	private Match match;
 	private boolean stop = false;
-	private ReentrantLock repoLock;
 	private Process curProcess;
+	private int core;
 
-	public MatchRunner(Worker worker, Match match, ReentrantLock repoLock) {
+	public MatchRunner(Worker worker, Match match, int core) {
 		config = Config.getConfig();
 		this.match = match;
 		this.worker = worker;
-		this.repoLock = repoLock;
+		this.core = core;
 		_log = config.getLogger();
 	}
 
@@ -57,44 +56,37 @@ public class MatchRunner implements Runnable {
 		double a_points = 0;
 		double b_points = 0;
 		byte[] data = null;
+		String repo = config.repo + (core + 1); // Core 0 uses repo1, core 1 uses repo2, etc
+		
 		// Clean out old data
-		File f = new File(config.repo + "/" + match.map + ".rms");
+		File f = new File(repo + "/" + match.map + ".rms");
 		f.delete();
 
 		try {
 			_log.info("Running: " + match);
-			String output_file = config.repo + "/" + match.map + match.seed + ".out";
+			String output_file = repo + "/" + match.map + match.seed + ".out";
 			Runtime run = Runtime.getRuntime();
-			try {
-				repoLock.lock();
 
-				// Update the repository
-				if (stop)
-					return;
-				curProcess = run.exec(config.cmd_update);
-				curProcess.waitFor();
-				if (stop)
-					return;
-				// Get the appropriate teams for the match
-				String[] args = new String[3];
-				args[0] = config.cmd_grabole;
-				args[1] = match.team_a;
-				args[2] = match.team_b;
-				curProcess = run.exec(args);
-				curProcess.waitFor();
-				if (stop)
-					return;
-				// Generate the bc.conf file
-				curProcess = run.exec(new String[] {config.cmd_gen_conf, match.map.map, ""+match.seed});
-				curProcess.waitFor();
-				if (stop)
-					return;
-				// Run the match
-				curProcess = run.exec(new String[] {config.cmd_run_match, config.repo, output_file});
-				Thread.sleep(10000);
-			} finally {
-				repoLock.unlock();
-			}
+			// Update the repository
+			if (stop)
+				return;
+			curProcess = run.exec(new String[] {config.cmd_update, repo});
+			curProcess.waitFor();
+			if (stop)
+				return;
+			// Get the appropriate teams for the match
+			curProcess = run.exec(new String[] {config.cmd_grabole, repo, match.team_a, match.team_b});
+			curProcess.waitFor();
+			if (stop)
+				return;
+			// Generate the bc.conf file
+			curProcess = run.exec(new String[] {config.cmd_gen_conf, repo, match.map.map, ""+match.seed});
+			curProcess.waitFor();
+			if (stop)
+				return;
+			// Run the match
+			curProcess = run.exec(new String[] {config.cmd_run_match, repo, output_file});
+			Thread.sleep(10000);
 			new Thread(new Callback(Thread.currentThread(), curProcess)).start();
 			try {
 				Thread.sleep(config.timeout);
@@ -108,7 +100,7 @@ public class MatchRunner implements Runnable {
 				sb.append(line);
 			}
 			String output = sb.toString();
-			File of = new File(config.repo + "/" + output_file);
+			File of = new File(repo + "/" + output_file);
 			of.delete();
 
 			// Check to see if there were any errors
@@ -117,7 +109,7 @@ public class MatchRunner implements Runnable {
 			if (curProcess.exitValue() != 0) {
 				_log.severe("Error running match\n" + output);
 				status = "error";
-				worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
 				return;
 			}
 
@@ -130,7 +122,7 @@ public class MatchRunner implements Runnable {
 					_log.warning("Unknown error running match\n" + output);
 					_log.warning("^ error: a_index: " + a_index + " b_index: " + b_index);
 					if (!stop) 
-						worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+						worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
 					return;
 				}
 				// If A loses, winner = 0
@@ -160,26 +152,26 @@ public class MatchRunner implements Runnable {
 			if (!stop) {
 				_log.log(Level.SEVERE, "Failed to run match", e);
 				status = "error";
-				worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
 			}
 			return;
 		}
 
 		// Read in the replay file
-		String matchFile = config.repo + "/" + match.map + ".rms";
+		String matchFile = repo + "/" + match.map + ".rms";
 		try {
 			data = getMatchData(matchFile);
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
 			status = "error";
 			if (!stop)
-				worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
 			return;
 		}
 
 		status = "ok";
 		if (!stop)
-			worker.matchFinish(this, match, status, winner, win_condition, a_points, b_points, data);
+			worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
 	}
 
 	/**

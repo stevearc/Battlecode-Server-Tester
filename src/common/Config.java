@@ -41,7 +41,6 @@ public class Config {
 	private boolean isServer;
 	public int http_port = 80;
 	public int https_port = 443;
-	public boolean reset_db = false;
 	public String keystore = "";
 
 	/* These options are specified in the battlecode.conf file */
@@ -266,9 +265,6 @@ public class Config {
 		if (!new File(log_dir).exists())
 			throw new InvalidConfigException("Invalid log directory " + log_dir);
 
-		if (!new File(repo).exists())
-			throw new InvalidConfigException("Invalid repository location " + repo);
-
 		if ("".equals(keystore_pass))
 			throw new InvalidConfigException("Keystore password cannot be blank");
 
@@ -288,12 +284,18 @@ public class Config {
 
 			if (cores < 1) 
 				throw new InvalidConfigException("Invalid number of cores: " + cores);
+
+			if (!new File(repo + "1").exists())
+				throw new InvalidConfigException("Could not find repository " + repo + "1");
 		}
 
 		// Check the server values
 		if (isServer) {
 			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
 				throw new InvalidConfigException("Invalid database type: " + db_type);
+
+			if (!new File(repo).exists())
+				throw new InvalidConfigException("Could not find repository " + repo);
 
 			if (db_user.equals(""))
 				throw new InvalidConfigException("Invalid database user");

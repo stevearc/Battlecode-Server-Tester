@@ -1,7 +1,7 @@
 #!/bin/bash
 source /etc/bs-tester.conf
 
-REPO=$INSTALL_DIR/repo
+REPO=$1
 USER=`ls -ld $REPO | awk '{split($0,a," ")} END{print a[3]}'`
 CMD_PREFIX="sudo -u $USER"
 

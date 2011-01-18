@@ -46,7 +46,7 @@ MASTER=1;
 
 INSTALL_DIR=`pwd`
 
-if [ -e "$INSTALL_DIR/repo" ]; then
+if [ -e "$INSTALL_DIR/repo" ] || [ -e "$INSTALL_DIR/repo1" ]; then
   if [ "$1" != "-f" ]; then
     echo "Setup completed.  To reconfigure type ./setup.sh -f"
     exit 0
@@ -98,11 +98,15 @@ setup_worker() {
   if [ ! -e repo ]; then
     echo "WARNING: Failed to initialize repository.  Either try again with ./setup.sh -f or manually clone your repository into $INSTALL_DIR/repo"
   fi
+  mv repo repo1
+  # Make one repo per core that this will be run on
+  for ((INDEX=2;INDEX<=$CORES;INDEX+=1)); do
+    cp -r repo1 repo$INDEX
+  done
   set_param INSTALL_DIR $INSTALL_DIR
   set_param CORES $CORES
 
   cp etc/bs-tester.conf /etc
-  
 }
 
 setup_master() {
@@ -221,13 +225,13 @@ setup_master() {
 # if the -f option is passed, remove the current repo and config file
 if [ "$1" == "-f" ]; then
   echo "Cleaning out old files..."
-  rm -rf repo
-  rm -f /etc/bs-tester.conf
-  rm -rf hsqldb*
+  rm -rf repo > /dev/null 2> /dev/null
+  rm -f /etc/bs-tester.conf > /dev/null 2> /dev/null
+  rm -rf hsqldb* > /dev/null 2> /dev/null
   if [ "$MASTER" == "1" ]; then
-    rm keystore
-    rm bs-worker.tar
-    rm bs-worker.tar.gz
+    rm keystor > /dev/null 2> /dev/null
+    rm bs-worker.tar > /dev/null 2> /dev/null
+    rm bs-worker.tar.gz > /dev/null 2> /dev/null
   fi
 fi
 

@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
-import java.util.HashSet;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,14 +32,14 @@ public class Worker implements Controller, Runnable {
 	private Config config;
 	private Logger _log;
 	private Network network;
-	private HashSet<MatchRunner> running = new HashSet<MatchRunner>();
-	private ReentrantLock repoLock = new ReentrantLock();
+	private MatchRunner[] running;
 	private boolean runWorker = true;
 	private SSLSocketFactory sf;
 
 	public Worker() throws Exception{
 		config = Config.getConfig();
 		_log = config.getLogger();
+		running = new MatchRunner[config.cores];
 
 		// Connect to the master using the certificate in the keystore
 		KeyStore keystore = KeyStore.getInstance("JKS");
@@ -72,12 +70,12 @@ public class Worker implements Controller, Runnable {
 	 * @param b_points
 	 * @param data
 	 */
-	public synchronized void matchFinish(MatchRunner mr, Match match, String status, int winner, 
+	public synchronized void matchFinish(int core, Match match, String status, int winner, 
 			int win_condition, double a_points, double b_points, byte[] data) {
 		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, win_condition, a_points, b_points, data});
 		network.send(p);
-		mr.stop();
-		running.remove(mr);
+		running[core].stop();
+		running[core] = null;
 	}
 
 	@Override
@@ -107,19 +105,30 @@ public class Worker implements Controller, Runnable {
 		switch (p.getCmd()) {
 		case RUN:
 			try {
-				MatchRunner m = new MatchRunner(this, (Match) p.get(0), repoLock);
+				// Find a free core
+				int core;
+				for (core = 0; core < config.cores; core++) {
+					if (running[core] == null)
+						break;
+				}
+				// Could not find free core
+				if (core == config.cores)
+					break;
+				MatchRunner m = new MatchRunner(this, (Match) p.get(0), core);
 				new Thread(m).start();
-				running.add(m);
+				running[core] = m;
 			} catch (Exception e) {
 				_log.warning("Error running match");
 			}
 			break;
 		case STOP:
 			_log.info("Received stop command");
-			for (MatchRunner mr: running) {
-				mr.stop();
+			for (int i = 0; i < config.cores; i++) {
+				if (running[i] != null) {
+					running[i].stop();
+					running[i] = null;
+				}
 			}
-			running.clear();
 			break;
 		default:
 			_log.warning("Unrecognized packet command: " + p.getCmd());
@@ -128,10 +137,12 @@ public class Worker implements Controller, Runnable {
 
 	@Override
 	public synchronized void onDisconnect() {
-		for (MatchRunner mr: running) {
-			mr.stop();
-		}
-		running.clear();
+			for (int i = 0; i < config.cores; i++) {
+				if (running[i] != null) {
+					running[i].stop();
+					running[i] = null;
+				}
+			}
 		_log.info("Disconnected from master");
 	}
 }

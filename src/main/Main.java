@@ -44,10 +44,10 @@ public class Main {
 		Options options = new Options();
 		HelpFormatter formatter = new HelpFormatter();
 		options.addOption("s", "server", false, "run as server");
+		options.addOption("w", "worker", false, "run as worker");
 		options.addOption("h", "help", false, "display help text");
 		options.addOption("o", HTTP_PORT_OP, true, "what port for the http server to listen on (default 80)");
 		options.addOption("l", SSL_PORT_OP, true, "what port for the https server to listen on (default 443)");
-		options.addOption("r", "reset-db", false, "clear and re-create the database");
 
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
@@ -73,7 +73,6 @@ public class Main {
 				if (cmd.hasOption(SSL_PORT_OP)) {
 					config.https_port = Integer.parseInt(cmd.getOptionValue(SSL_PORT_OP));
 				}
-				config.reset_db = cmd.hasOption('r');
 				Database db = null;
 				if (config.db_type.equals("mysql")){
 					db = new MySQLDatabase();
@@ -94,10 +93,12 @@ public class Main {
 				new Thread(new ProxyServer()).start();
 				new Thread(new WebServer()).start();
 			} // Start the worker
-			else {
+			else if (cmd.hasOption('w')){
 				Config c = new Config(false);
 				Config.setConfig(c);
 				new Thread(new Worker()).start();
+			} else {
+				System.out.println("Must specify if running as server or worker.  Do ./run.sh -h for help.");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

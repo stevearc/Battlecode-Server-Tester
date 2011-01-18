@@ -30,27 +30,31 @@ sub restart {
 }
 
 sub start {
+  print "Starting...";
   my $pid = `ps ax | grep bs-tester.jar | grep -v grep`;
 	$pid =~ s/^\s*(\d+) .*/$1/;
 
 	if ( $pid ) {
-		print "Already running\n"
+		print "Already running\n";
 	} else {
     if (MASTER) {
       start_master();
     } else {
       start_worker();
     }
+    print "Started\n";
 	}
 }
 
 sub stop {
+  print "Stopping...";
 	my $pid = `ps x | grep bs-tester.jar | grep -v grep`;
 	$pid =~ s/^\s*(\d+) .*/$1/;
 
 	if ( $pid ) {
 		`kill $pid`;
 	}
+  print "Stopped\n";
 }
 
 sub start_master {
@@ -60,7 +64,7 @@ sub start_master {
 
 sub start_worker {
 	chdir( BS_TESTER_DIR );
-	system( './run.sh > /dev/null 2>/dev/null &' );
+	system( './run.sh -w > /dev/null 2>/dev/null &' );
 }
 
 sub status {
