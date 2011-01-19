@@ -213,11 +213,11 @@ setup_master() {
   DIR=`pwd | sed -e 's/.*\///'`
   cd ..
   # adjust setup script to run for workers
-  sed -i -e 's/MASTER=1/MASTER=0/' $DIR/setup.sh
+  sed -i -e 's/^MASTER=1/MASTER=0/' $DIR/setup.sh
   tar -cf $DIR/bs-worker.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README $DIR/COPYING $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
   gzip $DIR/bs-worker.tar
   # reset setup script
-  sed -i -e 's/MASTER=0/MASTER=1/' $DIR/setup.sh
+  sed -i -e 's/^MASTER=0/MASTER=1/' $DIR/setup.sh
 
   echo "Setup completed!  All files for setting up a worker are in bs-worker.tar.gz"
 }

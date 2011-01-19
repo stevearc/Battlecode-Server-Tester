@@ -1,7 +1,7 @@
 #!/bin/bash
 URL=$1
-ROOT_URL=${URL%//*}
-ROOT_URL=${ROOT_URL##ssh://}
+ROOT_URL=${URL:6}
+ROOT_URL=${ROOT_URL%%/*}
 echo "Host BSTesterServer" >> $HOME/.ssh/config
 echo "  Hostname=$ROOT_URL" >> $HOME/.ssh/config
 echo "  IdentityFile=$HOME/.ssh/id_rsa" >> $HOME/.ssh/config
