@@ -100,6 +100,7 @@ public class MasterMethodCaller {
 			public void run() {
 				try {
 					Config.getMaster().updateRepo();
+					Config.getMaster().updateMaps();
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
