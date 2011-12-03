@@ -69,7 +69,7 @@ public class IndexServlet extends AbstractServlet {
 			"<tbody>");
 
 			// Display current runs
-			String sql = "SELECT id, team_a, t1.alias a_nick, team_b, t2.alias b_nick, status, " +
+			String sql = "SELECT id, team_a, team_b, status, " +
 			"started, ended, now() as now " +
 			"FROM runs r LEFT JOIN tags t1 ON r.team_a = t1.tag LEFT JOIN tags t2 ON r.team_b = t2.tag" +
 			" ORDER BY id DESC";
@@ -78,10 +78,8 @@ public class IndexServlet extends AbstractServlet {
 			long startTime = 0;
 			while (rs.next()) {
 				int status = rs.getInt("status");
-				String team_a = rs.getString("a_nick");
-				team_a = (team_a == null ? rs.getString("team_a") : "<a title='" + rs.getString("team_a") + "'>" + team_a + "</a>");
-				String team_b = rs.getString("b_nick");
-				team_b = (team_b == null ? rs.getString("team_b") : "<a title='" + rs.getString("team_b") + "'>" + team_b + "</a>");
+				String team_a = rs.getString("team_a");
+				String team_b = rs.getString("team_b");
 				ResultSet mapsQuery = db.query("SELECT COUNT(*) AS maps, SUM(win) AS wins FROM matches WHERE run_id = " + 
 						rs.getInt("id") + " AND win IS NOT NULL");
 				mapsQuery.next();

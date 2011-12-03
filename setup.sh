@@ -5,11 +5,6 @@ if [ $ID != 0 ]; then
   exit 1
 fi
 
-if [[ `which git` == "" && `which svn` == "" && `which hg` == "" ]]; then
-  echo "version control not found.  Install git, svn, or hg."
-  exit 1
-fi
-
 if [[ `which ant` == "" ]]; then
   echo "ant not found"
   exit 1
@@ -45,13 +40,6 @@ fi
 MASTER=1;
 
 INSTALL_DIR=`pwd`
-
-if [ -e "$INSTALL_DIR/repo" ] || [ -e "$INSTALL_DIR/repo1" ]; then
-  if [ "$1" != "-f" ]; then
-    echo "Setup completed.  To reconfigure type ./setup.sh -f"
-    exit 0
-  fi
-fi
 
 set_param() {
   KEY=$1
@@ -93,16 +81,6 @@ setup_worker() {
     ./scripts/install_daemon.sh 0 $INSTALL_DIR
   fi
 
-  sudo -u $SUDO_USER ./scripts/generate_ssh_keys.sh $VERSION_CONTROL $REPO_ADDR
-
-  if [ ! -e repo ]; then
-    echo "WARNING: Failed to initialize repository.  Either try again with ./setup.sh -f or manually clone your repository into $INSTALL_DIR/repo"
-  fi
-  mv repo repo1
-  # Make one repo per core that this will be run on
-  for ((INDEX=2;INDEX<=$CORES;INDEX+=1)); do
-    cp -r repo1 repo$INDEX
-  done
   set_param INSTALL_DIR $INSTALL_DIR
   set_param CORES $CORES
 
@@ -110,11 +88,6 @@ setup_worker() {
 }
 
 setup_master() {
-  VERSION_OPTIONS=""
-  for DIR in `find scripts/* -type d | sed -e 's/scripts\///'`; do
-    VERSION_OPTIONS=$VERSION_OPTIONS"/"$DIR
-  done
-
   # Get admin name
   ADMIN=""
   while [ "$ADMIN" == "" ]; do
@@ -122,20 +95,26 @@ setup_master() {
     read ADMIN
   done
 
-  # Get admin password
-  ADMIN_PASS=""
-  while [ "$ADMIN_PASS" == "" ]; do
-    echo -n "Admin password? "
-    read -s ADMIN_PASS
-  done
-  echo ""
-
-  # Specify team name
-  TEAM=""
-  while [ "$TEAM" == "" ]; do
-    echo -n "Team id (ex team049)? "
-    read TEAM
-  done
+    VERIFIED=0
+    while [ "$VERIFIED" == "0" ]; do
+        # Get admin password
+        ADMIN_PASS=""
+        while [ "$ADMIN_PASS" == "" ]; do
+            echo -n "Admin password? "
+            read -s ADMIN_PASS
+        done
+        echo ""
+        CONFIRMATION=""
+        echo -n "Confirm password? "
+        read -s CONFIRMATION
+        if [ "$ADMIN_PASS" == "$CONFIRMATION" ]; then
+            VERIFIED=1
+            echo ""
+        else
+            echo ""
+            echo "ERROR: Passwords do not match"
+        fi
+    done
 
   # Specify server address
   SERVER=""
@@ -143,6 +122,24 @@ setup_master() {
     echo -n "IP address/hostname of this machine? "
     read SERVER
   done
+
+  # Get existing battlecode files
+  BATTLECODE_DIR=""
+  while [ ! -e $BATTLECODE_DIR/lib/battlecode-server.jar ]; do
+    if [ "$BATTLECODE_DIR" != "" ]; then
+        echo "ERROR: Could not find $BATTLECODE_DIR/lib/battlecode-server.jar";
+        BATTLECODE_DIR=""
+    fi
+      while [ "$BATTLECODE_DIR" == "" ]; do
+        echo -n "Existing battlecode install directory? "
+        read BATTLECODE_DIR
+      done
+    done
+  mkdir -p battlecode/lib
+  mkdir -p battlecode/teams
+  cp -p $BATTLECODE_DIR/lib/battlecode-server.jar battlecode/lib
+  cp -pr $BATTLECODE_DIR/bc.conf $BATTLECODE_DIR/build.xml $BATTLECODE_DIR/idata $BATTLECODE_DIR/maps battlecode
+
 
   KEYSTORE_PASS=`uuidgen | cut -c-8`
   # Generate keystore
@@ -167,57 +164,33 @@ setup_master() {
     ./scripts/install_daemon.sh 1 $INSTALL_DIR
   fi
   
-  # Specify version control
-  VALID=0
-  while [ $VALID == 0 ]; do
-    echo -n "Version control ("${VERSION_OPTIONS:1}")? "
-    read VERSION_CONTROL
-    VALID=`expr match "$VERSION_OPTIONS" '.*'"$VERSION_CONTROL"'.*'`
-  done
-
-  # Specify version control URL
-  VALID=0
-  while [ "$VALID" == "0" ]; do
-    if [ "$VERSION_CONTROL" == "git" ]; then
-      echo -n "URL of repo (ex steven@server.mit.edu:/var/git/repo): "
-    elif [ "$VERSION_CONTROL" == "svn" ]; then
-      echo -n "URL of repo (ex svn+ssh://steven@server.mit.edu/var/svn/repo): "
-    elif [ "$VERSION_CONTROL" == "hg" ]; then
-      echo -n "URL of repo (ex ssh://steven@server.mit.edu//var/hg/repo): "
-    fi
-    read REPO_ADDR
-    VALID=`./scripts/$VERSION_CONTROL/check_url_format.sh $REPO_ADDR`
-  done
-
-  sudo -u $SUDO_USER ./scripts/generate_ssh_keys.sh $VERSION_CONTROL $REPO_ADDR
-
-  if [ ! -e repo ]; then
-    echo "WARNING: Failed to initialize repository.  Either try again with ./setup.sh -f or manually clone your repository into $INSTALL_DIR/repo"
-  fi
-
   set_param INSTALL_DIR $INSTALL_DIR
-  set_param VERSION_CONTROL $VERSION_CONTROL
-  set_param TEAM $TEAM
   set_param SERVER $SERVER
-  set_param REPO_ADDR $REPO_ADDR
   set_param ADMIN $ADMIN
   set_param ADMIN_PASS $ADMIN_PASS
   set_param KEYSTORE_PASS $KEYSTORE_PASS
-  cp etc/bs-tester.conf /etc
-
+  if [ "$INSTALL_DAEMON" == "1" ]; then
+      cp etc/bs-tester.conf /etc
+  fi
   # Remove the ADMIN and ADMIN_PASS fields from bs-tester.conf
   set_param ADMIN " "
   set_param ADMIN_PASS " "
 
   # Generate bs-worker.tar.gz
   DIR=`pwd | sed -e 's/.*\///'`
-  cd ..
+  pushd .. > /dev/null
   # adjust setup script to run for workers
   sed -i -e 's/^MASTER=1/MASTER=0/' $DIR/setup.sh
-  tar -cf $DIR/bs-worker.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README $DIR/COPYING $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh
+  tar -cf $DIR/bs-worker.tar $DIR/bs-tester.jar $DIR/etc $DIR/keystore $DIR/README $DIR/COPYING $DIR/run.sh $DIR/setup.sh $DIR/scripts $DIR/uninstall.sh $DIR/battlecode
   gzip $DIR/bs-worker.tar
   # reset setup script
   sed -i -e 's/^MASTER=0/MASTER=1/' $DIR/setup.sh
+
+  if [ "$INSTALL_DAEMON" != "1" ]; then
+    popd > /dev/null
+      set_param ADMIN $ADMIN
+      set_param ADMIN_PASS $ADMIN_PASS
+  fi
 
   echo "Setup completed!  All files for setting up a worker are in bs-worker.tar.gz"
 }
@@ -229,7 +202,7 @@ if [ "$1" == "-f" ]; then
   rm -f /etc/bs-tester.conf > /dev/null 2> /dev/null
   rm -rf hsqldb* > /dev/null 2> /dev/null
   if [ "$MASTER" == "1" ]; then
-    rm keystor > /dev/null 2> /dev/null
+    rm keystore > /dev/null 2> /dev/null
     rm bs-worker.tar > /dev/null 2> /dev/null
     rm bs-worker.tar.gz > /dev/null 2> /dev/null
   fi

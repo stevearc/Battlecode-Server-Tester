@@ -31,9 +31,6 @@ public class WebUtil {
 		out.println("<div id=\"tabs\"><h2>");
 		out.println("<ul>");
 		writeTab(out, response, current, IndexServlet.NAME, "Home");
-		if (Config.getConfig().version_control.equals("svn")) {
-			writeTab(out, response, current, TagServlet.NAME, "Tags");
-		}
 		writeTab(out, response, current, ConnectionsServlet.NAME, "Connections");
 		writeTab(out, response, current, AnalysisServlet.NAME, "Analysis");
 		writeTab(out, response, current, AdminServlet.NAME, "Admin");

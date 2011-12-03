@@ -36,7 +36,6 @@ public class WebServer implements Runnable {
 			new AdminServlet(),
 			new LogoutServlet(),
 			new AdminActionServlet(),
-			new TagServlet(),
 			};
 
 	public WebServer() {

@@ -1,7 +1,5 @@
 package master;
 
-import java.sql.SQLException;
-
 import networking.Packet;
 
 import common.Config;
@@ -98,12 +96,7 @@ public class MasterMethodCaller {
 
 			@Override
 			public void run() {
-				try {
-					Config.getMaster().updateRepo();
-					Config.getMaster().updateMaps();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				Config.getMaster().updateMaps();
 			}
 
 		}).start();

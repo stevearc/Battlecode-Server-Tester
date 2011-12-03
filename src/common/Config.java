@@ -52,8 +52,6 @@ public class Config {
 	public String install_dir = "";
 	/** The port number of the server to connect to (or listen on, if running as server) */
 	public int port = 8888;
-	/** The version control program being used (currently supports git, hg, and svn) */
-	public String version_control = "";
 	/** WORKER ONLY: The internet address of the master to connect to */
 	public String server = "";
 	/** WORKER ONLY: The number of simultaneous matches to run at a time */
@@ -74,12 +72,6 @@ public class Config {
 	public int map_cutoff_medium = 2400;
 
 	/* These options are generated from the above options */
-	/** The location of the repository being used */
-	public String repo = "";
-	/** The path to the script that will update the repository */
-	public String cmd_update = "";
-	/** The path to the script that will retrieve the appropriate teams from repository history */
-	public String cmd_grabole = "";
 	/** The path to the script that will generate the proper bc.conf file */
 	public String cmd_gen_conf = "./scripts/gen_conf.sh";
 	/** The path to the script that runs the battlecode match */
@@ -196,7 +188,6 @@ public class Config {
 		if (option.equals("install_dir")) {
 			install_dir = value;
 			keystore = install_dir + "/keystore";
-			repo = install_dir + "/repo";
 		}
 		else if (option.equals("keystore_pass")) {
 			keystore_pass = value;
@@ -240,11 +231,6 @@ public class Config {
 		else if (option.equals("repo_addr")) {
 			// pass
 		}
-		else if (option.equals("version_control")) {
-			version_control = value.toLowerCase();
-			cmd_grabole = "./scripts/" + value + "/grabole.sh";
-			cmd_update = "./scripts/" + value + "/update.sh";
-		}
 		else if (option.equals("cores")) {
 			cores = Integer.parseInt(value);
 		}
@@ -274,9 +260,6 @@ public class Config {
 		if (port < 1 || port > 65535)
 			throw new InvalidConfigException("Invalid port number " + port);
 
-		if (!version_control.equals("svn") && !version_control.equals("git") && !version_control.equals("hg"))
-			throw new InvalidConfigException("Invalid version control " + version_control);
-
 		// Check the worker values
 		if (!isServer) {
 			if (server.equals(""))
@@ -284,18 +267,12 @@ public class Config {
 
 			if (cores < 1) 
 				throw new InvalidConfigException("Invalid number of cores: " + cores);
-
-			if (!new File(repo + "1").exists())
-				throw new InvalidConfigException("Could not find repository " + repo + "1");
 		}
 
 		// Check the server values
 		if (isServer) {
 			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
 				throw new InvalidConfigException("Invalid database type: " + db_type);
-
-			if (!new File(repo).exists())
-				throw new InvalidConfigException("Could not find repository " + repo);
 
 			if (db_user.equals(""))
 				throw new InvalidConfigException("Invalid database user");

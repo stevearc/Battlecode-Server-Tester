@@ -1,11 +1,8 @@
 package master;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -304,9 +301,8 @@ public class Master {
 	}
 
 	private boolean validateTeams(String team_a, String team_b) throws SQLException {
-		updateRepo();
 
-		PreparedStatement st = db.prepare("SELECT * FROM tags WHERE tag LIKE ? OR alias LIKE ?");
+		PreparedStatement st = db.prepare("SELECT * FROM tags WHERE tag LIKE ?");
 		st.setString(1, team_a);
 		st.setString(2, team_a);
 		ResultSet rs = db.query(st);
@@ -316,7 +312,7 @@ public class Master {
 			return false;
 		}
 		st.close();
-		PreparedStatement stmt = db.prepare("SELECT * FROM tags WHERE tag LIKE ? OR alias LIKE ?");
+		PreparedStatement stmt = db.prepare("SELECT * FROM tags WHERE tag LIKE ?");
 		stmt.setString(1, team_b);
 		stmt.setString(2, team_b);
 		rs = db.query(stmt);
@@ -329,33 +325,10 @@ public class Master {
 	}
 
 	/**
-	 * Update the repository
-	 * @throws SQLException
-	 */
-	public synchronized void updateRepo() throws SQLException {
-		try {
-			Process p = Runtime.getRuntime().exec(new String[] {config.cmd_update, config.repo});
-
-			p.waitFor();
-			BufferedReader read = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			for (String line = read.readLine(); line != null; line = read.readLine()) {
-				PreparedStatement st = db.prepare("INSERT INTO tags (tag) VALUES (?)");
-				st.setString(1, line);
-				db.update(st, false);
-			}
-			wph.broadcastMsg("teams_update", new CometMessage(CometCmd.RELOAD, new String[] {}));
-		} catch (InterruptedException e){
-			_log.log(Level.WARNING, "Error updating repo", e);
-		} catch (IOException e) {
-			_log.log(Level.WARNING, "Error updating repo", e);
-		}
-	}
-
-	/**
 	 * Update the list of available maps
 	 */
 	public synchronized void updateMaps() {
-		File file = new File(config.repo + "/maps");
+		File file = new File("battlecode/maps");
 		File[] mapFiles = file.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {

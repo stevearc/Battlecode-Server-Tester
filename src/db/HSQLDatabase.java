@@ -12,8 +12,7 @@ public class HSQLDatabase extends JDBCDatabase {
 		"height INTEGER NOT NULL, width INTEGER NOT NULL, rounds INTEGER NOT NULL, a_points REAL, b_points REAL, data BLOB)",
 		// status (0 - queued, 1 - running, 2 - complete, 3 - error, 4 - canceled)
 		"CREATE TABLE runs (id IDENTITY,team_a varchar(45) NOT NULL, team_b varchar(45) NOT NULL,status TINYINT DEFAULT '0', started timestamp,ended timestamp)",
-		// allows svn users to easily make an alias for a specific revision of code
-		"CREATE TABLE tags (tag varchar(45) NOT NULL,alias varchar(20) DEFAULT NULL,UNIQUE (tag))",
+		"CREATE TABLE tags (tag varchar(45) NOT NULL,UNIQUE (tag))",
 		// session (cookie auth value), status (0 - unapproved, 1 - active, 2 - admin)
 		"CREATE TABLE users (username varchar(20) NOT NULL, password varchar(40) NOT NULL, salt varchar(40) NOT NULL, session varchar(40), status TINYINT NOT NULL, UNIQUE(username))",
 	};

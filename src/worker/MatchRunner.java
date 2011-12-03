@@ -56,36 +56,21 @@ public class MatchRunner implements Runnable {
 		double a_points = 0;
 		double b_points = 0;
 		byte[] data = null;
-		String repo = config.repo + (core + 1); // Core 0 uses repo1, core 1 uses repo2, etc
 		
-		// Clean out old data
-		File f = new File(repo + "/" + match.map + ".rms");
-		f.delete();
-
 		try {
 			_log.info("Running: " + match);
-			String output_file = repo + "/" + match.map + match.seed + ".out";
+			String output_file = "battlecode/" + match.map + match.seed + ".out";
 			Runtime run = Runtime.getRuntime();
 
-			// Update the repository
-			if (stop)
-				return;
-			curProcess = run.exec(new String[] {config.cmd_update, repo});
-			curProcess.waitFor();
-			if (stop)
-				return;
-			// Get the appropriate teams for the match
-			curProcess = run.exec(new String[] {config.cmd_grabole, repo, match.team_a, match.team_b});
-			curProcess.waitFor();
 			if (stop)
 				return;
 			// Generate the bc.conf file
-			curProcess = run.exec(new String[] {config.cmd_gen_conf, repo, match.map.map, ""+match.seed});
+			curProcess = run.exec(new String[] {config.cmd_gen_conf, "battlecode", match.map.map, ""+match.seed});
 			curProcess.waitFor();
 			if (stop)
 				return;
 			// Run the match
-			curProcess = run.exec(new String[] {config.cmd_run_match, repo, output_file});
+			curProcess = run.exec(new String[] {config.cmd_run_match, "battlecode", output_file});
 			Thread.sleep(10000);
 			new Thread(new Callback(Thread.currentThread(), curProcess)).start();
 			try {
@@ -100,7 +85,7 @@ public class MatchRunner implements Runnable {
 				sb.append(line);
 			}
 			String output = sb.toString();
-			File of = new File(repo + "/" + output_file);
+			File of = new File("battlecode/" + output_file);
 			of.delete();
 
 			// Check to see if there were any errors
@@ -158,7 +143,7 @@ public class MatchRunner implements Runnable {
 		}
 
 		// Read in the replay file
-		String matchFile = repo + "/" + match.map + ".rms";
+		String matchFile = "battlecode/" + match.map + ".rms";
 		try {
 			data = getMatchData(matchFile);
 		} catch (IOException e) {
