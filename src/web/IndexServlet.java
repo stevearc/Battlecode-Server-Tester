@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -146,13 +145,10 @@ public class IndexServlet extends AbstractServlet {
 			
 			// Begin the New Run form
 			ArrayList<String> tags = new ArrayList<String>();
-			HashMap<String, String> tagMap = new HashMap<String, String>();
 			ResultSet tagSet = db.query("SELECT * FROM tags");
 			while (tagSet.next()) {
-				String team = tagSet.getString("alias");
-				team = (team == null ? tagSet.getString("tag") : team);
+				String team = tagSet.getString("tag");
 				tags.add(team);
-				tagMap.put(team, tagSet.getString("tag"));
 			}
 			String[] sorted_tags = tags.toArray(new String[tags.size()]);
 			Arrays.sort(sorted_tags);
@@ -168,15 +164,14 @@ public class IndexServlet extends AbstractServlet {
 					"style='background:" + background + "'>");
 			out.println("<select id='team_a_button'>");
 			for (int i = sorted_tags.length - 1; i >= 0; i--) {
-				out.println("<option value='" + tagMap.get(sorted_tags[i]) + "'>" + sorted_tags[i] + "</option>");
+				out.println("<option value='" + sorted_tags[i] + "'>" + sorted_tags[i] + "</option>");
 			}
 			out.println("</select> vs. ");
 			out.println("<select id='team_b_button'>");
 			for (int i = sorted_tags.length - 1; i >= 0; i--) {
-				out.println("<option value='" + tagMap.get(sorted_tags[i]) + "'>" + sorted_tags[i] + "</option>");
+				out.println("<option value='" + sorted_tags[i] + "'>" + sorted_tags[i] + "</option>");
 			}
-			out.println("</select>&nbsp;&nbsp;&nbsp;Don't see your version here? " +
-					"<input id='update_button' type='button' onclick='doRepoUpdate()' value='update'></p>");
+			out.println("</select></p>");
 			out.println("Matches per map: " +
 			"<select id='seed_selector' onChange='numSeedsChange()'>");
 			for (int i = 1; i < 11; i++) 

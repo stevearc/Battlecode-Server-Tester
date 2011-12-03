@@ -99,3 +99,13 @@
 .changed {
   background:#FFF000;
 }
+
+.warning {
+	color:#FF0000;
+}
+
+.code {
+	background:#EEE;
+	font-family:Consolas, Liberation Mono;
+	margin:10;
+}

@@ -33,6 +33,7 @@ public class WebUtil {
 		writeTab(out, response, current, IndexServlet.NAME, "Home");
 		writeTab(out, response, current, ConnectionsServlet.NAME, "Connections");
 		writeTab(out, response, current, AnalysisServlet.NAME, "Analysis");
+		writeTab(out, response, current, UploadServlet.NAME, "Upload");
 		writeTab(out, response, current, AdminServlet.NAME, "Admin");
 		out.println("</ul>");
 		out.println("</h2></div>");

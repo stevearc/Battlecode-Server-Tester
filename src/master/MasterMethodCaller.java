@@ -27,7 +27,7 @@ public class MasterMethodCaller {
 
 		}).start();
 	}
-
+	
 	/**
 	 * Delete run data
 	 * @param run_id
@@ -88,18 +88,4 @@ public class MasterMethodCaller {
 		}).start();
 	}
 	
-	/**
-	 * Update the repository
-	 */
-	public static void updateRepo() {
-		new Thread(new Runnable(){
-
-			@Override
-			public void run() {
-				Config.getMaster().updateMaps();
-			}
-
-		}).start();
-	}
-
 }

@@ -86,21 +86,10 @@ public class Master {
 				}
 			}
 			wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {""+id, 
-					getTeamNameOrAlias(team_a), getTeamNameOrAlias(team_b)}));
+					team_a, team_b}));
 			startRun();
 		} catch (SQLException e) {
 		}
-	}
-
-	private String getTeamNameOrAlias(String team) throws SQLException {
-		PreparedStatement st = db.prepare("SELECT * FROM tags WHERE tag LIKE ?");
-		st.setString(1, team);
-		ResultSet r = db.query(st);
-		r.next();
-		String alias = r.getString("alias");
-		if (alias != null)
-			return alias;
-		return team;
 	}
 
 	/**
