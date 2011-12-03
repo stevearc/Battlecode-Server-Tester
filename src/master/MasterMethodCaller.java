@@ -3,6 +3,7 @@ package master;
 import networking.Packet;
 
 import common.Config;
+import common.Match;
 
 /**
  * Provides static methods to perform asynchronous calls to the master
@@ -88,4 +89,23 @@ public class MasterMethodCaller {
 		}).start();
 	}
 	
+	/**
+	 * Tell the master to send player/map data to the worker
+	 * @param worker
+	 * @param match
+	 * @param needMap
+	 * @param needTeamA
+	 * @param needTeamB
+	 */
+	public static void sendWorkerMatchDependencies(final WorkerRepr worker, final Match match, final boolean needMap, 
+			final boolean needTeamA, final boolean needTeamB) {
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				Config.getMaster().sendWorkerMatchDependencies(worker, match, needMap, needTeamA, needTeamB);
+			}
+			
+		}).start();
+	}
 }

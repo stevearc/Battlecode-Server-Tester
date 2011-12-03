@@ -3,6 +3,7 @@ package master;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,7 +18,9 @@ import networking.Packet;
 
 import common.BattlecodeMap;
 import common.Config;
+import common.Dependencies;
 import common.Match;
+import common.Util;
 
 import db.Database;
 
@@ -209,6 +212,32 @@ public class Master {
 				}
 			}
 		} catch (SQLException e) {
+		}
+	}
+	
+	public synchronized void sendWorkerMatchDependencies(WorkerRepr worker, Match match, boolean needMap, boolean needTeamA, boolean needTeamB) {
+		Dependencies dep;
+		byte[] map = null;
+		byte[] teamA = null;
+		byte[] teamB = null;
+		try {
+			if (needMap) {
+				map = Util.getFileData(config.install_dir + "/battlecode/maps/" + match.map.map + ".xml");
+			}
+			if (needTeamA) {
+				teamA = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_a + ".jar");
+			}
+			if (needTeamB) {
+				teamB = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_b + ".jar");
+			}
+			dep = new Dependencies(match.map.map, map, match.team_a, teamA, match.team_b, teamB);
+			_log.info("Sending " + worker + " " + dep);
+			worker.runMatchWithDependencies(match, dep);
+		} catch (IOException e) {
+			_log.log(Level.SEVERE, "Could not read data file", e);
+			wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {worker.toHTML(), match.toMapString()}));
+			worker.stopAllMatches();
+			MasterMethodCaller.sendWorkerMatches(worker);
 		}
 	}
 

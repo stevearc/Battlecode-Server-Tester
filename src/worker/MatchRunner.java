@@ -2,7 +2,6 @@ package worker;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,6 +12,7 @@ import java.util.regex.Pattern;
 
 import common.Config;
 import common.Match;
+import common.Util;
 
 /**
  * This class handles the running of battlecode matches and returning the results
@@ -145,7 +145,7 @@ public class MatchRunner implements Runnable {
 		// Read in the replay file
 		String matchFile = "battlecode/" + match.map + ".rms";
 		try {
-			data = getMatchData(matchFile);
+			data = Util.getFileData(matchFile);
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
 			status = "error";
@@ -157,40 +157,6 @@ public class MatchRunner implements Runnable {
 		status = "ok";
 		if (!stop)
 			worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
-	}
-
-	/**
-	 * 
-	 * @param filename
-	 * @return The data from the match.rms file
-	 * @throws IOException
-	 */
-	private byte[] getMatchData(String filename) throws IOException {
-		File file = new File(filename);
-		if (!file.exists())
-			throw new IOException("Match file does not exist");
-		FileInputStream is = new FileInputStream(file);
-
-		long length = file.length();
-
-		// Create the byte array to hold the data
-		byte[] data = new byte[(int)length];
-
-		// Read in the bytes
-		int offset = 0;
-		int numRead = 0;
-		while (offset < data.length
-				&& (numRead=is.read(data, offset, data.length-offset)) >= 0) {
-			offset += numRead;
-		}
-
-		// Ensure all the bytes have been read in
-		if (offset < data.length) {
-			throw new IOException("Could not completely read file "+file.getName());
-		}
-
-		is.close();
-		return data;
 	}
 
 	/**

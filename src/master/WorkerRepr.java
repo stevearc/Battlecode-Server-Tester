@@ -11,6 +11,7 @@ import networking.Packet;
 import networking.PacketCmd;
 
 import common.Config;
+import common.Dependencies;
 import common.Match;
 
 /**
@@ -38,7 +39,14 @@ public class WorkerRepr implements Controller {
 	 */
 	public synchronized void runMatch(Match m) {
 		runningMatches.add(m);
-		Packet p = new Packet(PacketCmd.RUN, new Object[] {m});
+		Packet p = new Packet(PacketCmd.RUN, new Object[] {m, null});
+		net.send(p);
+	}
+	
+	public synchronized void runMatchWithDependencies(Match m, Dependencies dep) {
+		// Don't add it to runningMatches because this method is only ever called
+		// if we have ALREADY called runMatch()
+		Packet p = new Packet(PacketCmd.RUN, new Object[] {m, dep});
 		net.send(p);
 	}
 
@@ -91,6 +99,13 @@ public class WorkerRepr implements Controller {
 		case INIT:
 			numCores = (Integer) p.get(0);
 			MasterMethodCaller.sendWorkerMatches(this);
+			break;
+		case REQUEST:
+			Match match = (Match) p.get(0);
+			boolean needMap = (Boolean) p.get(1);
+			boolean needTeamA = (Boolean) p.get(2);
+			boolean needTeamB = (Boolean) p.get(3);
+			MasterMethodCaller.sendWorkerMatchDependencies(this, match, needMap, needTeamA, needTeamB);
 			break;
 		default:
 			_log.warning("Invalid packet command: " + p.getCmd());

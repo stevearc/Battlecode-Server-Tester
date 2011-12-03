@@ -92,8 +92,14 @@ public class Config {
 		if (!file.exists()) {
 			// First try the hacked config file
 			file = new File("./etc/bs-tester.conf");
+			log_dir = "./var/log";
 			if (!file.exists()) {
 				throw new IOException("Config file /etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
+			}
+			File logDir = new File(log_dir);
+			if (!logDir.exists()) {
+				System.out.println("Creating log dir: " + log_dir);
+				logDir.mkdirs();
 			}
 		}
 		FileInputStream f = new FileInputStream(file);

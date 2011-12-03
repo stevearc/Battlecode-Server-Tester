@@ -1,6 +1,9 @@
 package worker;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -20,7 +23,9 @@ import networking.Network;
 import networking.Packet;
 import networking.PacketCmd;
 
+import common.BattlecodeMap;
 import common.Config;
+import common.Dependencies;
 import common.Match;
 
 /**
@@ -50,7 +55,7 @@ public class Worker implements Controller, Runnable {
 
 		SSLContext context = SSLContext.getInstance("TLS");
 		TrustManager[] trustManagers = tmf.getTrustManagers();
-		
+
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 		kmf.init(keystore, config.keystore_pass.toCharArray());
 		KeyManager[] keyManagers = kmf.getKeyManagers();
@@ -100,6 +105,95 @@ public class Worker implements Controller, Runnable {
 		}
 	}
 
+	private boolean haveMap(BattlecodeMap map) {
+		File mapFile = new File(config.install_dir + "/battlecode/maps/" + map.map + ".xml");
+		return mapFile.exists();
+	}
+
+	private boolean havePlayer(String player) {
+		File playerFile = new File(config.install_dir + "/battlecode/teams/" + player + ".jar");
+		return playerFile.exists();
+	}
+
+	/**
+	 * Checks to make sure we have the right files.  Requests them if not.
+	 * @param match
+	 * @return
+	 */
+	private boolean resolveDependencies(Match match) {
+		boolean allClear = true;
+		boolean needMap = false;
+		boolean needTeamA = false;
+		boolean needTeamB = false;
+		if (!haveMap(match.map)) {
+			allClear = false;
+			needMap = true;
+		}
+		if (!havePlayer(match.team_a)) {
+			allClear = false;
+			needTeamA = true;
+		}
+		if (!havePlayer(match.team_b)) {
+			allClear = false;
+			needTeamB = true;
+		}
+		if (!allClear) {
+			_log.info("Requesting " + (needMap ? "map: " + match.map + " " : "") + 
+					(needTeamA ? "player: " + match.team_a + " " : "") + 
+					(needTeamB ? "player: " + match.team_b + " " : ""));
+			Packet requestPacket = new Packet(PacketCmd.REQUEST, new Object[]{match, needMap, needTeamA, needTeamB});
+			network.send(requestPacket);
+		}
+		return allClear;
+	}
+
+	private void writeDependencies(Dependencies dep) {
+		if (dep == null) {
+			return;
+		}
+		String fileName;
+		File outputFile;
+		FileOutputStream ostream;
+		try {
+			if (dep.map != null) {
+				fileName = config.install_dir + "/battlecode/maps/" + dep.mapName + ".xml";
+				_log.info("Writing file: " + fileName);
+				outputFile = new File(fileName);
+				if (outputFile.exists()) {
+					outputFile.delete();
+				}
+				ostream = new FileOutputStream(fileName);
+				ostream.write(dep.map);
+				ostream.close();
+			}
+			if (dep.teamA != null) {
+				fileName = config.install_dir + "/battlecode/teams/" + dep.teamAName + ".jar";
+				_log.info("Writing file: " + fileName);
+				outputFile = new File(fileName);
+				if (outputFile.exists()) {
+					outputFile.delete();
+				}
+				ostream = new FileOutputStream(fileName);
+				ostream.write(dep.teamA);
+				ostream.close();
+			}
+			if (dep.teamB != null) {
+				fileName = config.install_dir + "/battlecode/teams/" + dep.teamBName + ".jar";
+				_log.info("Writing file: " + fileName);
+				outputFile = new File(fileName);
+				if (outputFile.exists()) {
+					outputFile.delete();
+				}
+				ostream = new FileOutputStream(fileName);
+				ostream.write(dep.teamB);
+				ostream.close();
+			}
+		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
+			_log.log(Level.SEVERE, "Could not create player or map file", e);
+		}
+	}
+
 	@Override
 	public synchronized void addPacket(Packet p) {
 		switch (p.getCmd()) {
@@ -114,9 +208,15 @@ public class Worker implements Controller, Runnable {
 				// Could not find free core
 				if (core == config.cores)
 					break;
-				MatchRunner m = new MatchRunner(this, (Match) p.get(0), core);
-				new Thread(m).start();
-				running[core] = m;
+
+				Match match = (Match) p.get(0);
+				Dependencies dep = (Dependencies) p.get(1);
+				writeDependencies(dep);
+				if (resolveDependencies(match)) {
+					MatchRunner m = new MatchRunner(this, (Match) p.get(0), core);
+					new Thread(m).start();
+					running[core] = m;
+				}
 			} catch (Exception e) {
 				_log.warning("Error running match");
 			}
@@ -137,12 +237,12 @@ public class Worker implements Controller, Runnable {
 
 	@Override
 	public synchronized void onDisconnect() {
-			for (int i = 0; i < config.cores; i++) {
-				if (running[i] != null) {
-					running[i].stop();
-					running[i] = null;
-				}
+		for (int i = 0; i < config.cores; i++) {
+			if (running[i] != null) {
+				running[i].stop();
+				running[i] = null;
 			}
+		}
 		_log.info("Disconnected from master");
 	}
 }

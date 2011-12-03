@@ -73,7 +73,7 @@ public class UploadServlet extends AbstractServlet {
 					db.update(stmt, true);
 					out.println("<p>Successfully uploaded player: " + playerName + "</p>");
 					FileInputStream istream = new FileInputStream(player);
-					FileOutputStream ostream = new FileOutputStream("battlecode/teams/" + playerName + ".jar");
+					FileOutputStream ostream = new FileOutputStream(config.install_dir + "/battlecode/teams/" + playerName + ".jar");
 					byte[] buffer = new byte[1000];
 					int len = 0;
 					while ((len = istream.read(buffer)) != -1) {

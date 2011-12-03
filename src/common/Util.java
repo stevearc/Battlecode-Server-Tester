@@ -1,5 +1,8 @@
 package common;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -40,5 +43,39 @@ public class Util {
 		md.update(text.getBytes("iso-8859-1"), 0, text.length());
 		sha1hash = md.digest();
 		return convertToHex(sha1hash);
-	} 
+	}
+	
+	/**
+	 * 
+	 * @param filename
+	 * @return The data from the file
+	 * @throws IOException
+	 */
+	public static byte[] getFileData(String filename) throws IOException {
+		File file = new File(filename);
+		if (!file.exists())
+			throw new IOException("File " + filename + " does not exist");
+		FileInputStream is = new FileInputStream(file);
+
+		long length = file.length();
+
+		// Create the byte array to hold the data
+		byte[] data = new byte[(int)length];
+
+		// Read in the bytes
+		int offset = 0;
+		int numRead = 0;
+		while (offset < data.length
+				&& (numRead=is.read(data, offset, data.length-offset)) >= 0) {
+			offset += numRead;
+		}
+
+		// Ensure all the bytes have been read in
+		if (offset < data.length) {
+			throw new IOException("Could not completely read file "+filename);
+		}
+
+		is.close();
+		return data;
+	}
 }

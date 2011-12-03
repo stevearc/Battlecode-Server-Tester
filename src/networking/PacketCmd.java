@@ -1,16 +1,17 @@
 package networking;
 
 /**
- * Types of packets that can be sent to and from Servers and Workers
+ * Types of packets that can be sent to and from Masters and Workers
  * @author stevearc
  *
  */
 public enum PacketCmd { 
-	// Server -> Worker
+	// Master -> Worker
 	RUN, // Sends data for running a match
 	STOP, // Tells worker to stop running matches
 	
-	// Worker -> Server
-	INIT, // Sends initial worker data to server
+	// Worker -> Master
+	INIT, // Sends initial worker data to master
 	RUN_REPLY, // Response with match data
+	REQUEST, // Requests a map and/or player from the master
 }
