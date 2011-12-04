@@ -52,16 +52,14 @@ public class MatchesByMapServlet extends AbstractServlet {
 		int id = Integer.parseInt(strId);
 		try {
 			out.println("<div id=\"tablewrapper\">");
-			PreparedStatement st = db.prepare("SELECT id, team_a, t1.alias a_nick, team_b, t2.alias b_nick " +
+			PreparedStatement st = db.prepare("SELECT id, team_a, team_b  " +
 					"FROM runs r LEFT JOIN tags t1 ON r.team_a = t1.tag " +
 			"LEFT JOIN tags t2 ON r.team_b = t2.tag WHERE id = ?");
 			st.setInt(1, id);
 			ResultSet rs = db.query(st);
 			rs.next();
-			String team_a = rs.getString("a_nick");
-			team_a = (team_a == null ? rs.getString("team_a") : "<a title='" + rs.getString("team_a") + "'>" + team_a + "</a>");
-			String team_b = rs.getString("b_nick");
-			team_b = (team_b == null ? rs.getString("team_b") : "<a title='" + rs.getString("team_b") + "'>" + team_b + "</a>");
+			String team_a = rs.getString("team_a");
+			String team_b = rs.getString("team_b");
 			out.println("<h2><font color='red'>" + team_a + "</font> vs. <font color='blue'>" + team_b + "</font></h2>");
 			out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
 			out.println("<br />");

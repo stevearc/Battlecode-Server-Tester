@@ -4,8 +4,7 @@
 ##################
 ## REQUIREMENTS ##
 ##################
-You need two things in order for this system to work properly:
-	* Git, Mercurial, or SVN
+    * Linux
 	* Java and Ant (to run the battlecode client)
 
 ##################
@@ -22,8 +21,8 @@ the faster the results.
 ## INSTALLING SERVER ##
 #######################
 To install the server, simply run
-sudo ./setup.sh
-It should prompt you for a few parameters and automatically set up the /etc/bs-tester.conf file.
+./setup.sh
+It should prompt you for a few parameters and automatically set up the bs-tester.conf file.
 
 ########################
 ## INSTALLING WORKERS ##
@@ -42,11 +41,6 @@ to display the available commandline arguments.
 If you installed the daemon in the setup script, you can start the service with 
 sudo invoke-rc.d bs-tester start
 
-#####################
-## VERSION CONTROL ##
-#####################
-If you use git you will need to use the `git tag` function to tag versions of your code
-that you want to run with the tester.  Remember to do git push --tags.  The same is true
-with mercurial, you need to use `hg tag` to tag your code.  If you are using svn then 
-there is a page on the website that will allow you to tag different revisions of your 
-code with strings.
+While you *can* run both a server and a worker on the same computer, you should make sure that
+only one or the other has been installed, otherwise one /etc/init.d/bs-tester file will
+overwrite the other.

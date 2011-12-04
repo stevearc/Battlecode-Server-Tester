@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,6 +22,7 @@ import common.Util;
  */
 
 public class MatchRunner implements Runnable {
+	private static final boolean PRINT_OUTPUT = true;
 	private Logger _log;
 	private Config config;
 	private Worker worker;
@@ -46,6 +48,20 @@ public class MatchRunner implements Runnable {
 			curProcess.destroy();
 	}
 
+	private void printOutput() {
+		if (PRINT_OUTPUT && !stop && curProcess != null) {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(curProcess.getInputStream()));
+			try {
+				String line = reader.readLine();
+				do {
+					System.out.println(line);
+				} while ((line = reader.readLine()) != null);
+			} catch (IOException e) {
+				_log.log(Level.WARNING, "Could not read script output", e);
+			}
+		}
+	}
+	
 	/**
 	 * Runs the battlecode match
 	 */
@@ -57,20 +73,49 @@ public class MatchRunner implements Runnable {
 		double b_points = 0;
 		byte[] data = null;
 		
+		String team_a = match.team_a.replaceAll("\\W", "_");
+		String team_b = match.team_b.replaceAll("\\W", "_");
 		try {
 			_log.info("Running: " + match);
-			String output_file = "battlecode/" + match.map + match.seed + ".out";
+			String output_file = config.install_dir + "/battlecode/core" + core + "/" + match.map + match.seed + ".out";
 			Runtime run = Runtime.getRuntime();
 
 			if (stop)
 				return;
 			// Generate the bc.conf file
-			curProcess = run.exec(new String[] {config.cmd_gen_conf, "battlecode", match.map.map, ""+match.seed});
+			curProcess = run.exec(new String[] {config.cmd_gen_conf, 
+					config.install_dir + "/battlecode/core" + core, 
+					match.map.map,
+					"A" + team_a,
+					"B" + team_b,
+					""+match.seed});
 			curProcess.waitFor();
+			printOutput();
 			if (stop)
 				return;
+			
+			// Rename team A in the source
+			curProcess = run.exec(new String[] {config.cmd_rename_team, 
+					config.install_dir + "/battlecode/core" + core, 
+					"A" + team_a, 
+					config.install_dir + "/battlecode/teams/" + match.team_a + ".jar"});
+			curProcess.waitFor();
+			printOutput();
+			if (stop)
+				return;
+			
+			// Rename team B in the source
+			curProcess = run.exec(new String[] {config.cmd_rename_team, 
+					config.install_dir + "/battlecode/core" + core, 
+					"B" + team_b, 
+					config.install_dir + "/battlecode/teams/" + match.team_b + ".jar"});
+			curProcess.waitFor();
+			printOutput();
+			if (stop)
+				return;
+			
 			// Run the match
-			curProcess = run.exec(new String[] {config.cmd_run_match, "battlecode", output_file});
+			curProcess = run.exec(new String[] {config.cmd_run_match, config.install_dir + "/battlecode/core" + core, output_file});
 			Thread.sleep(10000);
 			new Thread(new Callback(Thread.currentThread(), curProcess)).start();
 			try {
@@ -85,7 +130,7 @@ public class MatchRunner implements Runnable {
 				sb.append(line);
 			}
 			String output = sb.toString();
-			File of = new File("battlecode/" + output_file);
+			File of = new File(output_file);
 			of.delete();
 
 			// Check to see if there were any errors
@@ -143,7 +188,7 @@ public class MatchRunner implements Runnable {
 		}
 
 		// Read in the replay file
-		String matchFile = "battlecode/" + match.map + ".rms";
+		String matchFile = config.install_dir + "/battlecode/core" + core + "/" + match.map + ".rms";
 		try {
 			data = Util.getFileData(matchFile);
 		} catch (IOException e) {

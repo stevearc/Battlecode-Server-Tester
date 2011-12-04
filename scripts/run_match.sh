@@ -1,4 +1,6 @@
 #!/bin/bash
-REPO=$1
+DIR=$1
 FILE=$2
-ant file -f $REPO/build.xml > $FILE
+cd $DIR
+rm *.rms
+ant file -f $DIR/build.xml > $FILE

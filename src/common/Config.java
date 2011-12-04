@@ -74,6 +74,8 @@ public class Config {
 	/* These options are generated from the above options */
 	/** The path to the script that will generate the proper bc.conf file */
 	public String cmd_gen_conf = "./scripts/gen_conf.sh";
+	/** The path to the script that will rename the team in the source */
+	public String cmd_rename_team = "./scripts/rename_team.sh";
 	/** The path to the script that runs the battlecode match */
 	public String cmd_run_match = "./scripts/run_match.sh";
 	/** The path to the script that will remove the ADMIN and ADMIN_PASS fields from the config file */

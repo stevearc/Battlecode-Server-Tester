@@ -1,12 +1,10 @@
-<project name="MyProject" default="dist" basedir=".">
+<project name="Battlecode" default="dist" basedir=".">
     <description>
-        simple example build file
+        Compiles a battlecode team
     </description>
     <!-- set global properties for this build -->
-    <property name="src" location="team042"/>
     <property name="build" location="build"/>
-    <property name="dist"  location="dist"/>
-    <property name="path.lib" location="./battlecode-server.jar"/>
+    <property name="lib" location="../lib/battlecode-server.jar"/>
 
     <target name="init">
         <!-- Create the time stamp -->
@@ -18,23 +16,24 @@
     <target name="compile" depends="init"
         description="compile the source " >
         <!-- Compile the java code from ${src} into ${build} -->
-        <javac srcdir="${src}" destdir="${build}">
+        <fail unless="team">
+            must pass in team name with -Dteam=name
+        </fail>
+        <javac srcdir="${team}" destdir="${build}">
             <classpath>
-                <pathelement path="${path.lib}"/>
+                <pathelement path="${lib}"/>
             </classpath>
         </javac>
     </target>
 
     <target name="dist" depends="compile" description="generate the distribution" >
         <!-- Create the distribution directory -->
-        <mkdir dir="${dist}/lib"/>
 
-        <jar jarfile="${dist}/runnable.jar" basedir="${build}"/>
+        <jar jarfile="runnable.jar" basedir="${build}"/>
     </target>
 
     <target name="clean" description="clean up" >
         <!-- Delete the ${build} and ${dist} directory trees -->
         <delete dir="${build}"/>
-        <delete dir="${dist}"/>
     </target>
 </project>
