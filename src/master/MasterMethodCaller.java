@@ -3,7 +3,7 @@ package master;
 import networking.Packet;
 
 import common.Config;
-import common.Match;
+import common.NetworkMatch;
 
 /**
  * Provides static methods to perform asynchronous calls to the master
@@ -97,7 +97,7 @@ public class MasterMethodCaller {
 	 * @param needTeamA
 	 * @param needTeamB
 	 */
-	public static void sendWorkerMatchDependencies(final WorkerRepr worker, final Match match, final boolean needMap, 
+	public static void sendWorkerMatchDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needMap, 
 			final boolean needTeamA, final boolean needTeamB) {
 		new Thread(new Runnable() {
 			

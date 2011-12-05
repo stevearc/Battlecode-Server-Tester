@@ -2,21 +2,23 @@ package common;
 
 import java.io.Serializable;
 
+import beans.BSMap;
+
 /**
  * Wrapper for Match information to be sent over network between Server and Worker
  * @author stevearc
  *
  */
-public class Match implements Serializable {
+public class NetworkMatch implements Serializable {
 	private static final long serialVersionUID = 6673793068304545925L;
-	public int run_id;
-	public int id;
+	public Long run_id;
+	public Long id;
 	public String team_a;
 	public String team_b;
-	public BattlecodeMap map;
-	public int seed;
+	public BSMap map;
+	public Long seed;
 	
-	public Match(int run_id, int id, String team_a, String team_b, BattlecodeMap map, int seed) {
+	public NetworkMatch(Long run_id, Long id, String team_a, String team_b, BSMap map, Long seed) {
 		this.run_id = run_id;
 		this.id = id;
 		this.team_a = team_a;
@@ -25,15 +27,16 @@ public class Match implements Serializable {
 		this.seed = seed;
 	}
 
+	// TODO: remove references to hashCode and equals
 	@Override
 	public int hashCode() {
-		return id;
+		return id.intValue();
 	}
 	
 	@Override
 	public boolean equals(Object o) {
-		if (o instanceof Match) {
-			Match m = (Match) o;
+		if (o instanceof NetworkMatch) {
+			NetworkMatch m = (NetworkMatch) o;
 			return m.id == id;
 		}
 		return false;

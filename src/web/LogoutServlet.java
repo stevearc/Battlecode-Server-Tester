@@ -2,12 +2,14 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
+import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import beans.BSUser;
+import db.HibernateUtil;
 
 /**
  * Removes the user's cookies and deletes their session from the DB
@@ -24,8 +26,8 @@ public class LogoutServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null) {
+		BSUser user = checkLogin(request, response);
+		if (user == null) {
 			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			response.setHeader("Location", response.encodeURL("/" + LoginServlet.NAME));
 			return;
@@ -33,18 +35,17 @@ public class LogoutServlet extends AbstractServlet {
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
-		PreparedStatement st;
-		try {
-			st = db.prepare("UPDATE users SET session = NULL WHERE username LIKE ?");
-			st.setString(1, username);
-			db.update(st, true);
+		EntityManager em = HibernateUtil.getEntityManager();
+		user.setSession(null);
+		em.merge(user);
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
+		em.close();
 
-			out.println("<script type='text/javascript'>\n" +
-					"document.cookie = '" + COOKIE_NAME + "=; expires=Fri, 27 Jul 2001 00:00:00 UTC; path=/';\n" +
-					"document.location='" + response.encodeURL(LoginServlet.NAME) + "';\n" +
-			"</script>");
-		} catch (SQLException e) {
-			e.printStackTrace(out);
-		}
+		out.println("<script type='text/javascript'>\n" +
+				"document.cookie = '" + COOKIE_NAME + "=; expires=Fri, 27 Jul 2001 00:00:00 UTC; path=/';\n" +
+				"document.location='" + response.encodeURL(LoginServlet.NAME) + "';\n" +
+		"</script>");
 	}
 }

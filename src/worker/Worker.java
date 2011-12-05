@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,11 +23,11 @@ import networking.Controller;
 import networking.Network;
 import networking.Packet;
 import networking.PacketCmd;
+import beans.BSMap;
 
-import common.BattlecodeMap;
 import common.Config;
 import common.Dependencies;
-import common.Match;
+import common.NetworkMatch;
 
 /**
  * Connects to master and runs matches
@@ -75,7 +76,7 @@ public class Worker implements Controller, Runnable {
 	 * @param b_points
 	 * @param data
 	 */
-	public synchronized void matchFinish(int core, Match match, String status, int winner, 
+	public synchronized void matchFinish(int core, NetworkMatch match, String status, int winner, 
 			int win_condition, double a_points, double b_points, byte[] data) {
 		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, win_condition, a_points, b_points, data});
 		network.send(p);
@@ -105,8 +106,8 @@ public class Worker implements Controller, Runnable {
 		}
 	}
 
-	private boolean haveMap(BattlecodeMap map) {
-		File mapFile = new File(config.install_dir + "/battlecode/maps/" + map.map + ".xml");
+	private boolean haveMap(BSMap map) {
+		File mapFile = new File(config.install_dir + "/battlecode/maps/" + map.mapName + ".xml");
 		return mapFile.exists();
 	}
 
@@ -120,7 +121,7 @@ public class Worker implements Controller, Runnable {
 	 * @param match
 	 * @return
 	 */
-	private boolean resolveDependencies(Match match) {
+	private boolean resolveDependencies(NetworkMatch match) {
 		boolean allClear = true;
 		boolean needMap = false;
 		boolean needTeamA = false;
@@ -146,6 +147,16 @@ public class Worker implements Controller, Runnable {
 		}
 		return allClear;
 	}
+	
+	private boolean fileEqualsData(File file, byte[] data) throws IOException {
+		if (file.length() != data.length) {
+			return false;
+		}
+		byte[] fileData = new byte[data.length];
+		FileInputStream fis = new FileInputStream(file);
+		fis.read(fileData);
+		return Arrays.equals(fileData, data);
+	}
 
 	private void writeDependencies(Dependencies dep) {
 		if (dep == null) {
@@ -160,7 +171,9 @@ public class Worker implements Controller, Runnable {
 				_log.info("Writing file: " + fileName);
 				outputFile = new File(fileName);
 				if (outputFile.exists()) {
-					outputFile.delete();
+					if (!fileEqualsData(outputFile, dep.map)){
+						outputFile.delete();
+					}
 				}
 				ostream = new FileOutputStream(fileName);
 				ostream.write(dep.map);
@@ -171,7 +184,9 @@ public class Worker implements Controller, Runnable {
 				_log.info("Writing file: " + fileName);
 				outputFile = new File(fileName);
 				if (outputFile.exists()) {
-					outputFile.delete();
+					if (!fileEqualsData(outputFile, dep.teamA)) {
+						outputFile.delete();
+					}
 				}
 				ostream = new FileOutputStream(fileName);
 				ostream.write(dep.teamA);
@@ -182,7 +197,9 @@ public class Worker implements Controller, Runnable {
 				_log.info("Writing file: " + fileName);
 				outputFile = new File(fileName);
 				if (outputFile.exists()) {
-					outputFile.delete();
+					if (!fileEqualsData(outputFile, dep.teamB)) {
+						outputFile.delete();
+					}
 				}
 				ostream = new FileOutputStream(fileName);
 				ostream.write(dep.teamB);
@@ -209,11 +226,11 @@ public class Worker implements Controller, Runnable {
 				if (core == config.cores)
 					break;
 
-				Match match = (Match) p.get(0);
+				NetworkMatch match = (NetworkMatch) p.get(0);
 				Dependencies dep = (Dependencies) p.get(1);
 				writeDependencies(dep);
 				if (resolveDependencies(match)) {
-					MatchRunner m = new MatchRunner(this, (Match) p.get(0), core);
+					MatchRunner m = new MatchRunner(this, (NetworkMatch) p.get(0), core);
 					new Thread(m).start();
 					running[core] = m;
 				}

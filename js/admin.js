@@ -1,10 +1,10 @@
 // Makes an asynchronous call to change a user's status
-function manageUser(id, username, cmd) {
-  query("GET", "admin_action", "username="+username+"&cmd="+cmd, function(text) {process(id, username, cmd, text);});
+function manageUser(id, username, userid, cmd) {
+  query("GET", "admin_action", "userid="+userid+"&cmd="+cmd, function(text) {process(id, username, userid, cmd, text);});
 }
 
 // Handle the response of an asynchronous user change
-function process(id, username, cmd, response) {
+function process(id, username, userid, cmd, response) {
   var table = document.getElementById(id);
   var row_index = -1;
   for (var i = 1; i < table.rows.length; i++) {
@@ -30,19 +30,19 @@ function process(id, username, cmd, response) {
       var status_cell = row.insertCell(1);
       status_cell.innerHTML = "normal";
       var promote_cell = row.insertCell(2);
-      promote_cell.innerHTML = "<input type='button' value='Promote' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"make_admin\")'>";
+      promote_cell.innerHTML = "<input type='button' value='Promote' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"" + userid + "\", \"make_admin\")'>";
       var delete_cell = row.insertCell(3);
-      delete_cell.innerHTML = "<input type='button' value='Delete user' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"delete\")'>";
+      delete_cell.innerHTML = "<input type='button' value='Delete user' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"" + userid + "\", \"delete\")'>";
     }
     else if (cmd == "make_admin") {
       var row = table.rows[row_index];
       row.cells[1].innerHTML = "admin";
-      row.cells[2].innerHTML = "<input type='button' value='Demote' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"remove_admin\")'>";
+      row.cells[2].innerHTML = "<input type='button' value='Demote' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"" + userid + "\", \"remove_admin\")'>";
     }
     else if (cmd == "remove_admin") {
       var row = table.rows[row_index];
       row.cells[1].innerHTML = "normal";
-      row.cells[2].innerHTML = "<input type='button' value='Promote' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"make_admin\")'>";
+      row.cells[2].innerHTML = "<input type='button' value='Promote' onClick='manageUser(\"existing_user_table\", \"" + username + "\", \"" + userid + "\", \"make_admin\")'>";
     }
   }
 }

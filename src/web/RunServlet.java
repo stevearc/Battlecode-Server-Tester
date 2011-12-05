@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.MasterMethodCaller;
+import beans.BSUser;
 
 
 /**
@@ -26,8 +27,8 @@ public class RunServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null) {
+		BSUser user = checkLogin(request, response);
+		if (user == null) {
 			redirect(response);
 			return;
 		}

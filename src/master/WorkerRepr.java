@@ -12,7 +12,7 @@ import networking.PacketCmd;
 
 import common.Config;
 import common.Dependencies;
-import common.Match;
+import common.NetworkMatch;
 
 /**
  * Representation of a worker that is used by the server
@@ -23,27 +23,27 @@ public class WorkerRepr implements Controller {
 	private Config config;
 	private Logger _log;
 	private Network net;
-	private ArrayList<Match> runningMatches;
+	private ArrayList<NetworkMatch> runningMatches;
 	private int numCores = 0;
 
 	public WorkerRepr(Socket s) throws IOException {
 		config = Config.getConfig();
 		_log = config.getLogger();
 		this.net = new Network(this, s);
-		runningMatches = new ArrayList<Match>();
+		runningMatches = new ArrayList<NetworkMatch>();
 	}
 
 	/**
 	 * Messages worker telling it to run a Match
 	 * @param m The Match to run
 	 */
-	public synchronized void runMatch(Match m) {
+	public synchronized void runMatch(NetworkMatch m) {
 		runningMatches.add(m);
 		Packet p = new Packet(PacketCmd.RUN, new Object[] {m, null});
 		net.send(p);
 	}
 	
-	public synchronized void runMatchWithDependencies(Match m, Dependencies dep) {
+	public synchronized void runMatchWithDependencies(NetworkMatch m, Dependencies dep) {
 		// Don't add it to runningMatches because this method is only ever called
 		// if we have ALREADY called runMatch()
 		Packet p = new Packet(PacketCmd.RUN, new Object[] {m, dep});
@@ -85,7 +85,7 @@ public class WorkerRepr implements Controller {
 	 * 
 	 * @return List of all Matches currently being run on the worker
 	 */
-	public synchronized ArrayList<Match> getRunningMatches() {
+	public synchronized ArrayList<NetworkMatch> getRunningMatches() {
 		return runningMatches;
 	}
 
@@ -93,7 +93,7 @@ public class WorkerRepr implements Controller {
 	public synchronized void addPacket(Packet p) {
 		switch (p.getCmd()) {
 		case RUN_REPLY:
-			runningMatches.remove((Match) p.get(0));
+			runningMatches.remove((NetworkMatch) p.get(0));
 			MasterMethodCaller.matchFinished(this, p);
 			break;
 		case INIT:
@@ -101,7 +101,7 @@ public class WorkerRepr implements Controller {
 			MasterMethodCaller.sendWorkerMatches(this);
 			break;
 		case REQUEST:
-			Match match = (Match) p.get(0);
+			NetworkMatch match = (NetworkMatch) p.get(0);
 			boolean needMap = (Boolean) p.get(1);
 			boolean needTeamA = (Boolean) p.get(2);
 			boolean needTeamB = (Boolean) p.get(3);

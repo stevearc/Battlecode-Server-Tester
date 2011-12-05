@@ -11,7 +11,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import common.BattlecodeMap;
+import beans.BSMap;
+
 
 /**
  * Displays matches for a given run aggregated by map
@@ -91,12 +92,12 @@ public class MatchesByMapServlet extends AbstractServlet {
 				if (seenMaps.contains(rs3.getString("map"))) 
 					continue;
 				seenMaps.add(rs3.getString("map"));
-				BattlecodeMap map = new BattlecodeMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
+				BSMap map = new BSMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
 						rs3.getInt("rounds"));
 				out.println("<tr>");
-				out.println("<td>" + map.map + "</td>");
-				out.println("<td>" + WebUtil.getFormattedWinPercentage(WebUtil.getWinPercentage(id, map.map)) + "</td>");
-				out.println("<td>" + map.getSizeClass() + "</td>");
+				out.println("<td>" + map.mapName + "</td>");
+				out.println("<td>" + WebUtil.getFormattedWinPercentage(WebUtil.getWinPercentage(id, map.mapName)) + "</td>");
+				out.println("<td>" + map.calculateSizeClass() + "</td>");
 				out.println("</tr>");
 			}
 			st3.close();

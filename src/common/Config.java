@@ -13,8 +13,6 @@ import java.util.logging.SimpleFormatter;
 import master.Master;
 import master.WebPollHandler;
 
-import db.Database;
-
 /**
  * Handles the parsing of bs-tester.conf and stores
  * all the data in one convenient container
@@ -23,16 +21,8 @@ import db.Database;
  */
 public class Config {
 	private static Config rootConfig;
-	private static Database rootDB;
 	private static Master rootMaster;
 	private static WebPollHandler webPollHandler;
-
-	/* These constants are for interfacing with the DB */
-	public static final int STATUS_QUEUED = 0;
-	public static final int STATUS_RUNNING = 1;
-	public static final int STATUS_COMPLETE = 2;
-	public static final int STATUS_ERROR = 3;
-	public static final int STATUS_CANCELED = 4;
 
 	/* These options must be changed in source */
 	public long timeout = 300000;
@@ -56,16 +46,6 @@ public class Config {
 	public String server = "";
 	/** WORKER ONLY: The number of simultaneous matches to run at a time */
 	public int cores = 1;
-	/** MASTER ONLY: The type of database to use */
-	public String db_type = "hsql";
-	/** MASTER ONLY: The name of the database to use */
-	public String db_name = "battlecode";
-	/** MASTER ONLY: The host of the database */
-	public String db_host = "localhost";
-	/** MASTER ONLY: The username to use when connecting to the database. */
-	public String db_user = "battlecode";
-	/** MASTER ONLY: The password to use when connecting to the database. */
-	public String db_pass = "battlepass";
 	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "small" */
 	public int map_cutoff_small = 1400;
 	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
@@ -128,14 +108,7 @@ public class Config {
 		rootConfig = c;
 	}
 
-	public static Database getDB() {
-		return rootDB;
-	}
-
-	public static void setDB(Database db) {
-		rootDB = db;
-	}
-
+	// TODO: remove references to getMaster
 	public static Master getMaster() {
 		return rootMaster;
 	}
@@ -221,21 +194,6 @@ public class Config {
 		else if (option.equals("map_cutoff_medium")) {
 			map_cutoff_medium = Integer.parseInt(value);
 		} 
-		else if (option.equals("db_type")) {
-			db_type = value.toLowerCase();
-		}
-		else if (option.equals("db_name")) {
-			db_name = value;
-		}
-		else if (option.equals("db_host")) {
-			db_host = value;
-		}
-		else if (option.equals("db_user")) {
-			db_user = value;
-		}
-		else if (option.equals("db_pass")) {
-			db_pass = value;
-		}
 		else if (option.equals("repo_addr")) {
 			// pass
 		}
@@ -279,21 +237,6 @@ public class Config {
 
 		// Check the server values
 		if (isServer) {
-			if (!(db_type.equals("mysql") || db_type.equals("hsql")))
-				throw new InvalidConfigException("Invalid database type: " + db_type);
-
-			if (db_user.equals(""))
-				throw new InvalidConfigException("Invalid database user");
-
-			if (db_pass.equals(""))
-				throw new InvalidConfigException("Must have a non-blank database password");
-
-			if (db_name.equals(""))
-				throw new InvalidConfigException("Must have a non-blank database name");
-
-			if (db_host.equals(""))
-				throw new InvalidConfigException("Must have a valid database host");
-
 			if (map_cutoff_medium < 0)
 				throw new InvalidConfigException("MAP_CUTOFF_MEDIUM must be positive");
 

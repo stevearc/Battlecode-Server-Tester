@@ -8,10 +8,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.WorkerRepr;
-
+import beans.BSUser;
 
 import common.Config;
-import common.Match;
+import common.NetworkMatch;
 
 /**
  * Display current connected workers
@@ -28,8 +28,8 @@ public class ConnectionsServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null){
+		BSUser user = checkLogin(request, response);
+		if (user == null){
 			redirect(response);
 			return;
 		}
@@ -60,7 +60,7 @@ public class ConnectionsServlet extends AbstractServlet {
 			out.println("<td>" + c.toHTML() + "</td>");
 			out.print("<td>");
 			StringBuilder sb = new StringBuilder();
-			for (Match m: c.getRunningMatches()) {
+			for (NetworkMatch m: c.getRunningMatches()) {
 				sb.append(m.toMapString() + ", ");
 			}
 			if (sb.length() > 2) 

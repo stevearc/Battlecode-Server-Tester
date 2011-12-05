@@ -1,18 +1,19 @@
 package web;
 
 import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.logging.Level;
 
+import javax.persistence.EntityManager;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import beans.BSUser;
+
 import common.Config;
 
-import db.Database;
+import db.HibernateUtil;
 
 /**
  * Base framework for all servlets
@@ -23,7 +24,6 @@ public abstract class AbstractServlet extends HttpServlet {
 	private static final long serialVersionUID = 7415725707009960270L;
 	protected static final String COOKIE_NAME = "bs-tester";
 	public final String name;
-	protected Database db;
 	protected Config config;
 
 	/**
@@ -33,7 +33,6 @@ public abstract class AbstractServlet extends HttpServlet {
 	public AbstractServlet(String name) {
 		this.name = name;
 		config = Config.getConfig();
-		db = Config.getDB();
 	}
 
 	/**
@@ -43,66 +42,42 @@ public abstract class AbstractServlet extends HttpServlet {
 	 * @return True if authenticated, false otherwise
 	 * @throws IOException 
 	 */
-	protected String checkLogin(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		Cookie auth = null;
-		String username = null;
+	protected BSUser checkLogin(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String cookieVal = null;
 		Cookie[] cookies = request.getCookies();
 		if (cookies != null) {
 			for (Cookie c: cookies) {
 				if (COOKIE_NAME.equals(c.getName())) {
-					auth = c;
+					cookieVal = c.getValue();
 					break;
 				}
 			}
 		}
-		if (auth == null) {
-			return username;
+		if (cookieVal == null) {
+			return null;
+		}
+		// Cookie is encoded as [userid]$[session token]
+		Long userId = new Long(-1);
+		String token = "";
+		try {
+			userId = new Long(Integer.parseInt(cookieVal.substring(0, cookieVal.indexOf("$"))));
+			token = cookieVal.substring(cookieVal.indexOf("$") + 1);
+		} catch (Exception e) {
+			config.getLogger().log(Level.WARNING, "Login cookie with bad format: " + cookieVal, e);
 		}
 		// Check cookie value
-		try {
-			PreparedStatement st = db.prepare("SELECT username FROM users WHERE session LIKE ?");
-			st.setString(1, auth.getValue());
-			ResultSet rs = db.query(st);
-			if (rs.next()) {
-				username = rs.getString("username");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace(response.getWriter());
-			return username;
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSUser user = em.find(BSUser.class, userId);
+		if (user == null) {
+			return null;
 		}
-		return username;
+		if (token.equals(user.getSession())) {
+			return user;
+		}
+			
+		return null;
 	}
 	
-	protected int getUserStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		Cookie auth = null;
-		int status = 0;
-		Cookie[] cookies = request.getCookies();
-		if (cookies != null) {
-			for (Cookie c: cookies) {
-				if (COOKIE_NAME.equals(c.getName())) {
-					auth = c;
-					break;
-				}
-			}
-		}
-		if (auth == null) {
-			return status;
-		}
-		// Check cookie value
-		try {
-			PreparedStatement st = db.prepare("SELECT status FROM users WHERE session LIKE ?");
-			st.setString(1, auth.getValue());
-			ResultSet rs = db.query(st);
-			if (rs.next()) {
-				status = rs.getInt("status");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace(response.getWriter());
-			return status;
-		}
-		return status;
-	}
-
 	protected void redirect(HttpServletResponse response) {
 		response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 		response.setHeader("Location", response.encodeURL("/" + LoginServlet.NAME));

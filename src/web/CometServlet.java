@@ -12,6 +12,7 @@ import master.WebPollHandler;
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
 
+import beans.BSUser;
 
 import common.Config;
 
@@ -32,8 +33,8 @@ public class CometServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null){
+		BSUser user = checkLogin(request, response);
+		if (user == null){
 			redirect(response);
 			return;
 		}

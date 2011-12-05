@@ -2,12 +2,15 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import beans.BSUser;
+import db.HibernateUtil;
 
 /**
  * Admin panel for confirming new users
@@ -22,10 +25,11 @@ public class AdminServlet extends AbstractServlet {
 		super(NAME);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null) {
+		BSUser user = checkLogin(request, response);
+		if (user == null) {
 			redirect(response);
 			return;
 		}
@@ -44,7 +48,7 @@ public class AdminServlet extends AbstractServlet {
 
 		WebUtil.writeTabs(response, out, name);	
 
-		if (getUserStatus(request, response) != 2) {
+		if (user.getPrivs() != BSUser.PRIVS.ADMIN) {
 			out.println("<div id='tablewrapper'><h1>You are not an admin</h1></div>");
 			out.println("</body></html>");
 			return;
@@ -61,24 +65,19 @@ public class AdminServlet extends AbstractServlet {
 		out.println("</tr>");
 		out.println("</thead><tbody>");
 
-		try {
-			ResultSet rs = db.query("SELECT username FROM users WHERE status = 0 ORDER BY username");
-			int i = 1;
-			while (rs.next()) {
-				String user = rs.getString("username");
-				out.println("<tr>");
-				out.println("<td>" + user + "</td>");
-				out.println("<td><input type='button' value='Accept' onClick='manageUser(\"" + new_user_table + 
-						"\", \"" + user + "\", \"accept\", " + i + ")'></td>");
-				out.println("<td><input type='button' value='Deny' onClick='manageUser(\""+ new_user_table + 
-						"\", \"" + user + "\", \"delete\", " + i + ")'></td>");
-				out.println("</tr>");
-				i++;
-			}
 
-		} catch (SQLException e) {
-			e.printStackTrace(out);
+		EntityManager em = HibernateUtil.getEntityManager();
+		List<BSUser> pendingUsers = em.createQuery("from BSUser user where user.privs = ?").setParameter(1, BSUser.PRIVS.PENDING).getResultList();
+		for (BSUser pendingUser: pendingUsers) {
+			out.println("<tr>");
+			out.println("<td>" + pendingUser.getUsername() + "</td>");
+			out.println("<td><input type='button' value='Accept' onClick='manageUser(\"" + new_user_table + 
+					"\", \"" + pendingUser.getUsername() + "\", \"" + pendingUser.getId() + "\", \"accept\", " + pendingUser.getId() + ")'></td>");
+			out.println("<td><input type='button' value='Deny' onClick='manageUser(\""+ new_user_table + 
+					"\", \"" + pendingUser.getUsername() + "\", \"" + pendingUser.getId() + "\", \"delete\", " + pendingUser.getId() + ")'></td>");
+			out.println("</tr>");
 		}
+
 		out.println("</tbody></table>");
 		out.println("<p>&nbsp;</p>");
 		out.println("<p>&nbsp;</p>");
@@ -95,36 +94,32 @@ public class AdminServlet extends AbstractServlet {
 		out.println("</tr>");
 		out.println("</thead><tbody>");
 
-		try {
-			ResultSet rs = db.query("SELECT username, status FROM users WHERE status > 0 ORDER BY username");
-			while (rs.next()) {
-				String user = rs.getString("username");
-				int status = rs.getInt("status");
-				out.println("<tr>");
-				out.println("<td>" + user + "</td>");
-				if (status == 1) {
-					out.println("<td>normal</td>");
-					out.println("<td><input type='button' value='Promote' onClick='manageUser(\"" + existing_user_table + 
-							"\", \"" + user + "\", \"make_admin\")'></td>");
-					out.println("<td><input type='button' value='Delete user' onClick='manageUser(\""+ existing_user_table + 
-							"\", \"" + user + "\", \"delete\")'></td>");
-				} 
-				else if (status == 2) {
-					out.println("<td>admin</td>");
-					out.println("<td><input type='button' value='Demote' onClick='manageUser(\"" + existing_user_table + 
-							"\", \"" + user + "\", \"remove_admin\")'></td>");
-					out.println("<td><input type='button' value='Delete user' onClick='manageUser(\""+ existing_user_table + 
-							"\", \"" + user + "\", \"delete\")'></td>");
-				}
-				out.println("</tr>");
-			}
 
-		} catch (SQLException e) {
-			e.printStackTrace(out);
+		// TODO: pass user ids instead of usernames
+		List<BSUser> users = em.createQuery("from BSUser user where user.privs != ?").setParameter(1, BSUser.PRIVS.PENDING).getResultList();
+		for (BSUser regUser: users) {
+			out.println("<tr>");
+			out.println("<td>" + regUser.getUsername() + "</td>");
+			switch (regUser.getPrivs()) {
+			case USER:
+				out.println("<td>normal</td>");
+				out.println("<td><input type='button' value='Promote' onClick='manageUser(\"" + existing_user_table + 
+						"\", \"" + regUser.getUsername() + "\", \"" + regUser.getId() + "\", \"make_admin\")'></td>");
+				out.println("<td><input type='button' value='Delete user' onClick='manageUser(\""+ existing_user_table + 
+						"\", \"" + regUser.getUsername() + "\", \"" + regUser.getId() + "\", \"delete\")'></td>");
+				break;
+			case ADMIN:
+				out.println("<td>admin</td>");
+				out.println("<td><input type='button' value='Demote' onClick='manageUser(\"" + existing_user_table + 
+						"\", \"" + regUser.getUsername() + "\", \"" + regUser.getId() + "\", \"remove_admin\")'></td>");
+				out.println("<td><input type='button' value='Delete user' onClick='manageUser(\""+ existing_user_table + 
+						"\", \"" + regUser.getUsername() + "\", \"" + regUser.getId() + "\", \"delete\")'></td>");
+				break;
+			}
+			out.println("</tr>");
 		}
 		out.println("</tbody></table>");
 		out.println("</div>");
-
 		out.println("</body></html>");
 	}
 }

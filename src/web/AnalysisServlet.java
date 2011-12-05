@@ -6,7 +6,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import common.BattlecodeMap;
+import beans.BSMap;
+
 import common.Config;
 
 /**
@@ -26,8 +27,8 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 	@Override
 	protected void writeTableHead(PrintWriter out) {
 		HashSet<String> maps = new HashSet<String>();
-		for (BattlecodeMap m: Config.getMaster().getMaps()) {
-			String size = m.getSizeClass();
+		for (BSMap m: Config.getMaster().getMaps()) {
+			String size = m.calculateSizeClass();
 			if (!maps.contains(size)) 
 				maps.add(size);
 		}
@@ -49,11 +50,11 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 		HashMap<String, HashSet<String>> maps = new HashMap<String, HashSet<String>>();
 		ResultSet rs = db.query("SELECT * FROM matches WHERE run_id = " + runid);
 		while (rs.next()) {
-			BattlecodeMap map = new BattlecodeMap(rs.getString("map"), rs.getInt("height"), rs.getInt("width"), 
+			BSMap map = new BSMap(rs.getString("map"), rs.getInt("height"), rs.getInt("width"), 
 					rs.getInt("rounds"));
-			if (!maps.containsKey(map.getSizeClass()))
-				maps.put(map.getSizeClass(), new HashSet<String>());
-			maps.get(map.getSizeClass()).add(map.map);
+			if (!maps.containsKey(map.calculateSizeClass()))
+				maps.put(map.calculateSizeClass(), new HashSet<String>());
+			maps.get(map.calculateSizeClass()).add(map.mapName);
 		}
 		for (String size: keys) {
 			HashSet<String> toRun = maps.get(size);

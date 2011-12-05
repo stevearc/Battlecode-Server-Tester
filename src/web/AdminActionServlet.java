@@ -2,13 +2,15 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import beans.BSUser;
+import db.HibernateUtil;
 
 
 /**
@@ -26,78 +28,80 @@ public class AdminActionServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String myUsername = checkLogin(request, response);
-		if (myUsername == null) {
+		BSUser user = checkLogin(request, response);
+		if (user == null) {
 			return;
 		}
-		String username = request.getParameter("username");
+		Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
 		String cmd = request.getParameter("cmd");
 		response.setContentType("text/json");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
-
-		try {
-			// check for admin privs
-			if (!isUserAdmin(myUsername)) {
-				out.print("Unauthorized access");
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSUser targetUser = em.find(BSUser.class, userid);
+		if (targetUser == null) {
+			return;
+		}
+		// check for admin privs
+		if (user.getPrivs() != BSUser.PRIVS.ADMIN) {
+			out.print("Unauthorized access");
+			return;
+		}
+		if ("accept".equals(cmd)) {
+			targetUser.setPrivs(BSUser.PRIVS.USER);
+			em.merge(targetUser);
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			out.print("success");
+		} 
+		else if ("delete".equals(cmd)) {
+			if (getNumAdmins() <= 1 && targetUser.getPrivs() == BSUser.PRIVS.ADMIN) {
+				out.print("admin_limit");
 				return;
 			}
-			if ("accept".equals(cmd)) {
-				PreparedStatement st = db.prepare("UPDATE users SET status = 1 WHERE username LIKE ?");
-				st.setString(1, username);
-				db.update(st, true);
-				out.print("success");
-			} 
-			else if ("delete".equals(cmd)) {
-				if (getNumAdmins() <= 1 && isUserAdmin(username)) {
-					out.print("admin_limit");
-					return;
-				}
-				PreparedStatement st = db.prepare("DELETE FROM users WHERE username LIKE ?");
-				st.setString(1, username);
-				db.update(st, true);
-				out.print("success");
-			} 
-			else if ("make_admin".equals(cmd)) {
-				PreparedStatement st = db.prepare("UPDATE users SET status = 2 WHERE username LIKE ?");
-				st.setString(1, username);
-				db.update(st, true);
-				out.print("success");
-			}
-			else if ("remove_admin".equals(cmd)) {
-				ResultSet rs = db.query("SELECT COUNT(*) AS c FROM users WHERE status = 2");
-				rs.next();
-				if (rs.getInt("c") <= 1) {
-					out.print("admin_limit");
-					return;
-				}
-				PreparedStatement st = db.prepare("UPDATE users SET status = 1 WHERE username LIKE ?");
-				st.setString(1, username);
-				db.update(st, true);
-				out.print("success");
-			}
-			else if ("change_pass".equals(cmd)) {
-				
-			}
-			else {
-				out.print("Unknown error");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace(out);
+			em.remove(targetUser);
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			out.print("success");
+		} 
+		else if ("make_admin".equals(cmd)) {
+			targetUser.setPrivs(BSUser.PRIVS.ADMIN);
+			em.merge(targetUser);
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			out.print("success");
 		}
+		else if ("remove_admin".equals(cmd)) {
+			if (getNumAdmins() <= 1 && targetUser.getPrivs() == BSUser.PRIVS.ADMIN) {
+				out.print("admin_limit");
+				return;
+			}
+			targetUser.setPrivs(BSUser.PRIVS.USER);
+			em.merge(targetUser);
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			out.print("success");
+		}
+		else if ("change_pass".equals(cmd)) {
+
+		}
+		else {
+			out.print("Unknown error");
+		}
+		em.close();
 	}
 
-	private int getNumAdmins() throws SQLException {
-		ResultSet rs = db.query("SELECT COUNT(*) AS c FROM users WHERE status = 2");
-		rs.next();
-		return rs.getInt("c");
-	}
-	
-	private boolean isUserAdmin(String username) throws SQLException {
-		PreparedStatement st = db.prepare("SELECT status FROM users WHERE username LIKE ?");
-		st.setString(1, username);
-		ResultSet rs = db.query(st);
-		rs.next();
-		return rs.getInt("status") == 2;
+	@SuppressWarnings("unchecked")
+	private int getNumAdmins() {
+		// TODO: rowcount
+		EntityManager em = HibernateUtil.getEntityManager();
+		List<BSUser> users = em.createQuery("from BSUser users where users.privs = ?")
+		.setParameter(1, BSUser.PRIVS.ADMIN)
+		.getResultList();
+		return users.size();
 	}
 }

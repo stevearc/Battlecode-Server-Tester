@@ -33,7 +33,6 @@ public class WebServer implements Runnable {
 			new DeleteServlet(),
 			new MatchesServlet(),
 			new RunServlet(),
-			new MatchDownloadServlet(),
 			new AnalysisServlet(),
 			new MatchesByMapServlet(),
 			new LoginServlet(),
@@ -86,9 +85,14 @@ public class WebServer implements Runnable {
 			imgContext.setContextPath("/images");
 			imgContext.setHandler(new ImageHandler("images"));
 			
+			// Serve static match files
+			ContextHandler matchContext = new ContextHandler();
+			matchContext.setContextPath("/matches");
+			matchContext.setHandler(new StaticFileHandler("application/octet-stream", ".+\\.rms", config.install_dir + "/battlecode/matches"));
+			
 			// Add contexts
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.setHandlers(new Handler[] {jsContext, cssContext, imgContext, context});
+			contexts.setHandlers(new Handler[] {jsContext, cssContext, imgContext, matchContext, context});
 			server.setHandler(contexts);
 			
 			SslSelectChannelConnector ssl_connector = new SslSelectChannelConnector();

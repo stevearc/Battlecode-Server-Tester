@@ -10,7 +10,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import common.BattlecodeMap;
+import beans.BSMap;
+
 
 /**
  * View all the matches from a single run
@@ -39,12 +40,6 @@ public class MatchesServlet extends AbstractServlet {
 		out.println("<title>Battlecode Tester</title>");
 		out.println("<link rel=\"stylesheet\" href=\"css/tinytable.css\" />");
 		out.println("<link rel=\"stylesheet\" href=\"css/tabs.css\" />");
-		out.println("<script type=\"text/javascript\">");
-		// AJAX call to FileServlet
-		out.println("function downloadMatch(id) {\n" +
-				"document.location = \"" + response.encodeURL(MatchDownloadServlet.NAME) + "?id=\" + id;\n" +
-		"}");	
-		out.println("</script>");
 		out.println("</head>");
 		out.println("<body>");
 
@@ -99,18 +94,18 @@ public class MatchesServlet extends AbstractServlet {
 			while (rs3.next()) {
 				double a_points = rs3.getDouble("a_points");
 				double b_points = rs3.getDouble("b_points");
-				BattlecodeMap map = new BattlecodeMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
+				BSMap map = new BSMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
 						rs3.getInt("rounds"));
 				out.println("<tr>");
-				out.println("<td>" + map.map + "</td>");
+				out.println("<td>" + map.mapName + "</td>");
 				out.println("<td>" + rs3.getInt("seed") + "</td>");
 				out.println("<td><font color='" + (rs3.getInt("win") == 1 ? "red'>" + team_a : "blue'>" + team_b) + "</font></td>");
-				out.println("<td>" + map.getSizeClass() + "</td>");
+				out.println("<td>" + map.calculateSizeClass() + "</td>");
 				out.println("<td>" + win_conditions[rs3.getInt("win_condition")] + "</td>");
 				out.println("<td><font color='red'>" + a_points + "</font>/<font color='blue'>" + 
 						b_points + "</font></td>");
-				out.println("<td><input type=button value=\"download\" onclick=\"downloadMatch(" + 
-						rs3.getString("id") + ")\"></td>");
+				out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
+						strId + map.mapName + rs3.getInt("seed") + ".rms'\"></td>");
 				out.println("</tr>");
 			}
 			st3.close();

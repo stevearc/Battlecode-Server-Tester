@@ -5,12 +5,16 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import beans.BSPlayer;
+import beans.BSUser;
+import db.HibernateUtil;
 
 /**
  * Upload players
@@ -24,15 +28,15 @@ public class UploadServlet extends AbstractServlet {
 	public UploadServlet() {
 		super(NAME);
 	}
-	
+
 	private void warn(HttpServletResponse response, String warning) throws IOException {
 		response.getWriter().println("<p class=\"warning\">" + warning + "</p>");
 	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null){
+		BSUser user = checkLogin(request, response);
+		if (user == null){
 			redirect(response);
 			return;
 		}
@@ -45,12 +49,12 @@ public class UploadServlet extends AbstractServlet {
 		out.println("<link rel=\"stylesheet\" href=\"css/tabs.css\" />");
 		out.println("</head>");
 		out.println("<body>");
-		
+
 		WebUtil.writeTabs(response, out, name);
 		out.println("<div>Compile your player using");
 		out.println("<p class=\"code\">ant jar -Dteam=teamXXX</p>");
 		out.println("where teamXXX is your team number.  Then upload it here.</div><br/>");
-		
+
 		String submit = request.getParameter("submit");
 		if (submit != null) {
 			File player = (File) request.getAttribute("player");
@@ -66,42 +70,50 @@ public class UploadServlet extends AbstractServlet {
 			} else if (playerName.length() > 45) {
 				warn(response, "Player name is too long");
 			} else {
-				PreparedStatement stmt;
+				FileInputStream istream = new FileInputStream(player);
+				FileOutputStream ostream = new FileOutputStream(config.install_dir + "/battlecode/teams/" + playerName + ".jar");
+				byte[] buffer = new byte[1000];
+				int len = 0;
+				while ((len = istream.read(buffer)) != -1) {
+					ostream.write(buffer, 0, len);
+				}
+				istream.close();
+				ostream.close();
+				BSPlayer bsPlayer = new BSPlayer();
+				bsPlayer.setPlayerName(playerName);
+				EntityManager em = HibernateUtil.getEntityManager();
+				em.persist(bsPlayer);
+				em.getTransaction().begin();
 				try {
-					stmt = db.prepare("INSERT INTO tags (tag) VALUES (?)");
-					stmt.setString(1, playerName);
-					db.update(stmt, true);
+					em.flush();
 					out.println("<p>Successfully uploaded player: " + playerName + "</p>");
-					FileInputStream istream = new FileInputStream(player);
-					FileOutputStream ostream = new FileOutputStream(config.install_dir + "/battlecode/teams/" + playerName + ".jar");
-					byte[] buffer = new byte[1000];
-					int len = 0;
-					while ((len = istream.read(buffer)) != -1) {
-						ostream.write(buffer, 0, len);
-					}
-					istream.close();
-					ostream.close();
-					stmt.close();
-				} catch (SQLException e) {
+				} catch (PersistenceException e) {
+					// player name already exists
 					warn(response, "Player name already exists");
 				}
+				if (em.getTransaction().getRollbackOnly()) {
+					em.getTransaction().rollback();
+				} else {
+					em.getTransaction().commit();
+				}
+				em.close();
 			}
 		}
-		
+
 		out.println("<div>");
 		out.println("<form action=\"" + name + "\" method=\"post\" enctype=\"multipart/form-data\">");
-			out.println("<input type=\"file\" name=\"player\"><br/>");
-			out.println("Player Name:<input type=\"text\" name=\"player_name\" size=\"20\" /><br/>");
-			out.println("<input type=\"submit\" name=\"submit\" value=\"Upload\"/>");
+		out.println("<input type=\"file\" name=\"player\"><br/>");
+		out.println("Player Name:<input type=\"text\" name=\"player_name\" size=\"20\" /><br/>");
+		out.println("<input type=\"submit\" name=\"submit\" value=\"Upload\"/>");
 		out.println("</form>");
-		
-		
+
+
 		out.println("</div>");
 
 		out.println("</body>" +
 		"</html>");
 	}
-	
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);

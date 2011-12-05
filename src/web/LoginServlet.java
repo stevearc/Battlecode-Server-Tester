@@ -2,18 +2,20 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceException;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import beans.BSUser;
+
 import common.Util;
+
+import db.HibernateUtil;
 
 /**
  * Displays the login form
@@ -31,8 +33,8 @@ public class LoginServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username != null) {
+		BSUser user = checkLogin(request, response);
+		if (user != null) {
 			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 			response.setHeader("Location", response.encodeURL("/" + IndexServlet.NAME));
 			return;
@@ -96,7 +98,6 @@ public class LoginServlet extends AbstractServlet {
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		PrintWriter out = response.getWriter();
 		String username = request.getParameter("username");
 		username = (username == null ? null : username.trim());
 		String password = request.getParameter("password");
@@ -122,68 +123,71 @@ public class LoginServlet extends AbstractServlet {
 			doGet(request, response);
 			return;
 		}
-		try {
 			String seed = request.getParameter("seed");
 			seed += Util.SHA1(""+Math.random());
 			String salt = Util.SHA1(seed);
+			EntityManager em = HibernateUtil.getEntityManager();
 			if (request.getParameter("register") != null) {
-				// Check to see if username is taken yet
-				PreparedStatement stmt = db.prepare("SELECT username FROM users WHERE username LIKE ?");
-				stmt.setString(1, username);
-				ResultSet rs = db.query(stmt);
-				if (rs.next()) {
-					request.setAttribute("error", "name_taken");
-					doGet(request, response);
-					return;
-				}
 				String hashed_password = Util.SHA1(password + salt);
-				PreparedStatement st = db.prepare("INSERT INTO users (username, password, salt, status) " +
-				"VALUES (?, ?, ?, ?)");
-				st.setString(1, username);
-				st.setString(2, hashed_password);
-				st.setString(3, salt);
-				st.setInt(4, 0);
-				db.update(st, true);
-				request.setAttribute("register", "success");
+				BSUser user = new BSUser();
+				user.setUsername(username);
+				user.setHashedPassword(hashed_password);
+				user.setSalt(salt);
+				user.setPrivs(BSUser.PRIVS.PENDING);
+				
+				em.getTransaction().begin();
+				try {
+					em.persist(user);
+					em.flush();
+				} catch (PersistenceException e) {
+					// Username already exists
+					request.setAttribute("error", "name_taken");
+				}
+				if (em.getTransaction().getRollbackOnly()) {
+					em.getTransaction().rollback();
+				} else {
+					em.getTransaction().commit();
+				}
+				em.close();
 				doGet(request, response);
 				return;
 			}
-			if (checkCredentials(username, password)) {
-				if (request.getParameter("login") != null) {
-					PreparedStatement st = db.prepare("UPDATE users SET session = ? WHERE username LIKE ?");
-					st.setString(1, salt);
-					st.setString(2, username);
-					db.update(st, true);
-					Cookie c = new Cookie(COOKIE_NAME, salt);
-					c.setSecure(true);
-					response.addCookie(c);
-					response.setStatus(HttpServletResponse.SC_OK);
-					response.setContentType("text/html");
-					goToPage(response, IndexServlet.NAME);
-					return;
-				}
+			BSUser user = getMatchingUser(username, password);
+			if (user != null && request.getParameter("login") != null) {
+				user.setSession(salt);
+				em.getTransaction().begin();
+				em.merge(user);
+				em.flush();
+				em.getTransaction().commit();
+				em.close();
+				// Cookie is encoded as [userid]$[session token]
+				Cookie c = new Cookie(COOKIE_NAME, user.getId() + "$" + salt);
+				c.setSecure(true);
+				response.addCookie(c);
+				response.setStatus(HttpServletResponse.SC_OK);
+				response.setContentType("text/html");
+				goToPage(response, IndexServlet.NAME);
+				return;
 			}
-		} catch (Exception e) {
-			response.setContentType("text/html");
-			response.setStatus(HttpServletResponse.SC_OK);
-			e.printStackTrace(out);
-		}
+		em.close();
 		request.setAttribute("error", "bad_auth");
 		doGet(request, response);
 	}
 
-	private boolean checkCredentials(String username, String password) throws SQLException, NoSuchAlgorithmException, UnsupportedEncodingException {
-		PreparedStatement st;
-		st = db.prepare("SELECT * FROM users WHERE username LIKE ?");
-		st.setString(1, username);
-		ResultSet rs = db.query(st);
-		if (!rs.next())
-			return false;
-		String salt = rs.getString("salt");
-		String hashed = Util.SHA1(password + salt);
-		if (!hashed.equals(rs.getString("password")))
-			return false;
-		return true;
+	private BSUser getMatchingUser(String username, String password) {
+		EntityManager em = HibernateUtil.getEntityManager();
+		
+		try {
+			BSUser user = (BSUser) em.createQuery("from BSUser user where user.username = ?")
+			.setParameter(1, username)
+			.getSingleResult();
+			if (Util.SHA1(password + user.getSalt()).equals(user.getHashedPassword())) {
+				return user;
+			}
+		} catch (NoResultException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	private void goToPage(HttpServletResponse response, String page) throws IOException {

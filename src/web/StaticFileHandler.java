@@ -1,11 +1,9 @@
 package web;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -45,14 +43,18 @@ public class StaticFileHandler extends AbstractHandler {
 			baseRequest.setHandled(true);
 			return;
 		}
-		BufferedReader read = new BufferedReader(new InputStreamReader(new FileInputStream(absPath)));
-		PrintWriter out = response.getWriter();
+		FileInputStream fis = new FileInputStream(absPath);
+		
+		byte[] buffer = new byte[1000];
+		OutputStream ostream = response.getOutputStream();
+		int len = 0;
+		while ((len = fis.read(buffer)) != -1) {
+			ostream.write(buffer, 0, len);
+		}
+		
 		response.setStatus(HttpServletResponse.SC_OK);
 		baseRequest.setHandled(true);
 		response.setContentType(content);
-		for (String line = read.readLine(); line != null; line = read.readLine()) {
-			out.println(line);
-		}
 	}
 
 }

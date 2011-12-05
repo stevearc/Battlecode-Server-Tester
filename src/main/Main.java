@@ -1,10 +1,9 @@
 package main;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.util.List;
+
+import javax.persistence.EntityManager;
 
 import master.Master;
 import master.MasterMethodCaller;
@@ -19,13 +18,12 @@ import org.apache.commons.cli.ParseException;
 import web.ProxyServer;
 import web.WebServer;
 import worker.Worker;
+import beans.BSUser;
 
 import common.Config;
 import common.Util;
 
-import db.Database;
-import db.HSQLDatabase;
-import db.MySQLDatabase;
+import db.HibernateUtil;
 
 /**
  * Starts all threads and services
@@ -73,16 +71,6 @@ public class Main {
 				if (cmd.hasOption(SSL_PORT_OP)) {
 					config.https_port = Integer.parseInt(cmd.getOptionValue(SSL_PORT_OP));
 				}
-				Database db = null;
-				if (config.db_type.equals("mysql")){
-					db = new MySQLDatabase();
-				} else if (config.db_type.equals("hsql")) {
-					db = new HSQLDatabase();
-				} else {
-					throw new Exception("Invalid database type");
-				}
-				db.connect();
-				Config.setDB(db);
 				// If this is the first run, make sure the initial admin is in the DB
 				if (!config.admin.trim().equals(""))
 					createWebAdmin();
@@ -107,28 +95,34 @@ public class Main {
 
 	/**
 	 * Take the initial user/pass from the config file and put the information into the DB
-	 * @throws SQLException
-	 * @throws NoSuchAlgorithmException
-	 * @throws UnsupportedEncodingException
 	 */
-	private static void createWebAdmin() throws SQLException, NoSuchAlgorithmException, UnsupportedEncodingException {
-		Database db = Config.getDB();
+	private static void createWebAdmin() {
+		EntityManager em = HibernateUtil.getEntityManager();
+		
+		// TODO: rowCount
+		List users = em.createQuery("from BSUser user").getResultList();
+		if (users.isEmpty()) {
+		
 		Config config = Config.getConfig();
 		String salt = Util.SHA1(""+Math.random());
 		String hashed_password = Util.SHA1(config.admin_pass + salt);
-		PreparedStatement st = db.prepare("INSERT INTO users (username, password, salt, status) " +
-		"VALUES (?, ?, ?, ?)");
-		st.setString(1, config.admin);
-		st.setString(2, hashed_password);
-		st.setString(3, salt);
-		st.setInt(4, 2);
-		db.update(st, false);
+		BSUser user = new BSUser();
+		user.setUsername(config.admin);
+		user.setHashedPassword(hashed_password);
+		user.setSalt(salt);
+		user.setPrivs(BSUser.PRIVS.ADMIN);
+		em.getTransaction().begin();
+		em.merge(user);
+		em.flush();
+		em.getTransaction().commit();
+		em.close();
 
 		// Now remove the user information from the config file
 		try {
 			Runtime.getRuntime().exec(config.cmd_clean_config_file);
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
 		}
 	}
 

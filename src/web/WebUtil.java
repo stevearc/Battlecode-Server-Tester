@@ -8,9 +8,9 @@ import java.util.HashSet;
 
 import javax.servlet.http.HttpServletResponse;
 
-import common.Config;
+import org.hsqldb.Database;
 
-import db.Database;
+import common.Config;
 
 /**
  * Utility class with static methods for common web server functions

@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import common.Config;
-import common.Match;
+import common.NetworkMatch;
 import common.Util;
 
 /**
@@ -26,12 +26,12 @@ public class MatchRunner implements Runnable {
 	private Logger _log;
 	private Config config;
 	private Worker worker;
-	private Match match;
+	private NetworkMatch match;
 	private boolean stop = false;
 	private Process curProcess;
 	private int core;
 
-	public MatchRunner(Worker worker, Match match, int core) {
+	public MatchRunner(Worker worker, NetworkMatch match, int core) {
 		config = Config.getConfig();
 		this.match = match;
 		this.worker = worker;
@@ -85,7 +85,7 @@ public class MatchRunner implements Runnable {
 			// Generate the bc.conf file
 			curProcess = run.exec(new String[] {config.cmd_gen_conf, 
 					config.install_dir + "/battlecode/core" + core, 
-					match.map.map,
+					match.map.mapName,
 					"A" + team_a,
 					"B" + team_b,
 					""+match.seed});

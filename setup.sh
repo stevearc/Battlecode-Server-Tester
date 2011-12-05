@@ -130,6 +130,7 @@ setup_master() {
     done
     mkdir -p battlecode/lib
     mkdir -p battlecode/teams
+    mkdir matches
     cp -p scripts/build.xml battlecode/teams
     cp -p $BATTLECODE_DIR/lib/battlecode-server.jar battlecode/lib
     cp -pr $BATTLECODE_DIR/bc.conf $BATTLECODE_DIR/build.xml $BATTLECODE_DIR/idata $BATTLECODE_DIR/maps battlecode

@@ -1,28 +1,37 @@
 package master;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceException;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import networking.CometCmd;
 import networking.CometMessage;
 import networking.Packet;
+import beans.BSMap;
+import beans.BSMatch;
+import beans.BSPlayer;
+import beans.BSRun;
 
-import common.BattlecodeMap;
 import common.Config;
 import common.Dependencies;
-import common.Match;
+import common.NetworkMatch;
 import common.Util;
 
-import db.Database;
+import db.HibernateUtil;
 
 /**
  * Handles distribution of load to connected workers
@@ -31,16 +40,14 @@ import db.Database;
  */
 public class Master {
 	private Config config;
-	private Database db;
 	private Logger _log;
 	private NetworkHandler handler;
 	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
-	private HashSet<BattlecodeMap> maps = new HashSet<BattlecodeMap>();
+	private HashSet<BSMap> maps = new HashSet<BSMap>();
 	private WebPollHandler wph;
 
 	public Master() throws Exception {
 		config = Config.getConfig();
-		db = Config.getDB();
 		wph = Config.getWebPollHandler();
 		_log = config.getLogger();
 		handler = new NetworkHandler();
@@ -50,11 +57,20 @@ public class Master {
 	 * Start running the master
 	 */
 	public synchronized void start() {
-		try {
-			new Thread(handler).start();
-			startRun();
-		} catch (SQLException e) {
-		}
+		new Thread(handler).start();
+		startRun();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					updateMaps();
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e) {
+					}
+				}
+			}
+		}).start();
 	}
 
 	/**
@@ -63,36 +79,34 @@ public class Master {
 	 * @param seeds
 	 * @param mapNames
 	 */
-	public synchronized void queueRun(String team_a, String team_b, String[] seeds, String[] mapNames) {
-		try {
-			PreparedStatement st = db.prepare("INSERT INTO runs (team_a, team_b) VALUES (?, ?)");
-			st.setString(1, team_a);
-			st.setString(2, team_b);
-			db.update(st, true);
-			ResultSet rs = db.query("SELECT MAX(id) as newest FROM runs"); 
-			rs.next();
-			int id = rs.getInt("newest");
+	public synchronized void queueRun(String teamA, String teamB, String[] seeds, String[] maps) {
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSRun newRun = new BSRun();
+		newRun.setTeamA(teamA);
+		newRun.setTeamB(teamB);
+		em.persist(newRun);
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
+		em.refresh(newRun);
 
-			HashSet<BattlecodeMap> runMaps = getMapsByName(mapNames);
-			for (String seed: seeds) {
-				int seed_int = Integer.parseInt(seed);
-				for (BattlecodeMap map: runMaps) {
-					PreparedStatement stmt = db.prepare("INSERT INTO matches (run_id, map, height, width, rounds, seed)" +
-					" VALUES (?, ?, ?, ?, ?, ?)");
-					stmt.setInt(1, id);
-					stmt.setString(2, map.map);
-					stmt.setInt(3, map.height);
-					stmt.setInt(4, map.width);
-					stmt.setInt(5, map.rounds);
-					stmt.setInt(6, seed_int);
-					db.update(stmt, true);
-				}
+		for (String seed: seeds) {
+			Long seedLong = new Long(Integer.parseInt(seed));
+			for (BSMap map: maps) {
+				BSMatch match = new BSMatch();
+				match.setMap(map);
+				match.setSeed(seedLong);
+				match.setRun(newRun);
+				em.persist(match);
 			}
-			wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {""+id, 
-					team_a, team_b}));
-			startRun();
-		} catch (SQLException e) {
 		}
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
+		em.close();
+		wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {""+newRun.getId(), 
+				teamA.getPlayerName(), teamB.getPlayerName()}));
+		startRun();
 	}
 
 	/**
@@ -100,16 +114,19 @@ public class Master {
 	 * @param runId
 	 */
 	public synchronized void deleteRun(int runId) {
-		try {
-			if (runId == getCurrentId()) {
-				stopCurrentRun(Config.STATUS_CANCELED);
-				startRun();
-			} else {
-				db.update("DELETE FROM matches WHERE run_id = " + runId, true);
-				db.update("DELETE FROM runs WHERE id = " + runId, true);
-				wph.broadcastMsg("matches", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {""+runId}));
-			}
-		} catch (SQLException e) {
+		BSRun currentRun = getCurrentRun();
+		if (currentRun == null)
+			return;
+		// If it's running right now, just cancel it
+		if (currentRun.getStatus() == BSRun.STATUS.RUNNING) {
+			stopCurrentRun(BSRun.STATUS.CANCELED);
+			startRun();
+		} else {
+			// otherwise, delete it
+			EntityManager em = HibernateUtil.getEntityManager();
+			em.remove(currentRun);
+			em.close();
+			wph.broadcastMsg("matches", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {""+runId}));
 		}
 	}
 
@@ -140,7 +157,8 @@ public class Master {
 	 * @param p
 	 */
 	public synchronized void matchFinished(WorkerRepr worker, Packet p) {
-		Match m = (Match) p.get(0);
+		/* TODO
+		NetworkMatch m = (NetworkMatch) p.get(0);
 		String status = (String) p.get(1);
 		int winner = (Integer) p.get(2);
 		int win_condition = (Integer) p.get(3);
@@ -156,14 +174,15 @@ public class Master {
 					return;
 				}
 				_log.info("Match finished: " + m + " winner: " + (winner == 1 ? "A" : "B"));
+				FileOutputStream fos = new FileOutputStream("battlecode/matches/" + getCurrentId() + m.map.mapName + m.seed + ".rms");
+				fos.write(data);
 				PreparedStatement stmt = null;
-				stmt = db.prepare("UPDATE matches SET win = ?, win_condition = ?, a_points = ?, b_points = ?, data = ? WHERE id = ?");
+				stmt = db.prepare("UPDATE matches SET win = ?, win_condition = ?, a_points = ?, b_points = ? WHERE id = ?");
 				stmt.setInt(1, winner);
 				stmt.setInt(2, win_condition);
 				stmt.setDouble(3, a_points);
 				stmt.setDouble(4, b_points);
-				stmt.setBinaryStream(5, new ByteArrayInputStream(data), data.length);
-				stmt.setInt(6, m.id);
+				stmt.setInt(5, m.id);
 				db.update(stmt, true);
 				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new String[] {""+m.run_id, ""+winner}));
 
@@ -184,7 +203,10 @@ public class Master {
 				sendWorkerMatches(worker);
 			}
 		} catch (SQLException e) {
+		} catch (IOException e) {
+			_log.log(Level.SEVERE, "Error writing match file", e);
 		}
+		*/
 	}
 
 	/**
@@ -192,37 +214,45 @@ public class Master {
 	 * @param worker
 	 */
 	public synchronized void sendWorkerMatches(WorkerRepr worker) {
-		try {
-			HashSet<Match> matches = getMatchesLeftAndNotRunning();
-			for (Match m: matches) {
-				if (!worker.isFree())
-					break;
-				_log.info("Sending match " + m + " to worker " + worker);
-				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), m.toMapString()}));
-				worker.runMatch(m);
-			}
+		List<BSMatch> queuedMatches = getMatchesWithStatus(BSMatch.STATUS.QUEUED);
+		EntityManager em = HibernateUtil.getEntityManager();
 
-			// If we are currently running all necessary maps, add some redundancy by
-			// Sending this worker random maps that other workers are currently running
-			Match[] matchIndex = getMatchesLeft().toArray(new Match[0]);
-			if (matchIndex.length > 0) {
-				Random r = new Random();
-				if (worker.isFree()) {
-					worker.runMatch(matchIndex[r.nextInt(matchIndex.length)]);
-				}
+		for (int i = 0; i < queuedMatches.size() && worker.isFree(); i++) {
+			BSMatch m = queuedMatches.get(i);
+			NetworkMatch nm = m.buildNetworkMatch();
+			_log.info("Sending match " + nm + " to worker " + worker);
+			wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
+			worker.runMatch(nm);
+			m.setStatus(BSMatch.STATUS.RUNNING);
+			em.merge(m);
+		}
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
+		em.close();
+
+		// If we are currently running all necessary maps, add some redundancy by
+		// Sending this worker random maps that other workers are currently running
+		if (worker.isFree()) {
+			Random r = new Random();
+			List<BSMatch> runningMatches = getMatchesWithStatus(BSMatch.STATUS.RUNNING);
+			while (!runningMatches.isEmpty() && worker.isFree()) {
+				NetworkMatch nm = runningMatches.get(r.nextInt()%runningMatches.size()).buildNetworkMatch();
+				_log.info("Sending match " + nm + " to worker " + worker);
+				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
+				worker.runMatch(nm);
 			}
-		} catch (SQLException e) {
 		}
 	}
-	
-	public synchronized void sendWorkerMatchDependencies(WorkerRepr worker, Match match, boolean needMap, boolean needTeamA, boolean needTeamB) {
+
+	public synchronized void sendWorkerMatchDependencies(WorkerRepr worker, NetworkMatch match, boolean needMap, boolean needTeamA, boolean needTeamB) {
 		Dependencies dep;
 		byte[] map = null;
 		byte[] teamA = null;
 		byte[] teamB = null;
 		try {
 			if (needMap) {
-				map = Util.getFileData(config.install_dir + "/battlecode/maps/" + match.map.map + ".xml");
+				map = Util.getFileData(config.install_dir + "/battlecode/maps/" + match.map.mapName + ".xml");
 			}
 			if (needTeamA) {
 				teamA = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_a + ".jar");
@@ -230,7 +260,7 @@ public class Master {
 			if (needTeamB) {
 				teamB = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_b + ".jar");
 			}
-			dep = new Dependencies(match.map.map, map, match.team_a, teamA, match.team_b, teamB);
+			dep = new Dependencies(match.map.mapName, map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);
 			worker.runMatchWithDependencies(match, dep);
 		} catch (IOException e) {
@@ -241,105 +271,91 @@ public class Master {
 		}
 	}
 
-	private void startRun() throws SQLException {
-		updateMaps();
-		if (getCurrentId() != -1)
-			return;
-
-		ResultSet rs = db.query("SELECT * FROM runs WHERE status = " + Config.STATUS_QUEUED + " ORDER BY id");
-		if (!rs.next()) {
+	private void startRun() {
+		if (getCurrentRun() != null) {
+			// Already running
 			return;
 		}
-		String team_a = rs.getString("team_a");
-		String team_b = rs.getString("team_b");
-		db.update("UPDATE runs SET status = " + Config.STATUS_RUNNING + ", started = NOW() WHERE id = " + rs.getInt("id"), true);
-		if (!validateTeams(team_a, team_b)) {
-			PreparedStatement stmt = db.prepare("UPDATE runs SET status = " + Config.STATUS_ERROR + " WHERE team_a LIKE ? AND team_b LIKE ?");
-			stmt.setString(1, team_a);
-			stmt.setString(2, team_b);
-			db.update(stmt, true);
-			wph.broadcastMsg("matches", new CometMessage(CometCmd.RUN_ERROR, new String[] {""+rs.getInt("id")}));
-			startRun();
-		} else {
-			int runid = rs.getInt("id");
-			ResultSet r = db.query("SELECT COUNT(*) AS num_matches FROM matches WHERE run_id = " + runid);
-			r.next();
-			wph.broadcastMsg("matches", new CometMessage(CometCmd.START_RUN, new String[] {""+runid, ""+r.getInt("num_matches")}));
+
+		EntityManager em = HibernateUtil.getEntityManager();
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<BSRun> criteria = builder.createQuery( BSRun.class );
+		Root<BSRun> run = criteria.from( BSRun.class );
+		criteria.select(run);
+		criteria.where(builder.equal(run.get("status"), BSRun.STATUS.QUEUED));
+		BSRun nextRun = null;
+		try {
+			nextRun = em.createQuery(criteria).getSingleResult();
+		} catch (NoResultException e) {
+			// pass
+		}
+		if (nextRun != null) {
+			nextRun.setStatus(BSRun.STATUS.RUNNING);
+			nextRun.setStarted(new Date());
+			em.merge(nextRun);
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			wph.broadcastMsg("matches", new CometMessage(CometCmd.START_RUN, 
+					new String[] {""+nextRun.getId(), ""+nextRun.getMatches().size()}));
 			for (WorkerRepr c: workers) {
 				sendWorkerMatches(c);
 			}
 		}
+		em.close();
 	}
 
-	private int getCurrentId() throws SQLException {
-		ResultSet rs = db.query("SELECT id FROM runs WHERE status = " + Config.STATUS_RUNNING);
-		if (rs.next()) {
-			return rs.getInt("id");
-		} else {
-			return -1;
+	private BSRun getCurrentRun() {
+		EntityManager em = HibernateUtil.getEntityManager();
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<BSRun> criteria = builder.createQuery( BSRun.class );
+		Root<BSRun> run = criteria.from( BSRun.class );
+		criteria.select(run);
+		criteria.where(builder.equal(run.get("status"), BSRun.STATUS.RUNNING));
+		BSRun currentRun = null;
+		try {
+			currentRun = em.createQuery(criteria).getSingleResult();
+		} catch (NoResultException e) {
+			// pass
+		} finally {
+			em.close();
 		}
+		return currentRun;
 	}
 
-	private void stopCurrentRun(int status) throws SQLException {
+	private void stopCurrentRun(BSRun.STATUS status) {
 		_log.info("Stopping current run");
-		int id = getCurrentId();
-		db.update("UPDATE runs SET status = " + status + ", ended = NOW() WHERE id = " + id, true);
-		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+id, ""+status}));
+		BSRun currentRun = getCurrentRun();
+		EntityManager em = HibernateUtil.getEntityManager();
+		currentRun.setStatus(status);
+		currentRun.setEnded(new Date());
+		em.merge(currentRun);
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
+		// TODO: set status of child matches
+		em.close();
+		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+currentRun.getId(), ""+status}));
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.FINISH_RUN, new String[] {}));
 		for (WorkerRepr c: workers) {
 			c.stopAllMatches();
 		}
 	}
 
-	private HashSet<Match> getMatchesLeft() throws SQLException {
-		ResultSet rs = db.query("SELECT id, team_a, team_b FROM runs WHERE status = " + Config.STATUS_RUNNING);
-		rs.next();
-		int run = rs.getInt("id");
-		String team_a = rs.getString("team_a");
-		String team_b = rs.getString("team_b");
-		rs.close();
-		PreparedStatement st = db.prepare("SELECT * FROM matches WHERE run_id = ? AND win is NULL");
-		st.setInt(1, run);
-		rs = db.query(st);
-		HashSet<Match> unfinishedMatches = new HashSet<Match>();
-		while (rs.next()) {
-			unfinishedMatches.add(new Match(run, rs.getInt("id"), team_a, team_b, new BattlecodeMap(rs.getString("map"), 0, 0, 0), rs.getInt("seed")));
+	private List<BSMatch> getMatchesWithStatus(BSMatch.STATUS status) {
+		BSRun currentRun = getCurrentRun();
+		if (currentRun == null) {
+			return new ArrayList<BSMatch>();
 		}
-		return unfinishedMatches;
-	}
 
-	private HashSet<Match> getMatchesLeftAndNotRunning() throws SQLException {
-		HashSet<Match> matchesLeft = getMatchesLeft();
-		for (WorkerRepr c: workers) {
-			for (Match m: c.getRunningMatches()) {
-				matchesLeft.remove(m);
+		// TODO: maybe move this into a query?
+		ArrayList<BSMatch> matches = new ArrayList<BSMatch>();
+		for (BSMatch m: currentRun.getMatches()) {
+			if (m.getStatus() == status) {
+				matches.add(m);
 			}
 		}
-		return matchesLeft;
-	}
-
-	private boolean validateTeams(String team_a, String team_b) throws SQLException {
-
-		PreparedStatement st = db.prepare("SELECT * FROM tags WHERE tag LIKE ?");
-		st.setString(1, team_a);
-		st.setString(2, team_a);
-		ResultSet rs = db.query(st);
-
-		if (!rs.next()) {
-			st.close();
-			return false;
-		}
-		st.close();
-		PreparedStatement stmt = db.prepare("SELECT * FROM tags WHERE tag LIKE ?");
-		stmt.setString(1, team_b);
-		stmt.setString(2, team_b);
-		rs = db.query(stmt);
-		if (!rs.next()) {
-			stmt.close();
-			return false;
-		}
-		stmt.close();
-		return true;
+		return matches;
 	}
 
 	/**
@@ -353,14 +369,36 @@ public class Master {
 				return name.toLowerCase().endsWith(".xml");
 			}
 		});
-		maps.clear();
+		HashSet<BSMap> newMaps = new HashSet<BSMap>();
 		for (File m: mapFiles) {
 			try {
-				maps.add(new BattlecodeMap(m));
+				newMaps.add(new BSMap(m));
 			} catch (Exception e) {
 				_log.log(Level.WARNING, "Error parsing map", e);
 			}
 		}
+		
+		if (newMaps.equals(maps)) {
+			return;
+		}
+		maps = newMaps;
+		
+		EntityManager em = HibernateUtil.getEntityManager();
+		for (BSMap map: maps) {
+			em.persist(map);
+		}
+		em.getTransaction().begin();
+		try {
+			em.flush();
+		} catch (PersistenceException e) {
+			// Those maps already exist; don't worry about it.
+		}
+		if (em.getTransaction().getRollbackOnly()) {
+			em.getTransaction().rollback();
+		} else {
+			em.getTransaction().commit();
+		}
+		em.close();
 	}
 
 	/**
@@ -376,19 +414,8 @@ public class Master {
 	 * @return All known maps
 	 */
 	@SuppressWarnings("unchecked")
-	public HashSet<BattlecodeMap> getMaps() {
-		return (HashSet<BattlecodeMap>) maps.clone();
-	}
-
-	private HashSet<BattlecodeMap> getMapsByName(String[] mapNames) {
-		HashSet<BattlecodeMap> result = new HashSet<BattlecodeMap>();
-		HashSet<String> mapNameSet = new HashSet<String>();
-		for (String m: mapNames)
-			mapNameSet.add(m);
-		for (BattlecodeMap m: maps)
-			if (mapNameSet.contains(m.map))
-				result.add(m);
-		return result;
+	public HashSet<BSMap> getMaps() {
+		return (HashSet<BSMap>) maps.clone();
 	}
 
 }
