@@ -1,7 +1,13 @@
-package db;
+package dataAccess;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+
+import model.BSMap;
+import model.BSMatch;
+import model.BSPlayer;
+import model.BSRun;
+import model.BSUser;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
@@ -9,11 +15,6 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
-import beans.BSMap;
-import beans.BSMatch;
-import beans.BSPlayer;
-import beans.BSRun;
-import beans.BSUser;
 
 public class HibernateUtil {
 	private static final String[][] properties = {

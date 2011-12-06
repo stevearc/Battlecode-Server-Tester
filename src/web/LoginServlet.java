@@ -11,11 +11,12 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSUser;
+import model.BSUser;
+
 
 import common.Util;
 
-import db.HibernateUtil;
+import dataAccess.HibernateUtil;
 
 /**
  * Displays the login form

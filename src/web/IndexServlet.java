@@ -5,21 +5,16 @@ import java.io.PrintWriter;
 import java.util.List;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSMap;
-import beans.BSPlayer;
-import beans.BSRun;
-import beans.BSUser;
-
-import common.Util;
-
-import db.HibernateUtil;
+import model.BSMap;
+import model.BSMatch;
+import model.BSPlayer;
+import model.BSRun;
+import model.BSUser;
+import dataAccess.HibernateUtil;
 
 /**
  * Displays the list of all runs
@@ -34,7 +29,6 @@ public class IndexServlet extends AbstractServlet {
 		super(NAME);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		BSUser user = checkLogin(request, response);
@@ -73,11 +67,7 @@ public class IndexServlet extends AbstractServlet {
 
 		// Display current runs
 		EntityManager em = HibernateUtil.getEntityManager();
-		CriteriaBuilder builder = em.getCriteriaBuilder();
-		CriteriaQuery<BSRun> criteria = builder.createQuery(BSRun.class);
-		Root<BSRun> run = criteria.from(BSRun.class);
-		criteria.select(run);
-		List<BSRun> runs = em.createQuery(criteria).getResultList();
+		List<BSRun> runs = em.createQuery("from BSRun", BSRun.class).getResultList();
 		for (BSRun r: runs) {
 			String td;
 			// Make runs with data clickable
@@ -86,13 +76,26 @@ public class IndexServlet extends AbstractServlet {
 			else
 				td = "<td>";
 			out.println("<tr>");
-			/*
-			 * TODO: print wins
-				out.println(td + r.getId() + "</td>" + 
-						td + team_a + "</td>" +
-						td + team_b + "</td>" +				
-						td + mapsQuery.getInt("wins") + "/" + (mapsQuery.getInt("maps")-mapsQuery.getInt("wins")) + "</td>");
-			 */
+			
+			// TODO: cache this data in BSRun
+			List<Object[]> wins = em.createQuery("select match.winner, count(*) from BSMatch match where match.run = ? and match.status = ? group by match.winner", Object[].class)
+			.setParameter(1, r)
+			.setParameter(2, BSMatch.STATUS.FINISHED)
+			.getResultList();
+			long aWins = 0;
+			long bWins = 0;
+			for (Object[] valuePair: wins) {
+				if (valuePair[0] == BSMatch.TEAM.TEAM_A) {
+					aWins = (Long) valuePair[1];
+				} else if (valuePair[0] == BSMatch.TEAM.TEAM_B) {
+					bWins = (Long) valuePair[1];
+				}
+			}
+			
+			out.println(td + r.getId() + "</td>" + 
+					td + r.getTeamA().getPlayerName() + "</td>" +
+					td + r.getTeamB().getPlayerName() + "</td>" +				
+					td + aWins + "/" + bWins + "</td>");
 			switch (r.getStatus()){
 			case QUEUED:
 				out.println("<td>Queued</td>");
@@ -101,12 +104,12 @@ public class IndexServlet extends AbstractServlet {
 				break;
 			case RUNNING:
 				out.println(td + "Running</td>");
-				out.println(td + "<a id=\"cntdwn\" name=" + r.calculateTimeTaken() + "></a></td>");
+				out.println(td + "<a id=\"cntdwn\" name=" + r.calculateTimeTaken()/1000 + "></a></td>");
 				out.println("<td><input type=\"button\" value=\"cancel\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
 				break;
 			case COMPLETE:
 				out.println(td + "Complete</td>");
-				out.println(td + Util.formatTime(r.calculateTimeTaken()) + "</td>");
+				out.println(td + r.printTimeTaken() + "</td>");
 				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", true)\"></td>");
 				break;
 			case ERROR:
@@ -116,7 +119,7 @@ public class IndexServlet extends AbstractServlet {
 				break;
 			case CANCELED:
 				out.println(td + "Canceled</td>");
-				out.println(td + Util.formatTime(r.calculateTimeTaken()) + "</td>");
+				out.println(td + r.printTimeTaken() + "</td>");
 				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", true)\"></td>");
 				break;
 			default: // Run finished with wtf errors
@@ -131,7 +134,7 @@ public class IndexServlet extends AbstractServlet {
 		WebUtil.printTableFooter(out, "sorter");
 
 		// Begin the New Run form
-		List<BSPlayer> players = em.createQuery("from BSPlayer player order by player.playerName desc").getResultList();
+		List<BSPlayer> players = em.createQuery("from BSPlayer player order by player.playerName desc", BSPlayer.class).getResultList();
 		out.println("<br /><br />");
 		String background = "#CEFFFC";
 		out.println("<div class='tabbutton'>");
@@ -144,12 +147,12 @@ public class IndexServlet extends AbstractServlet {
 				"style='background:" + background + "'>");
 		out.println("<select id='team_a_button'>");
 		for (BSPlayer p: players) {
-			out.println("<option value='" + p.getPlayerName() + "'>" + p.getPlayerName() + "</option>");
+			out.println("<option value='" + p.getId() + "'>" + p.getPlayerName() + "</option>");
 		}
 		out.println("</select> vs. ");
 		out.println("<select id='team_b_button'>");
 		for (BSPlayer p: players) {
-			out.println("<option value='" + p.getPlayerName() + "'>" + p.getPlayerName() + "</option>");
+			out.println("<option value='" + p.getId() + "'>" + p.getPlayerName() + "</option>");
 		}
 		out.println("</select></p>");
 		out.println("Matches per map: " +
@@ -179,9 +182,11 @@ public class IndexServlet extends AbstractServlet {
 				"<th class='desc'><h3>Map</h3></th>" +
 		"<th class='desc'><h3>Size</h3></th></tr>");
 		out.println("</thead><tbody>");
-		List<BSMap> maps = em.createQuery("from BSMap").getResultList();
-		for (BSMap m: maps)
-			out.println("<tr><td><input type='checkbox' name='" + m.mapName + "'></td><td>" + m.mapName + "</td><td>" + m.calculateSizeClass() + "</td></tr>");
+		List<BSMap> maps = em.createQuery("from BSMap", BSMap.class).getResultList();
+		for (BSMap m: maps) {
+			out.println("<tr><td><input type='checkbox' value='" + m.getId() + "'></td>" +
+					"<td>" + m.getMapName() + "</td><td>" + m.calculateSizeClass() + "</td></tr>");
+		}
 		out.println("</tbody></table>");
 		out.println("<input type=\"button\" value=\"Start\" onclick=\"if (newRun()) {toggleNewRun()}\"><br /></p>");
 
@@ -191,12 +196,22 @@ public class IndexServlet extends AbstractServlet {
 		// End new run form
 		out.println("</div>");
 
-		// TODO: count better
-		Integer totalMatches = (Integer) 10;
+		List<Object[]> resultList = em.createQuery("select match.status, count(*) from BSMatch match where match.run.status = ? group by match.status", Object[].class)
+		.setParameter(1, BSRun.STATUS.RUNNING)
+		.getResultList();
+		
+		long currentMatches = 0;
+		long totalMatches = 0;
+		for (Object[] valuePair: resultList) {
+			if (valuePair[0] == BSMatch.STATUS.FINISHED) {
+				currentMatches += (Long) valuePair[1];
+			}
+			totalMatches += (Long) valuePair[1];
+		}
+		
 		out.println("<script type=\"text/javascript\">");
 		out.println("var total_num_matches = " + totalMatches);
 		out.println("</script>");
-		Integer currentMatches = (Integer) 5;
 		out.println("<script type=\"text/javascript\">");
 		out.println("var current_num_matches = " + currentMatches);
 		out.println("</script>");

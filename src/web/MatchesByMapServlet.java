@@ -11,7 +11,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSMap;
+import model.BSMap;
+import model.BSUser;
+
+
 
 
 /**
@@ -28,8 +31,8 @@ public class MatchesByMapServlet extends AbstractServlet {
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null) {
+		BSUser user = checkLogin(request, response);
+		if (user == null) {
 			redirect(response);
 			return;
 		}
@@ -62,7 +65,8 @@ public class MatchesByMapServlet extends AbstractServlet {
 			String team_a = rs.getString("team_a");
 			String team_b = rs.getString("team_b");
 			out.println("<h2><font color='red'>" + team_a + "</font> vs. <font color='blue'>" + team_b + "</font></h2>");
-			out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
+			//TODO: this line
+			//out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
 			out.println("<br />");
 			out.println("<div class='tabbutton'>");
 			out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesServlet.NAME) + "?id=" + id + "\"' " +

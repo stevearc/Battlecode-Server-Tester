@@ -85,7 +85,7 @@ public class MatchRunner implements Runnable {
 			// Generate the bc.conf file
 			curProcess = run.exec(new String[] {config.cmd_gen_conf, 
 					config.install_dir + "/battlecode/core" + core, 
-					match.map.mapName,
+					match.map.getMapName(),
 					"A" + team_a,
 					"B" + team_b,
 					""+match.seed});

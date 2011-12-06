@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.MasterMethodCaller;
+import model.BSUser;
 
 
 /**
@@ -24,8 +25,8 @@ public class DeleteServlet extends AbstractServlet {
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null) {
+		BSUser user = checkLogin(request, response);
+		if (user == null) {
 			redirect(response);
 			return;
 		}
@@ -37,8 +38,7 @@ public class DeleteServlet extends AbstractServlet {
 			out.println("Invalid id: " + strId);
 		}
 
-		int id = Integer.parseInt(strId);
-		MasterMethodCaller.deleteRun(id);
+		MasterMethodCaller.deleteRun(new Long(Integer.parseInt(strId)));
 		out.print("success");
 	}
 }

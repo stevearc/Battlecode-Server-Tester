@@ -9,8 +9,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSUser;
-import db.HibernateUtil;
+import model.BSUser;
+
+import dataAccess.HibernateUtil;
 
 /**
  * Admin panel for confirming new users

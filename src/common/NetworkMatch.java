@@ -2,7 +2,9 @@ package common;
 
 import java.io.Serializable;
 
-import beans.BSMap;
+import model.BSMap;
+
+
 
 /**
  * Wrapper for Match information to be sent over network between Server and Worker
@@ -37,7 +39,7 @@ public class NetworkMatch implements Serializable {
 	public boolean equals(Object o) {
 		if (o instanceof NetworkMatch) {
 			NetworkMatch m = (NetworkMatch) o;
-			return m.id == id;
+			return id.equals(m.id);
 		}
 		return false;
 	}

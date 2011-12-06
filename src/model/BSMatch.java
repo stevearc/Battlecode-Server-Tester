@@ -1,4 +1,4 @@
-package beans;
+package model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -25,8 +25,8 @@ public class BSMatch {
 	private TEAM winner;
 	private WIN_CONDITION winCondition;
 	private Long rounds;
-	private Long aPoints;
-	private Long bPoints;
+	private Double aPoints;
+	private Double bPoints;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE)
@@ -34,6 +34,7 @@ public class BSMatch {
 		return id;
 	}
 	@ManyToOne
+	@JoinColumn(name = "bsrun_id")
 	public BSRun getRun() {
 		return run;
 	}
@@ -58,16 +59,13 @@ public class BSMatch {
 	public WIN_CONDITION getWinCondition() {
 		return winCondition;
 	}
-	@Column(nullable=false,updatable=false)
 	public Long getRounds() {
 		return rounds;
 	}
-	@Column(nullable=false,updatable=false)
-	public Long getaPoints() {
+	public Double getaPoints() {
 		return aPoints;
 	}
-	@Column(nullable=false,updatable=false)
-	public Long getbPoints() {
+	public Double getbPoints() {
 		return bPoints;
 	}
 	
@@ -95,10 +93,10 @@ public class BSMatch {
 	public void setRounds(Long rounds) {
 		this.rounds = rounds;
 	}
-	public void setaPoints(Long aPoints) {
+	public void setaPoints(Double aPoints) {
 		this.aPoints = aPoints;
 	}
-	public void setbPoints(Long bPoints) {
+	public void setbPoints(Double bPoints) {
 		this.bPoints = bPoints;
 	}
 	

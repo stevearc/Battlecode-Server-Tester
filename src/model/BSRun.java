@@ -1,4 +1,4 @@
-package beans;
+package model;
 
 import java.util.Date;
 import java.util.List;
@@ -17,6 +17,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.hibernate.annotations.IndexColumn;
+
+import common.Util;
 
 @Entity
 public class BSRun {
@@ -96,8 +98,12 @@ public class BSRun {
 		this.matches = matches;
 	}
 	
+	public String printTimeTaken() {
+		return Util.formatTime(calculateTimeTaken());
+	}
+	
 	public long calculateTimeTaken() {
 		Date end = (ended == null ? new Date() : ended);
-		return (end.getTime() - started.getTime())/1000;
+		return (end.getTime() - started.getTime());
 	}
 }

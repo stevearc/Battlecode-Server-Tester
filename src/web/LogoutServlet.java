@@ -8,8 +8,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSUser;
-import db.HibernateUtil;
+import model.BSUser;
+
+import dataAccess.HibernateUtil;
 
 /**
  * Removes the user's cookies and deletes their session from the DB

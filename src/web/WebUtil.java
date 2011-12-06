@@ -64,7 +64,7 @@ public class WebUtil {
 	 * @return int[3] of {red team wins, ties, blue team wins}
 	 * @throws SQLException
 	 */
-	public static int[] getMapResults(int runid, HashSet<String> maps, boolean reverse) throws SQLException {
+	public static int[] getMapResults(long runid, HashSet<String> maps, boolean reverse) {
 		int[] results = new int[3];
 		if (maps == null) {
 			maps = new HashSet<String>();

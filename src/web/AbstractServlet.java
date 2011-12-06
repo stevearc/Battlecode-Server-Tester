@@ -9,11 +9,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSUser;
+import model.BSUser;
+
 
 import common.Config;
 
-import db.HibernateUtil;
+import dataAccess.HibernateUtil;
 
 /**
  * Base framework for all servlets

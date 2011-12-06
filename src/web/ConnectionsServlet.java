@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.WorkerRepr;
-import beans.BSUser;
+import model.BSUser;
 
 import common.Config;
 import common.NetworkMatch;

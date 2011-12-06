@@ -1,4 +1,4 @@
-package beans;
+package model;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,11 +29,11 @@ import common.Config;
 @Entity
 public class BSMap implements Serializable {
 	private static final long serialVersionUID = -3033262234181516847L;
-	public Long id;
-	public String mapName;
-	public Long height;
-	public Long width;
-	public Long rounds;
+	private Long id;
+	private String mapName;
+	private Long height;
+	private Long width;
+	private Long rounds;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE)

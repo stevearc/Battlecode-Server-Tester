@@ -12,9 +12,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSPlayer;
-import beans.BSUser;
-import db.HibernateUtil;
+import model.BSPlayer;
+import model.BSUser;
+
+import dataAccess.HibernateUtil;
 
 /**
  * Upload players

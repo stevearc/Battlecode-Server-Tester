@@ -19,11 +19,11 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import model.BSMap;
 import networking.Controller;
 import networking.Network;
 import networking.Packet;
 import networking.PacketCmd;
-import beans.BSMap;
 
 import common.Config;
 import common.Dependencies;
@@ -107,7 +107,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean haveMap(BSMap map) {
-		File mapFile = new File(config.install_dir + "/battlecode/maps/" + map.mapName + ".xml");
+		File mapFile = new File(config.install_dir + "/battlecode/maps/" + map.getMapName() + ".xml");
 		return mapFile.exists();
 	}
 

@@ -7,6 +7,7 @@ import javax.persistence.EntityManager;
 
 import master.Master;
 import master.MasterMethodCaller;
+import model.BSUser;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -18,12 +19,11 @@ import org.apache.commons.cli.ParseException;
 import web.ProxyServer;
 import web.WebServer;
 import worker.Worker;
-import beans.BSUser;
 
 import common.Config;
 import common.Util;
 
-import db.HibernateUtil;
+import dataAccess.HibernateUtil;
 
 /**
  * Starts all threads and services

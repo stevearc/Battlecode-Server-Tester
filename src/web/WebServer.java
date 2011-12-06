@@ -88,7 +88,7 @@ public class WebServer implements Runnable {
 			// Serve static match files
 			ContextHandler matchContext = new ContextHandler();
 			matchContext.setContextPath("/matches");
-			matchContext.setHandler(new StaticFileHandler("application/octet-stream", ".+\\.rms", config.install_dir + "/battlecode/matches"));
+			matchContext.setHandler(new StaticFileHandler("application/octet-stream", ".+\\.rms", config.install_dir + "/matches"));
 			
 			// Add contexts
 			ContextHandlerCollection contexts = new ContextHandlerCollection();

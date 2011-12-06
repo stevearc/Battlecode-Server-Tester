@@ -1,9 +1,9 @@
 package master;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -14,24 +14,21 @@ import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceException;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 
+import model.BSMap;
+import model.BSMatch;
+import model.BSPlayer;
+import model.BSRun;
 import networking.CometCmd;
 import networking.CometMessage;
 import networking.Packet;
-import beans.BSMap;
-import beans.BSMatch;
-import beans.BSPlayer;
-import beans.BSRun;
 
 import common.Config;
 import common.Dependencies;
 import common.NetworkMatch;
 import common.Util;
 
-import db.HibernateUtil;
+import dataAccess.HibernateUtil;
 
 /**
  * Handles distribution of load to connected workers
@@ -79,24 +76,25 @@ public class Master {
 	 * @param seeds
 	 * @param mapNames
 	 */
-	public synchronized void queueRun(String teamA, String teamB, String[] seeds, String[] maps) {
+	public synchronized void queueRun(Long teamAId, Long teamBId, List<Long> seeds, List<Long> mapIds) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun newRun = new BSRun();
+		BSPlayer teamA = em.find(BSPlayer.class, teamAId);
+		BSPlayer teamB = em.find(BSPlayer.class, teamBId);
 		newRun.setTeamA(teamA);
 		newRun.setTeamB(teamB);
+		newRun.setStatus(BSRun.STATUS.QUEUED);
+		newRun.setStarted(new Date());
 		em.persist(newRun);
-		em.getTransaction().begin();
-		em.flush();
-		em.getTransaction().commit();
-		em.refresh(newRun);
 
-		for (String seed: seeds) {
-			Long seedLong = new Long(Integer.parseInt(seed));
-			for (BSMap map: maps) {
+		for (Long mapId: mapIds) {
+			BSMap map = em.find(BSMap.class, mapId);
+			for (Long seed: seeds) {
 				BSMatch match = new BSMatch();
 				match.setMap(map);
-				match.setSeed(seedLong);
+				match.setSeed(seed);
 				match.setRun(newRun);
+				match.setStatus(BSMatch.STATUS.QUEUED);
 				em.persist(match);
 			}
 		}
@@ -113,18 +111,26 @@ public class Master {
 	 * Delete run data
 	 * @param runId
 	 */
-	public synchronized void deleteRun(int runId) {
-		BSRun currentRun = getCurrentRun();
-		if (currentRun == null)
-			return;
+	public synchronized void deleteRun(Long runId) {
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSRun run = em.find(BSRun.class, runId);
 		// If it's running right now, just cancel it
-		if (currentRun.getStatus() == BSRun.STATUS.RUNNING) {
+		if (run.getStatus() == BSRun.STATUS.RUNNING) {
+			_log.info("canceling run");
 			stopCurrentRun(BSRun.STATUS.CANCELED);
 			startRun();
 		} else {
+			// TODO: delete rms files
 			// otherwise, delete it
-			EntityManager em = HibernateUtil.getEntityManager();
-			em.remove(currentRun);
+			em.getTransaction().begin();
+			em.createQuery("delete from BSMatch match where match.run = ?").setParameter(1, run).executeUpdate();
+			em.flush();
+			em.getTransaction().commit();
+			
+			em.getTransaction().begin();
+			em.remove(run);
+			em.flush();
+			em.getTransaction().commit();
 			em.close();
 			wph.broadcastMsg("matches", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {""+runId}));
 		}
@@ -157,7 +163,6 @@ public class Master {
 	 * @param p
 	 */
 	public synchronized void matchFinished(WorkerRepr worker, Packet p) {
-		/* TODO
 		NetworkMatch m = (NetworkMatch) p.get(0);
 		String status = (String) p.get(1);
 		int winner = (Integer) p.get(2);
@@ -167,46 +172,45 @@ public class Master {
 		byte[] data = (byte[]) p.get(6);
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {worker.toHTML(), m.toMapString()}));
 		try {
-			if ("ok".equals(status) && m.run_id == getCurrentId()) {
-				if (!getMatchesLeft().contains(m)) {
-					_log.info("Received duplicate match: " + m);
-					sendWorkerMatches(worker);
-					return;
-				}
+			EntityManager em = HibernateUtil.getEntityManager();
+			BSMatch match = em.find(BSMatch.class, m.id);
+			if (match.getStatus() != BSMatch.STATUS.RUNNING || match.getRun().getStatus() != BSRun.STATUS.RUNNING) {
+				// Match was already finished by another worker
+			} else if ("ok".equals(status)) {
+				match.setWinner(winner == 1 ? BSMatch.TEAM.TEAM_A : BSMatch.TEAM.TEAM_B);
+				match.setWinCondition(BSMatch.WIN_CONDITION.values()[win_condition]);
+				match.setaPoints(a_points);
+				match.setbPoints(b_points);
+				match.setStatus(BSMatch.STATUS.FINISHED);
 				_log.info("Match finished: " + m + " winner: " + (winner == 1 ? "A" : "B"));
-				FileOutputStream fos = new FileOutputStream("battlecode/matches/" + getCurrentId() + m.map.mapName + m.seed + ".rms");
+				File outFile = new File(config.install_dir + "/matches/" + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
+				outFile.createNewFile();
+				FileOutputStream fos = new FileOutputStream(outFile);
 				fos.write(data);
-				PreparedStatement stmt = null;
-				stmt = db.prepare("UPDATE matches SET win = ?, win_condition = ?, a_points = ?, b_points = ? WHERE id = ?");
-				stmt.setInt(1, winner);
-				stmt.setInt(2, win_condition);
-				stmt.setDouble(3, a_points);
-				stmt.setDouble(4, b_points);
-				stmt.setInt(5, m.id);
-				db.update(stmt, true);
+				em.getTransaction().begin();
+				em.merge(match);
+				em.flush();
+				em.getTransaction().commit();
 				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new String[] {""+m.run_id, ""+winner}));
-
-				// If finished, start next run
-				if (getMatchesLeft().isEmpty()) {
-					stopCurrentRun(Config.STATUS_COMPLETE);
-					startRun();
-				}
-
 			} else {
 				_log.warning("Match " + m + " on worker " + worker + " failed");
 			}
 
-			if (getMatchesLeft().isEmpty()) {
-				stopCurrentRun(Config.STATUS_COMPLETE);
+			Long matchesLeft = em.createQuery("select count(*) from BSMatch match where match.run = ? and match.status != ?", Long.class)
+			.setParameter(1, match.getRun())
+			.setParameter(2, BSMatch.STATUS.FINISHED)
+			.getSingleResult();
+			// If finished, start next run
+			if (matchesLeft == 0) {
+				stopCurrentRun(BSRun.STATUS.COMPLETE);
 				startRun();
 			} else {
 				sendWorkerMatches(worker);
 			}
-		} catch (SQLException e) {
+			em.close();
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Error writing match file", e);
 		}
-		*/
 	}
 
 	/**
@@ -214,8 +218,12 @@ public class Master {
 	 * @param worker
 	 */
 	public synchronized void sendWorkerMatches(WorkerRepr worker) {
-		List<BSMatch> queuedMatches = getMatchesWithStatus(BSMatch.STATUS.QUEUED);
 		EntityManager em = HibernateUtil.getEntityManager();
+		BSRun currentRun = getCurrentRun();
+		List<BSMatch> queuedMatches = em.createQuery("from BSMatch match inner join fetch match.map where match.run = ? and match.status = ?", BSMatch.class)
+		.setParameter(1, currentRun)
+		.setParameter(2, BSMatch.STATUS.QUEUED)
+		.getResultList();
 
 		for (int i = 0; i < queuedMatches.size() && worker.isFree(); i++) {
 			BSMatch m = queuedMatches.get(i);
@@ -229,20 +237,23 @@ public class Master {
 		em.getTransaction().begin();
 		em.flush();
 		em.getTransaction().commit();
-		em.close();
 
 		// If we are currently running all necessary maps, add some redundancy by
 		// Sending this worker random maps that other workers are currently running
 		if (worker.isFree()) {
 			Random r = new Random();
-			List<BSMatch> runningMatches = getMatchesWithStatus(BSMatch.STATUS.RUNNING);
+			List<BSMatch> runningMatches = em.createQuery("from BSMatch match inner join fetch match.map where match.run = ? and match.status = ?", BSMatch.class)
+			.setParameter(1, currentRun)
+			.setParameter(2, BSMatch.STATUS.RUNNING)
+			.getResultList();
 			while (!runningMatches.isEmpty() && worker.isFree()) {
-				NetworkMatch nm = runningMatches.get(r.nextInt()%runningMatches.size()).buildNetworkMatch();
+				NetworkMatch nm = runningMatches.get(r.nextInt(runningMatches.size())).buildNetworkMatch();
 				_log.info("Sending match " + nm + " to worker " + worker);
 				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
 				worker.runMatch(nm);
 			}
 		}
+		em.close();
 	}
 
 	public synchronized void sendWorkerMatchDependencies(WorkerRepr worker, NetworkMatch match, boolean needMap, boolean needTeamA, boolean needTeamB) {
@@ -252,7 +263,7 @@ public class Master {
 		byte[] teamB = null;
 		try {
 			if (needMap) {
-				map = Util.getFileData(config.install_dir + "/battlecode/maps/" + match.map.mapName + ".xml");
+				map = Util.getFileData(config.install_dir + "/battlecode/maps/" + match.map.getMapName() + ".xml");
 			}
 			if (needTeamA) {
 				teamA = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_a + ".jar");
@@ -260,7 +271,7 @@ public class Master {
 			if (needTeamB) {
 				teamB = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_b + ".jar");
 			}
-			dep = new Dependencies(match.map.mapName, map, match.team_a, teamA, match.team_b, teamB);
+			dep = new Dependencies(match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);
 			worker.runMatchWithDependencies(match, dep);
 		} catch (IOException e) {
@@ -276,16 +287,10 @@ public class Master {
 			// Already running
 			return;
 		}
-
 		EntityManager em = HibernateUtil.getEntityManager();
-		CriteriaBuilder builder = em.getCriteriaBuilder();
-		CriteriaQuery<BSRun> criteria = builder.createQuery( BSRun.class );
-		Root<BSRun> run = criteria.from( BSRun.class );
-		criteria.select(run);
-		criteria.where(builder.equal(run.get("status"), BSRun.STATUS.QUEUED));
 		BSRun nextRun = null;
 		try {
-			nextRun = em.createQuery(criteria).getSingleResult();
+			nextRun = em.createQuery("from BSRun run where run.status = ? order by run.id asc limit 1", BSRun.class).setParameter(1, BSRun.STATUS.QUEUED).getSingleResult();
 		} catch (NoResultException e) {
 			// pass
 		}
@@ -307,14 +312,9 @@ public class Master {
 
 	private BSRun getCurrentRun() {
 		EntityManager em = HibernateUtil.getEntityManager();
-		CriteriaBuilder builder = em.getCriteriaBuilder();
-		CriteriaQuery<BSRun> criteria = builder.createQuery( BSRun.class );
-		Root<BSRun> run = criteria.from( BSRun.class );
-		criteria.select(run);
-		criteria.where(builder.equal(run.get("status"), BSRun.STATUS.RUNNING));
 		BSRun currentRun = null;
 		try {
-			currentRun = em.createQuery(criteria).getSingleResult();
+			currentRun = em.createQuery("from BSRun run where run.status = ?", BSRun.class).setParameter(1, BSRun.STATUS.RUNNING).getSingleResult();
 		} catch (NoResultException e) {
 			// pass
 		} finally {
@@ -333,29 +333,21 @@ public class Master {
 		em.getTransaction().begin();
 		em.flush();
 		em.getTransaction().commit();
-		// TODO: set status of child matches
+		
+		// Remove unfinished matches
+		em.getTransaction().begin();
+		em.createQuery("delete from BSMatch m where m.run = ? and m.status != ?")
+		.setParameter(1, currentRun)
+		.setParameter(2, BSMatch.STATUS.FINISHED)
+		.executeUpdate();
+		em.flush();
+		em.getTransaction().commit();
 		em.close();
 		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+currentRun.getId(), ""+status}));
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.FINISH_RUN, new String[] {}));
 		for (WorkerRepr c: workers) {
 			c.stopAllMatches();
 		}
-	}
-
-	private List<BSMatch> getMatchesWithStatus(BSMatch.STATUS status) {
-		BSRun currentRun = getCurrentRun();
-		if (currentRun == null) {
-			return new ArrayList<BSMatch>();
-		}
-
-		// TODO: maybe move this into a query?
-		ArrayList<BSMatch> matches = new ArrayList<BSMatch>();
-		for (BSMatch m: currentRun.getMatches()) {
-			if (m.getStatus() == status) {
-				matches.add(m);
-			}
-		}
-		return matches;
 	}
 
 	/**

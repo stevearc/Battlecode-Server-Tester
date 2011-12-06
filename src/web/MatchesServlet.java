@@ -2,15 +2,19 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import beans.BSMap;
+import model.BSMatch;
+import model.BSRun;
+import model.BSUser;
+import dataAccess.HibernateUtil;
+
+
 
 
 /**
@@ -21,15 +25,14 @@ import beans.BSMap;
 public class MatchesServlet extends AbstractServlet {
 	private static final long serialVersionUID = 3122992891626513814L;
 	public static final String NAME = "matches.html";
-	private static final String[] win_conditions = {"destroy", "points", "time"};
 
 	public MatchesServlet() {
 		super(NAME);
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String username = checkLogin(request, response);
-		if (username == null) {
+		BSUser user = checkLogin(request, response);
+		if (user == null) {
 			redirect(response);
 			return;
 		}
@@ -50,75 +53,63 @@ public class MatchesServlet extends AbstractServlet {
 			out.println("Invalid id</body></html>");
 			return;
 		}
-		int id = Integer.parseInt(strId);
-		try {
-			out.println("<div id=\"tablewrapper\">");
-			PreparedStatement st = db.prepare("SELECT id, team_a, team_b " +
-					"FROM runs r LEFT JOIN tags t1 ON r.team_a = t1.tag " +
-			"LEFT JOIN tags t2 ON r.team_b = t2.tag WHERE id = ?");
-			st.setInt(1, id);
-			ResultSet rs = db.query(st);
-			rs.next();
-			String team_a = rs.getString("team_a");
-			String team_b = rs.getString("team_b");
-			out.println("<h2><font color='red'>" + team_a + "</font> vs. <font color='blue'>" + team_b + "</font></h2>");
-			out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
-			out.println("<br />");
-			out.println("<div class='tabbutton'>");
-			out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "\"' " +
-			"style='cursor:pointer;'><span>View by map</span></a>");
-			out.println("<p>&nbsp;</p>");
-			out.println("<p>&nbsp;</p>");
-			out.println("<p>&nbsp;</p>");
-			out.println("</div>");
+		long id = new Long(Integer.parseInt(strId));
+		out.println("<div id=\"tablewrapper\">");
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSRun run = em.find(BSRun.class, id);
+		out.println("<h2><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + run.getTeamB().getPlayerName() + "</font></h2>");
+		// TODO: this line
+		//out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
+		out.println("<br />");
+		out.println("<div class='tabbutton'>");
+		out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "\"' " +
+		"style='cursor:pointer;'><span>View by map</span></a>");
+		out.println("<p>&nbsp;</p>");
+		out.println("<p>&nbsp;</p>");
+		out.println("<p>&nbsp;</p>");
+		out.println("</div>");
 
-			st.close();
+		WebUtil.printTableHeader(out, "matches_sorter");
+		out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"matches_table\" class=\"tinytable\">" +
+				"<thead>" + 
+				"<tr>" +
+				"<th class='desc'><h3>Map</h3></th>" +
+				"<th class='desc'><h3>Map seed</h3></th>" +
+				"<th class='desc'><h3>Winner</h3></th>" +
+				"<th class='desc'><h3>Size</h3></th>" +
+				"<th class='desc'><h3>Win condition</h3></th>" +
+				"<th class='desc'><h3>Points</h3></th>" +
+				"<th class='nosort'><h3>&nbsp;</h3></th>" +
+				"</tr>" +
+				"</thead>" +
+		"<tbody>");
 
-			WebUtil.printTableHeader(out, "matches_sorter");
-			out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"matches_table\" class=\"tinytable\">" +
-					"<thead>" + 
-					"<tr>" +
-					"<th class='desc'><h3>Map</h3></th>" +
-					"<th class='desc'><h3>Map seed</h3></th>" +
-					"<th class='desc'><h3>Winner</h3></th>" +
-					"<th class='desc'><h3>Size</h3></th>" +
-					"<th class='desc'><h3>Win condition</h3></th>" +
-					"<th class='desc'><h3>Points</h3></th>" +
-					"<th class='nosort'><h3>&nbsp;</h3></th>" +
-					"</tr>" +
-					"</thead>" +
-			"<tbody>");
-			PreparedStatement st3 = db.prepare("SELECT * FROM matches WHERE run_id = ? AND win IS NOT NULL ORDER BY map");
-			st3.setInt(1, id);
-			ResultSet rs3 = db.query(st3);
-			while (rs3.next()) {
-				double a_points = rs3.getDouble("a_points");
-				double b_points = rs3.getDouble("b_points");
-				BSMap map = new BSMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
-						rs3.getInt("rounds"));
-				out.println("<tr>");
-				out.println("<td>" + map.mapName + "</td>");
-				out.println("<td>" + rs3.getInt("seed") + "</td>");
-				out.println("<td><font color='" + (rs3.getInt("win") == 1 ? "red'>" + team_a : "blue'>" + team_b) + "</font></td>");
-				out.println("<td>" + map.calculateSizeClass() + "</td>");
-				out.println("<td>" + win_conditions[rs3.getInt("win_condition")] + "</td>");
-				out.println("<td><font color='red'>" + a_points + "</font>/<font color='blue'>" + 
-						b_points + "</font></td>");
-				out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
-						strId + map.mapName + rs3.getInt("seed") + ".rms'\"></td>");
-				out.println("</tr>");
-			}
-			st3.close();
-			out.println("</tbody>");
-			out.println("</table>");
-			WebUtil.printTableFooter(out, "matches_sorter");
-
-			out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
-			out.println("<script type=\"text/javascript\" src=\"js/matches_init_table.js\"></script>");
-			out.println("</body></html>");
-		} catch (SQLException e) {
-			e.printStackTrace(out);
+		List<BSMatch> matches = em.createQuery("from BSMatch match where match.run = ? and match.status = ? order by match.map.mapName", BSMatch.class)
+		.setParameter(1, run)
+		.setParameter(2, BSMatch.STATUS.FINISHED)
+		.getResultList();
+		for (BSMatch match: matches) {
+			out.println("<tr>");
+			out.println("<td>" + match.getMap().getMapName() + "</td>");
+			out.println("<td>" + match.getSeed() + "</td>");
+			out.println("<td><font color='" + (match.getWinner() == BSMatch.TEAM.TEAM_A ? "red'>" + 
+					run.getTeamA().getPlayerName() : "blue'>" + run.getTeamB().getPlayerName()) + "</font></td>");
+			out.println("<td>" + match.getMap().calculateSizeClass() + "</td>");
+			out.println("<td>" + match.getWinCondition() + "</td>");
+			out.println("<td><font color='red'>" + match.getaPoints() + "</font>/<font color='blue'>" + 
+					match.getbPoints() + "</font></td>");
+			out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
+					strId + match.getMap().getMapName() + match.getSeed() + ".rms'\"></td>");
+			out.println("</tr>");
 		}
+		em.close();
+		out.println("</tbody>");
+		out.println("</table>");
+		WebUtil.printTableFooter(out, "matches_sorter");
+
+		out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
+		out.println("<script type=\"text/javascript\" src=\"js/matches_init_table.js\"></script>");
+		out.println("</body></html>");
 	}
 
 }

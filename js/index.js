@@ -98,7 +98,7 @@ function newRun() {
   for (var i = 1; i < table.rows.length; i++) {
     var cell = table.rows[i].cells[0];
     if (cell.getElementsByTagName("input")[0].checked) {
-      maps.push(table.rows[i].cells[1].innerHTML);
+      maps.push(cell.getElementsByTagName("input")[0].value);
     }
   }
   if (maps.length == 0) {

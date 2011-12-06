@@ -1,5 +1,7 @@
 package master;
 
+import java.util.List;
+
 import networking.Packet;
 
 import common.Config;
@@ -18,12 +20,12 @@ public class MasterMethodCaller {
 	 * @param seeds
 	 * @param maps
 	 */
-	public static void queueRun(final String team_a, final String team_b, final String[] seeds, final String[] maps) {
+	public static void queueRun(final Long teamAId, final Long teamBId, final List<Long> seeds, final List<Long> mapIds) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getMaster().queueRun(team_a, team_b, seeds, maps);
+				Config.getMaster().queueRun(teamAId, teamBId, seeds, mapIds);
 			}
 
 		}).start();
@@ -33,7 +35,7 @@ public class MasterMethodCaller {
 	 * Delete run data
 	 * @param run_id
 	 */
-	public static void deleteRun(final int run_id) {
+	public static void deleteRun(final Long run_id) {
 		new Thread(new Runnable(){
 
 			@Override
