@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Random;
 
 /**
  * Provides static utility functions
@@ -50,9 +49,7 @@ public class Util {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
-		Random rand = new Random();
-		String s = rand.nextLong() + "" + rand.nextLong() + "" + rand.nextLong();
-		return s.substring(0, 40);
+		throw new RuntimeException("Could not complete SHA1 hash!");
 	}
 
 	/**

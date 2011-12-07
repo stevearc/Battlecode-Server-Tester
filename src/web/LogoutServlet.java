@@ -5,11 +5,11 @@ import java.io.PrintWriter;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
-
 import dataAccess.HibernateUtil;
 
 /**
@@ -17,22 +17,13 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public class LogoutServlet extends AbstractServlet {
+public class LogoutServlet extends HttpServlet {
 	private static final long serialVersionUID = 2965899260728547098L;
 	public static final String NAME = "logout.html";
 
-	public LogoutServlet() {
-		super(NAME);
-	}
-
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-			response.setHeader("Location", response.encodeURL("/" + LoginServlet.NAME));
-			return;
-		}
+		BSUser user = (BSUser) request.getSession().getAttribute("user");
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -45,8 +36,13 @@ public class LogoutServlet extends AbstractServlet {
 		em.close();
 
 		out.println("<script type='text/javascript'>\n" +
-				"document.cookie = '" + COOKIE_NAME + "=; expires=Fri, 27 Jul 2001 00:00:00 UTC; path=/';\n" +
+				"document.cookie = '" + LoginServlet.COOKIE_NAME + "=; expires=Fri, 27 Jul 2001 00:00:00 UTC; path=/';\n" +
 				"document.location='" + response.encodeURL(LoginServlet.NAME) + "';\n" +
 		"</script>");
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

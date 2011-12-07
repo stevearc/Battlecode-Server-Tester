@@ -6,13 +6,13 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSMap;
 import model.BSMatch;
 import model.BSRun;
-import model.BSUser;
 import dataAccess.HibernateUtil;
 
 /**
@@ -20,20 +20,11 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public class MatchesByMapServlet extends AbstractServlet {
+public class MatchesByMapServlet extends HttpServlet {
 	private static final long serialVersionUID = 5352256649398067730L;
 	public static final String NAME = "matches_by_map.html";
 	
-	public MatchesByMapServlet() {
-		super(NAME);
-	}
-
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			redirect(response);
-			return;
-		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -44,7 +35,7 @@ public class MatchesByMapServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, name);
+		WebUtil.writeTabs(response, out, toString());
 
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
@@ -105,5 +96,10 @@ public class MatchesByMapServlet extends AbstractServlet {
 			out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
 			out.println("<script type=\"text/javascript\" src=\"js/matches_init_table.js\"></script>");
 			out.println("</body></html>");
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

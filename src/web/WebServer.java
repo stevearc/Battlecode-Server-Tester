@@ -4,6 +4,8 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.servlet.http.HttpServlet;
+
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -27,7 +29,7 @@ public class WebServer implements Runnable {
 	private Config config;
 	private Logger _log;
 	/** Must put any new servlets in this array to load them into the web server */
-	private AbstractServlet[] servlets = {
+	private HttpServlet[] servlets = {
 			new IndexServlet(),
 			new ConnectionsServlet(),
 			new DeleteServlet(),
@@ -61,9 +63,10 @@ public class WebServer implements Runnable {
 			context.setContextPath("/");
 
 			context.addServlet(new ServletHolder(new IndexServlet()),"/");
-			for (AbstractServlet s: servlets)
-				context.addServlet(new ServletHolder(s), "/" + s.name);
+			for (HttpServlet s: servlets)
+				context.addServlet(new ServletHolder(s), "/" + s.toString());
 			
+			context.addFilter(new FilterHolder(new LoginFilter()), "/*", 1);
 			context.addFilter(new FilterHolder(new MultiPartFilter()), "/" + UploadServlet.NAME, 1);
 			
 			// Add the cometd servlet

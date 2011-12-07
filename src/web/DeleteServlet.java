@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.MasterMethodCaller;
-import model.BSUser;
 
 
 /**
@@ -16,20 +16,11 @@ import model.BSUser;
  * @author stevearc
  *
  */
-public class DeleteServlet extends AbstractServlet {
+public class DeleteServlet extends HttpServlet {
 	private static final long serialVersionUID = 4149519483270976451L;
 	public static final String NAME = "delete.html";
 	
-	public DeleteServlet() {
-		super(NAME);
-	}
-
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			redirect(response);
-			return;
-		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -40,5 +31,10 @@ public class DeleteServlet extends AbstractServlet {
 
 		MasterMethodCaller.deleteRun(new Long(Integer.parseInt(strId)));
 		out.print("success");
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

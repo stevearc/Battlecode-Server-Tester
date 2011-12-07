@@ -2,15 +2,14 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
-
 import dataAccess.HibernateUtil;
 
 
@@ -19,20 +18,13 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public class AdminActionServlet extends AbstractServlet {
+public class AdminActionServlet extends HttpServlet {
 	private static final long serialVersionUID = 46170148422590931L;
 	public static final String NAME = "admin_action";
 
-	public AdminActionServlet() {
-		super(NAME);
-	}
-
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			return;
-		}
+		BSUser user = (BSUser) request.getSession().getAttribute("user");
 		Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
 		String cmd = request.getParameter("cmd");
 		response.setContentType("text/json");
@@ -96,13 +88,17 @@ public class AdminActionServlet extends AbstractServlet {
 		em.close();
 	}
 
-	@SuppressWarnings("unchecked")
 	private int getNumAdmins() {
-		// TODO: rowcount
 		EntityManager em = HibernateUtil.getEntityManager();
-		List<BSUser> users = em.createQuery("from BSUser users where users.privs = ?")
+		Long numAdmins = em.createQuery("select count(*) from BSUser users where users.privs = ?", Long.class)
 		.setParameter(1, BSUser.PRIVS.ADMIN)
-		.getResultList();
-		return users.size();
+		.getSingleResult();
+		em.close();
+		return numAdmins.intValue();
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

@@ -4,15 +4,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.WebPollHandler;
-import model.BSUser;
 
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
-
 
 import common.Config;
 
@@ -21,23 +20,18 @@ import common.Config;
  * @author stevearc
  *
  */
-public class CometServlet extends AbstractServlet {
+public class CometServlet extends HttpServlet {
 	private static final long serialVersionUID = 3140389708838079253L;
 	public static final String NAME = "comet";
 	private WebPollHandler wph;
 
 	public CometServlet() {
-		super(NAME);
+		super();
 		wph = Config.getWebPollHandler();
 	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null){
-			redirect(response);
-			return;
-		}
 		poll(request, response);
 	}
 
@@ -66,5 +60,10 @@ public class CometServlet extends AbstractServlet {
 			response.setContentType("text/json;charset=utf-8");
 			out.print(r.toString());
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }
