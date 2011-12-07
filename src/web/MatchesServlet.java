@@ -58,8 +58,7 @@ public class MatchesServlet extends AbstractServlet {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
 		out.println("<h2><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + run.getTeamB().getPlayerName() + "</font></h2>");
-		// TODO: this line
-		//out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
+		out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
 		out.println("<br />");
 		out.println("<div class='tabbutton'>");
 		out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "\"' " +
@@ -94,7 +93,7 @@ public class MatchesServlet extends AbstractServlet {
 			out.println("<td>" + match.getSeed() + "</td>");
 			out.println("<td><font color='" + (match.getWinner() == BSMatch.TEAM.TEAM_A ? "red'>" + 
 					run.getTeamA().getPlayerName() : "blue'>" + run.getTeamB().getPlayerName()) + "</font></td>");
-			out.println("<td>" + match.getMap().calculateSizeClass() + "</td>");
+			out.println("<td>" + match.getMap().getSize() + "</td>");
 			out.println("<td>" + match.getWinCondition() + "</td>");
 			out.println("<td><font color='red'>" + match.getaPoints() + "</font>/<font color='blue'>" + 
 					match.getbPoints() + "</font></td>");

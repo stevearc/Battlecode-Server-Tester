@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +41,7 @@ public class Master {
 	private Logger _log;
 	private NetworkHandler handler;
 	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
-	private HashSet<BSMap> maps = new HashSet<BSMap>();
+	private Date mapsLastModifiedDate;
 	private WebPollHandler wph;
 
 	public Master() throws Exception {
@@ -290,7 +291,12 @@ public class Master {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun nextRun = null;
 		try {
-			nextRun = em.createQuery("from BSRun run where run.status = ? order by run.id asc limit 1", BSRun.class).setParameter(1, BSRun.STATUS.QUEUED).getSingleResult();
+			List<BSRun> queued = em.createQuery("from BSRun run where run.status = ? order by run.id asc limit 1", BSRun.class)
+			.setParameter(1, BSRun.STATUS.QUEUED)
+			.getResultList();
+			if (queued.size() > 0) {
+				nextRun = queued.get(0);
+			}
 		} catch (NoResultException e) {
 			// pass
 		}
@@ -355,13 +361,16 @@ public class Master {
 	 */
 	public synchronized void updateMaps() {
 		File file = new File("battlecode/maps");
+		if (new Date(file.lastModified()).equals(mapsLastModifiedDate))
+			return;
+		mapsLastModifiedDate = new Date(file.lastModified());
 		File[] mapFiles = file.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.toLowerCase().endsWith(".xml");
 			}
 		});
-		HashSet<BSMap> newMaps = new HashSet<BSMap>();
+		ArrayList<BSMap> newMaps = new ArrayList<BSMap>();
 		for (File m: mapFiles) {
 			try {
 				newMaps.add(new BSMap(m));
@@ -370,13 +379,8 @@ public class Master {
 			}
 		}
 		
-		if (newMaps.equals(maps)) {
-			return;
-		}
-		maps = newMaps;
-		
 		EntityManager em = HibernateUtil.getEntityManager();
-		for (BSMap map: maps) {
+		for (BSMap map: newMaps) {
 			em.persist(map);
 		}
 		em.getTransaction().begin();
@@ -399,15 +403,6 @@ public class Master {
 	 */
 	public HashSet<WorkerRepr> getConnections() {
 		return workers;
-	}
-
-	/**
-	 * 
-	 * @return All known maps
-	 */
-	@SuppressWarnings("unchecked")
-	public HashSet<BSMap> getMaps() {
-		return (HashSet<BSMap>) maps.clone();
 	}
 
 }

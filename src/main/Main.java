@@ -1,7 +1,6 @@
 package main;
 
 import java.io.IOException;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 
@@ -98,31 +97,30 @@ public class Main {
 	 */
 	private static void createWebAdmin() {
 		EntityManager em = HibernateUtil.getEntityManager();
-		
-		// TODO: rowCount
-		List users = em.createQuery("from BSUser user").getResultList();
-		if (users.isEmpty()) {
-		
-		Config config = Config.getConfig();
-		String salt = Util.SHA1(""+Math.random());
-		String hashed_password = Util.SHA1(config.admin_pass + salt);
-		BSUser user = new BSUser();
-		user.setUsername(config.admin);
-		user.setHashedPassword(hashed_password);
-		user.setSalt(salt);
-		user.setPrivs(BSUser.PRIVS.ADMIN);
-		em.getTransaction().begin();
-		em.merge(user);
-		em.flush();
-		em.getTransaction().commit();
-		em.close();
 
-		// Now remove the user information from the config file
-		try {
-			Runtime.getRuntime().exec(config.cmd_clean_config_file);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		Long numUsers = em.createQuery("select count(*) from BSUser", Long.class).getSingleResult();
+		if (numUsers == 0) {
+
+			Config config = Config.getConfig();
+			String salt = Util.SHA1(""+Math.random());
+			String hashed_password = Util.SHA1(config.admin_pass + salt);
+			BSUser user = new BSUser();
+			user.setUsername(config.admin);
+			user.setHashedPassword(hashed_password);
+			user.setSalt(salt);
+			user.setPrivs(BSUser.PRIVS.ADMIN);
+			em.getTransaction().begin();
+			em.merge(user);
+			em.flush();
+			em.getTransaction().commit();
+			em.close();
+
+			// Now remove the user information from the config file
+			try {
+				Runtime.getRuntime().exec(config.cmd_clean_config_file);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

@@ -1,16 +1,16 @@
 package web;
 
 import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletResponse;
 
-import org.hsqldb.Database;
-
-import common.Config;
+import model.BSMap;
+import model.BSMatch;
+import model.BSRun;
+import dataAccess.HibernateUtil;
 
 /**
  * Utility class with static methods for common web server functions
@@ -18,6 +18,7 @@ import common.Config;
  *
  */
 public class WebUtil {
+	public static final double WIN_THRESHOLD = 0.3;
 
 	/**
 	 * Write the HTML for the tabs at the top of the page
@@ -64,31 +65,37 @@ public class WebUtil {
 	 * @return int[3] of {red team wins, ties, blue team wins}
 	 * @throws SQLException
 	 */
-	public static int[] getMapResults(long runid, HashSet<String> maps, boolean reverse) {
+	public static int[] getMapResults(BSRun run, List<BSMap> maps, boolean reverse) {
+		EntityManager em = HibernateUtil.getEntityManager();
 		int[] results = new int[3];
 		if (maps == null) {
-			maps = new HashSet<String>();
-			ResultSet mapSet = Config.getDB().query("SELECT map FROM matches WHERE run_id = " + runid + " AND win IS NOT NULL GROUP BY map");
-			while (mapSet.next())
-				maps.add(mapSet.getString("map"));
+			maps = em.createQuery("from BSMap", BSMap.class).getResultList();
 		}
-		for (String m: maps) {
-			results[getMapResult(runid, m)]++;
+		int index;
+		for (BSMap m: maps) {
+			index = getMapResult(run, m);
+			if (index >= 0) {
+				results[index]++;
+			}
 		}
 		if (reverse) {
 			int swap = results[0];
 			results[0] = results[2];
 			results[2] = swap;
 		}
+		em.close();
 		return results;
 	}
 
-	private static int getMapResult(int runid, String map) throws SQLException {
-		float ratio = getWinPercentage(runid, map);
+	private static int getMapResult(BSRun run, BSMap map) {
+		float ratio = getWinPercentage(run, map);
 		// These are the thresholds for determining which team "won" on a map
-		if (ratio < 0.3)
+		if (ratio < 0) {
+			return -1;
+		}
+		else if (ratio < WIN_THRESHOLD)
 			return 2;
-		else if (ratio < 0.7)
+		else if (ratio < 1 - WIN_THRESHOLD)
 			return 1;
 		else
 			return 0;
@@ -99,19 +106,29 @@ public class WebUtil {
 	 * @param runid
 	 * @param map
 	 * @return
-	 * @throws SQLException
 	 */
-	public static float getWinPercentage(int runid, String map) throws SQLException {
-		Database db = Config.getDB();
-		PreparedStatement stmt = db.prepare("SELECT SUM(win) AS wins, COUNT(*) AS total FROM matches WHERE run_id = ? AND win IS NOT NULL AND map LIKE ?");
-		stmt.setInt(1, runid);
-		stmt.setString(2, map);
-		ResultSet rs = db.query(stmt);
-		rs.next();
-		int wins = rs.getInt("wins");
-		int total = rs.getInt("total");
-		rs.close();
-		return (float) wins/ (float) total;
+	public static float getWinPercentage(BSRun run, BSMap map) {
+		EntityManager em = HibernateUtil.getEntityManager();
+		List<Object[]> valuePairs = em.createQuery("select match.winner, count(*) from BSMatch match where match.run = ? and " +
+				"match.map = ? and match.status = ? group by match.winner", Object[].class)
+				.setParameter(1, run)
+				.setParameter(2, map)
+				.setParameter(3, BSMatch.STATUS.FINISHED)
+				.getResultList();
+		long teamAWins = 0;
+		long teamBWins = 0;
+		for (Object[] valuePair: valuePairs) {
+			if (valuePair[0] == BSMatch.TEAM.TEAM_A) {
+				teamAWins = (Long) valuePair[1];
+			} else if (valuePair[0] == BSMatch.TEAM.TEAM_B) {
+				teamBWins = (Long) valuePair[1];
+			}
+		}
+		em.close();
+		if (teamAWins == 0 && teamBWins == 0) {
+			return -1;
+		}
+		return (float) teamAWins/ (float) (teamAWins + teamBWins);
 	}
 
 	/**
@@ -119,13 +136,24 @@ public class WebUtil {
 	 * @param percent
 	 * @return
 	 */
-	public static String getFormattedWinPercentage(float percent) {
-		if (percent < 0.3)
+	public static String getFormattedWinPercentage(double percent) {
+		if (percent < WIN_THRESHOLD)
 			return "<font color='blue'>" + (int) (100*percent) + "</font>";
-		else if (percent < 0.7)
+		else if (percent < 1 - WIN_THRESHOLD)
 			return "<font color='gray'>" + (int) (100*percent) + "</font>";
 		else 
 			return "<font color='red'>" + (int) (100*percent) + "</font>";
+	}
+	
+	public static BSMatch.TEAM getWinner(Long aWins, Long bWins) {
+		double percent = aWins.doubleValue()/(aWins + bWins);
+		if (percent < WIN_THRESHOLD) {
+			return BSMatch.TEAM.TEAM_B;
+		} else if (percent > 1 - WIN_THRESHOLD) {
+			return BSMatch.TEAM.TEAM_A;
+		} else {
+			return null;
+		}
 	}
 
 	/**

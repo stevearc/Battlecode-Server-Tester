@@ -29,4 +29,18 @@ public class BSPlayer {
 	public void setPlayerName(String playerName) {
 		this.playerName = playerName;
 	}
+	
+	@Override
+	public int hashCode() {
+		return id.intValue();
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof BSPlayer) {
+			BSPlayer p = (BSPlayer) o;
+			return p.id.equals(id);
+		}
+		return false;
+	}
 }

@@ -106,4 +106,18 @@ public class BSRun {
 		Date end = (ended == null ? new Date() : ended);
 		return (end.getTime() - started.getTime());
 	}
+	
+	@Override
+	public int hashCode() {
+		return id.intValue();
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof BSRun) {
+			BSRun r = (BSRun) o;
+			return id.equals(r.id);
+		}
+		return false;
+	}
 }

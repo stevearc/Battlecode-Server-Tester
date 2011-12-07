@@ -2,20 +2,18 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSMap;
+import model.BSMatch;
+import model.BSRun;
 import model.BSUser;
-
-
-
+import dataAccess.HibernateUtil;
 
 /**
  * Displays matches for a given run aggregated by map
@@ -53,20 +51,13 @@ public class MatchesByMapServlet extends AbstractServlet {
 			out.println("Invalid id</body></html>");
 			return;
 		}
-		int id = Integer.parseInt(strId);
-		try {
+		Long id = new Long(Integer.parseInt(strId));
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSRun run = em.find(BSRun.class, id);
 			out.println("<div id=\"tablewrapper\">");
-			PreparedStatement st = db.prepare("SELECT id, team_a, team_b  " +
-					"FROM runs r LEFT JOIN tags t1 ON r.team_a = t1.tag " +
-			"LEFT JOIN tags t2 ON r.team_b = t2.tag WHERE id = ?");
-			st.setInt(1, id);
-			ResultSet rs = db.query(st);
-			rs.next();
-			String team_a = rs.getString("team_a");
-			String team_b = rs.getString("team_b");
-			out.println("<h2><font color='red'>" + team_a + "</font> vs. <font color='blue'>" + team_b + "</font></h2>");
-			//TODO: this line
-			//out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(id, null, false)) + "</h3>");
+			out.println("<h2><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
+					run.getTeamB().getPlayerName() + "</font></h2>");
+			out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
 			out.println("<br />");
 			out.println("<div class='tabbutton'>");
 			out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesServlet.NAME) + "?id=" + id + "\"' " +
@@ -75,8 +66,6 @@ public class MatchesByMapServlet extends AbstractServlet {
 			out.println("<p>&nbsp;</p>");
 			out.println("<p>&nbsp;</p>");
 			out.println("</div>");
-
-			st.close();
 
 			WebUtil.printTableHeader(out, "matches_sorter");
 			out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"matches_table\" class=\"tinytable\">" +
@@ -88,23 +77,26 @@ public class MatchesByMapServlet extends AbstractServlet {
 					"</tr>" +
 					"</thead>" +
 			"<tbody>");
-			PreparedStatement st3 = db.prepare("SELECT * FROM matches WHERE run_id = ? AND win IS NOT NULL");
-			st3.setInt(1, id);
-			ResultSet rs3 = db.query(st3);
-			HashSet<String> seenMaps = new HashSet<String>();
-			while (rs3.next()) {
-				if (seenMaps.contains(rs3.getString("map"))) 
-					continue;
-				seenMaps.add(rs3.getString("map"));
-				BSMap map = new BSMap(rs3.getString("map"), rs3.getInt("height"), rs3.getInt("width"), 
-						rs3.getInt("rounds"));
+			List<Object[]> valuePairs = em.createQuery("select map, match.winner, count(*) from BSMatch match inner join match.map as map where match.run = ?" +
+					"and match.status = ? group by map, match.winner order by map, match.winner", Object[].class)
+					.setParameter(1, run)
+					.setParameter(2, BSMatch.STATUS.FINISHED)
+					.getResultList();
+			for (int i = 0; i < valuePairs.size(); i++) {
+				Object[] valuePair = valuePairs.get(i);
+				BSMap map = (BSMap) valuePair[0];
+				long aCount = (Long) valuePair[2];
+				long bCount = 0;
+				if (i + 1 < valuePairs.size() && map.equals(valuePairs.get(i+1)[0])) {
+					bCount = (Long) valuePairs.get(i+1)[2];
+					i++;
+				}
 				out.println("<tr>");
-				out.println("<td>" + map.mapName + "</td>");
-				out.println("<td>" + WebUtil.getFormattedWinPercentage(WebUtil.getWinPercentage(id, map.mapName)) + "</td>");
-				out.println("<td>" + map.calculateSizeClass() + "</td>");
+				out.println("<td>" + map.getMapName() + "</td>");
+				out.println("<td>" + WebUtil.getFormattedWinPercentage((double)aCount/(aCount+bCount)) + "</td>");
+				out.println("<td>" + map.getSize() + "</td>");
 				out.println("</tr>");
 			}
-			st3.close();
 			out.println("</tbody>");
 			out.println("</table>");
 			WebUtil.printTableFooter(out, "matches_sorter");
@@ -113,8 +105,5 @@ public class MatchesByMapServlet extends AbstractServlet {
 			out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
 			out.println("<script type=\"text/javascript\" src=\"js/matches_init_table.js\"></script>");
 			out.println("</body></html>");
-		} catch (SQLException e) {
-			e.printStackTrace(out);
-		}
 	}
 }

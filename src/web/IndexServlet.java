@@ -185,7 +185,7 @@ public class IndexServlet extends AbstractServlet {
 		List<BSMap> maps = em.createQuery("from BSMap", BSMap.class).getResultList();
 		for (BSMap m: maps) {
 			out.println("<tr><td><input type='checkbox' value='" + m.getId() + "'></td>" +
-					"<td>" + m.getMapName() + "</td><td>" + m.calculateSizeClass() + "</td></tr>");
+					"<td>" + m.getMapName() + "</td><td>" + m.getSize() + "</td></tr>");
 		}
 		out.println("</tbody></table>");
 		out.println("<input type=\"button\" value=\"Start\" onclick=\"if (newRun()) {toggleNewRun()}\"><br /></p>");

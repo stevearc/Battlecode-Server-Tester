@@ -19,8 +19,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import common.Config;
-
 /**
  * Representation of map information to be sent over network between Worker and Server
  * @author stevearc
@@ -29,11 +27,13 @@ import common.Config;
 @Entity
 public class BSMap implements Serializable {
 	private static final long serialVersionUID = -3033262234181516847L;
+	public static enum SIZE {SMALL, MEDIUM, LARGE}
 	private Long id;
 	private String mapName;
 	private Long height;
 	private Long width;
 	private Long rounds;
+	private SIZE size;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE)
@@ -61,6 +61,11 @@ public class BSMap implements Serializable {
 		return rounds;
 	}
 	
+	@Column(nullable=false)
+	public SIZE getSize() {
+		return size;
+	}
+	
 	public void setId(Long id) {
 		this.id = id;
 	}
@@ -79,6 +84,21 @@ public class BSMap implements Serializable {
 
 	public void setRounds(Long rounds) {
 		this.rounds = rounds;
+	}
+	
+	public void setSize(SIZE size) {
+		this.size = size;
+	}
+	
+	public SIZE calculateSize() {
+		long area = height * width;
+		if (area < 1400) {
+			return SIZE.SMALL;
+		} else if (area < 2400) {
+			return SIZE.MEDIUM;
+		} else {
+			return SIZE.LARGE;
+		}
 	}
 
 	public BSMap() {
@@ -104,6 +124,7 @@ public class BSMap implements Serializable {
 		NamedNodeMap nl = n.getAttributes();
 		width = new Long(Integer.parseInt(nl.getNamedItem("width").getNodeValue()));
 		height = new Long(Integer.parseInt(nl.getNamedItem("height").getNodeValue()));
+		setSize(calculateSize());
 
 		nodeLst = doc.getElementsByTagName("game");
 		n = nodeLst.item(0);
@@ -124,40 +145,19 @@ public class BSMap implements Serializable {
 		this.height = height;
 		this.width = width;
 		this.rounds = rounds;
-	}
-	
-	/**
-	 * 
-	 * @return The area of the map
-	 */
-	public Long calculateSize() {
-		return width * height;
-	}
-	
-	/**
-	 * 
-	 * @return The size classifier for the map (small, medium, large)
-	 */
-	public String calculateSizeClass() {
-		Long area = calculateSize();
-		if (area < Config.getConfig().map_cutoff_small)
-			return "small";
-		else if (area < Config.getConfig().map_cutoff_medium)
-			return "medium";
-		else
-			return "large";
+		setSize(calculateSize());
 	}
 	
 	@Override
 	public int hashCode() {
-		return mapName.hashCode();
+		return id.intValue();
 	}
 	
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof BSMap) {
-			BSMap bm = (BSMap) o;
-			return bm.mapName.equals(mapName);
+			BSMap m = (BSMap) o;
+			return id.equals(m.id);
 		}
 		return false;
 	}
