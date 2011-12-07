@@ -6,11 +6,11 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSPlayer;
-import model.BSUser;
 import dataAccess.HibernateUtil;
 
 /**
@@ -18,20 +18,11 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public abstract class AbstractAnalysisServlet extends AbstractServlet {
+public abstract class AbstractAnalysisServlet extends HttpServlet {
 	private static final long serialVersionUID = 5929611248935884353L;
-
-	public AbstractAnalysisServlet(String name) {
-		super(name);
-	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			redirect(response);
-			return;
-		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -43,7 +34,7 @@ public abstract class AbstractAnalysisServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, name);
+		WebUtil.writeTabs(response, out, toString());
 
 		// Javascript to do HTTP GET
 		out.println("<script type=\"text/Javascript\">\n" +

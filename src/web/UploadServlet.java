@@ -9,11 +9,13 @@ import java.io.PrintWriter;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSPlayer;
-import model.BSUser;
+
+import common.Config;
 
 import dataAccess.HibernateUtil;
 
@@ -22,13 +24,9 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public class UploadServlet extends AbstractServlet {
+public class UploadServlet extends HttpServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
 	public static final String NAME = "upload.html";
-
-	public UploadServlet() {
-		super(NAME);
-	}
 
 	private void warn(HttpServletResponse response, String warning) throws IOException {
 		response.getWriter().println("<p class=\"warning\">" + warning + "</p>");
@@ -36,11 +34,6 @@ public class UploadServlet extends AbstractServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null){
-			redirect(response);
-			return;
-		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -51,7 +44,7 @@ public class UploadServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, name);
+		WebUtil.writeTabs(response, out, toString());
 		out.println("<div>Compile your player using");
 		out.println("<p class=\"code\">ant jar -Dteam=teamXXX</p>");
 		out.println("where teamXXX is your team number.  Then upload it here.</div><br/>");
@@ -72,7 +65,7 @@ public class UploadServlet extends AbstractServlet {
 				warn(response, "Player name is too long");
 			} else {
 				FileInputStream istream = new FileInputStream(player);
-				FileOutputStream ostream = new FileOutputStream(config.install_dir + "/battlecode/teams/" + playerName + ".jar");
+				FileOutputStream ostream = new FileOutputStream(Config.getConfig().install_dir + "/battlecode/teams/" + playerName + ".jar");
 				byte[] buffer = new byte[1000];
 				int len = 0;
 				while ((len = istream.read(buffer)) != -1) {
@@ -102,7 +95,7 @@ public class UploadServlet extends AbstractServlet {
 		}
 
 		out.println("<div>");
-		out.println("<form action=\"" + name + "\" method=\"post\" enctype=\"multipart/form-data\">");
+		out.println("<form action=\"" + toString() + "\" method=\"post\" enctype=\"multipart/form-data\">");
 		out.println("<input type=\"file\" name=\"player\"><br/>");
 		out.println("Player Name:<input type=\"text\" name=\"player_name\" size=\"20\" /><br/>");
 		out.println("<input type=\"submit\" name=\"submit\" value=\"Upload\"/>");
@@ -118,5 +111,10 @@ public class UploadServlet extends AbstractServlet {
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

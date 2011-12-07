@@ -5,11 +5,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.MasterMethodCaller;
-import model.BSUser;
 
 
 /**
@@ -17,21 +17,12 @@ import model.BSUser;
  * @author stevearc
  *
  */
-public class RunServlet extends AbstractServlet {
+public class RunServlet extends HttpServlet {
 	private static final long serialVersionUID = -5024779464960322694L;
 	public static final String NAME = "run.html";
 
-	public RunServlet() {
-		super(NAME);
-	}
-
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			redirect(response);
-			return;
-		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -73,6 +64,10 @@ public class RunServlet extends AbstractServlet {
 		} catch (Exception e) {
 			e.printStackTrace(out);
 		}
-
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

@@ -6,11 +6,11 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
-
 import dataAccess.HibernateUtil;
 
 /**
@@ -18,22 +18,14 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public class AdminServlet extends AbstractServlet {
+public class AdminServlet extends HttpServlet {
 	private static final long serialVersionUID = 1272536670071318079L;
 	public static final String NAME = "admin.html";
-
-	public AdminServlet() {
-		super(NAME);
-	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			redirect(response);
-			return;
-		}
+		BSUser user = (BSUser) request.getSession().getAttribute("user");
 
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
@@ -47,7 +39,7 @@ public class AdminServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, name);	
+		WebUtil.writeTabs(response, out, toString());	
 
 		if (user.getPrivs() != BSUser.PRIVS.ADMIN) {
 			out.println("<div id='tablewrapper'><h1>You are not an admin</h1></div>");
@@ -122,5 +114,10 @@ public class AdminServlet extends AbstractServlet {
 		out.println("</tbody></table>");
 		out.println("</div>");
 		out.println("</body></html>");
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -13,7 +14,6 @@ import model.BSMap;
 import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
-import model.BSUser;
 import dataAccess.HibernateUtil;
 
 /**
@@ -21,21 +21,12 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public class IndexServlet extends AbstractServlet {
+public class IndexServlet extends HttpServlet {
 	private static final long serialVersionUID = -2587225634870177013L;
 	public static final String NAME = "index.html";
 
-	public IndexServlet() {
-		super(NAME);
-	}
-
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null) {
-			redirect(response);
-			return;
-		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -46,7 +37,7 @@ public class IndexServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, name);
+		WebUtil.writeTabs(response, out, toString());
 
 		out.println("<div id=\"tablewrapper\">");
 
@@ -222,7 +213,10 @@ public class IndexServlet extends AbstractServlet {
 		out.println("<script type=\"text/javascript\" src=\"js/init_table.js\"></script>");
 		out.println("</body></html>");
 		em.close();
-
-
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

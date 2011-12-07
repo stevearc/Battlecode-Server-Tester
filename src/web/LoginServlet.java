@@ -2,18 +2,20 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.logging.Level;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceException;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
 
-
+import common.Config;
 import common.Util;
 
 import dataAccess.HibernateUtil;
@@ -23,21 +25,19 @@ import dataAccess.HibernateUtil;
  * @author stevearc
  *
  */
-public class LoginServlet extends AbstractServlet {
+public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 4347939279807133754L;
 	public static final String NAME = "login.html";
+	public static final String COOKIE_NAME = "bs-tester";
 	private static final char[] BLACKLIST = {' ', '<', '>', '\'', '"', '`', '\t', '\n'};
-
-	public LoginServlet() {
-		super(NAME);
-	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		BSUser user = checkLogin(request, response);
 		if (user != null) {
-			response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-			response.setHeader("Location", response.encodeURL("/" + IndexServlet.NAME));
+			System.out.println("Setting user in session");
+			request.getSession(true).setAttribute("user", user);
+			response.sendRedirect("/" + IndexServlet.NAME);
 			return;
 		}
 		response.setContentType("text/html");
@@ -166,8 +166,9 @@ public class LoginServlet extends AbstractServlet {
 				c.setSecure(true);
 				response.addCookie(c);
 				response.setStatus(HttpServletResponse.SC_OK);
+				request.getSession(true).setAttribute("user", user);
+				response.sendRedirect("/" + IndexServlet.NAME);
 				response.setContentType("text/html");
-				goToPage(response, IndexServlet.NAME);
 				return;
 			}
 		em.close();
@@ -190,11 +191,52 @@ public class LoginServlet extends AbstractServlet {
 		}
 		return null;
 	}
+	
+	/**
+	 * 
+	 * @param request
+	 * @param response
+	 * @return True if authenticated, false otherwise
+	 * @throws IOException 
+	 */
+	private BSUser checkLogin(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String cookieVal = null;
+		Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (Cookie c: cookies) {
+				if (COOKIE_NAME.equals(c.getName())) {
+					cookieVal = c.getValue();
+					break;
+				}
+			}
+		}
+		if (cookieVal == null) {
+			return null;
+		}
+		// Cookie is encoded as [userid]$[session token]
+		Long userId = new Long(-1);
+		String token = "";
+		try {
+			userId = new Long(Integer.parseInt(cookieVal.substring(0, cookieVal.indexOf("$"))));
+			token = cookieVal.substring(cookieVal.indexOf("$") + 1);
+		} catch (Exception e) {
+			Config.getConfig().getLogger().log(Level.WARNING, "Login cookie with bad format: " + cookieVal, e);
+		}
+		// Check cookie value
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSUser user = em.find(BSUser.class, userId);
+		if (user == null) {
+			return null;
+		}
+		if (token.equals(user.getSession())) {
+			return user;
+		}
+			
+		return null;
+	}
 
-	private void goToPage(HttpServletResponse response, String page) throws IOException {
-		PrintWriter out = response.getWriter();
-		out.println("<html><head>");
-		out.println("<script type='text/javascript'>document.location='" + response.encodeURL(page) + "'</script>");
-		out.println("</head></html>");
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

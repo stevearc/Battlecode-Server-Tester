@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.WorkerRepr;
-import model.BSUser;
 
 import common.Config;
 import common.NetworkMatch;
@@ -18,21 +18,12 @@ import common.NetworkMatch;
  * @author stevearc
  *
  */
-public class ConnectionsServlet extends AbstractServlet {
+public class ConnectionsServlet extends HttpServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
 	public static final String NAME = "connections.html";
 
-	public ConnectionsServlet() {
-		super(NAME);
-	}
-
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
-		if (user == null){
-			redirect(response);
-			return;
-		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -43,7 +34,7 @@ public class ConnectionsServlet extends AbstractServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, name);
+		WebUtil.writeTabs(response, out, toString());
 
 		out.println("<div id=\"tablewrapper\">");
 		WebUtil.printTableHeader(out, "conn_sorter");
@@ -81,5 +72,10 @@ public class ConnectionsServlet extends AbstractServlet {
 		out.println("<script type=\"text/javascript\" src=\"js/connections.js\"></script>");
 		out.println("</body>" +
 		"</html>");
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 }

@@ -20,17 +20,14 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 	public static final String NAME = "analysis.html";
 	private static final long serialVersionUID = 5833958478703546254L;
 
-	public AnalysisServlet(){
-		super(NAME);
-	}
-
 	@Override
 	protected void writeTableHead(PrintWriter out) {
 		out.println("<tr>" +
 		"<th class='desc'><h3>Opponent</h3></th>");
 		for (BSMap.SIZE size: BSMap.SIZE.values()) {
-			out.println("<th class='desc'><h3>" + size + "</h3></th>");
+			out.println("<th class='nosort'><h3>" + size + "</h3></th>");
 		}
+		out.println("<th class='nosort'><h3>Total</h3></th>");
 		out.println("</tr>");
 	}
 	
@@ -79,14 +76,26 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 				}
 				i++;
 			}
+			long[] total = new long[3];
 			for (long[] results: mapSizeResults) {
+				for (int j = 0; j < 3; j++) {
+					total[j] += results[j];
+				}
 				out.println("<td><font color='blue'>" + results[0] + "</font>/" +
 						"<font color='green'>" + results[1] + "</font>/" +
-								"<font color='red'>" + results[2] + "</font></td>");
+						"<font color='red'>" + results[2] + "</font></td>");
 			}
+			out.println("<td><font color='blue'>" + total[0] + "</font>/" +
+					"<font color='green'>" + total[1] + "</font>/" +
+					"<font color='red'>" + total[2] + "</font></td>");
 			out.println("</tr>");
 		}
 		em.close();
+	}
+	
+	@Override
+	public String toString() {
+		return NAME;
 	}
 
 }

@@ -5,7 +5,7 @@
 ## REQUIREMENTS ##
 ##################
     * Linux
-	* Java and Ant (to run the battlecode client)
+    * Java and Ant (to run the battlecode client)
 
 ##################
 ## ARCHITECTURE ##
