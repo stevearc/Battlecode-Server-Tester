@@ -149,6 +149,8 @@ public class Master {
 				ostream.close();
 				battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/lib/battlecode-server.jar"));
 				idataHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/idata"));
+				pendingBattlecodeServerFile = null;
+				pendingIdataFile = null;
 			}
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Error updating battlecode version", e);
