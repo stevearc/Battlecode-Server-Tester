@@ -13,12 +13,14 @@ import model.BSMap;
  */
 public class NetworkMatch implements Serializable {
 	private static final long serialVersionUID = 6673793068304545925L;
-	public Long run_id;
-	public Long id;
-	public String team_a;
-	public String team_b;
-	public BSMap map;
-	public Long seed;
+	public final Long run_id;
+	public final Long id;
+	public final String team_a;
+	public final String team_b;
+	public final BSMap map;
+	public final Long seed;
+	public String battlecodeServerHash;
+	public String idataHash;
 	
 	public NetworkMatch(Long run_id, Long id, String team_a, String team_b, BSMap map, Long seed) {
 		this.run_id = run_id;
@@ -28,7 +30,7 @@ public class NetworkMatch implements Serializable {
 		this.map = map;
 		this.seed = seed;
 	}
-
+	
 	// TODO: remove references to hashCode and equals
 	@Override
 	public int hashCode() {

@@ -2,12 +2,12 @@ package worker;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +28,7 @@ import networking.PacketCmd;
 import common.Config;
 import common.Dependencies;
 import common.NetworkMatch;
+import common.Util;
 
 /**
  * Connects to master and runs matches
@@ -106,9 +107,36 @@ public class Worker implements Controller, Runnable {
 		}
 	}
 
+	private boolean battlecodeUpToDate(NetworkMatch nm) {
+		try {
+			if (!nm.battlecodeServerHash.equals(Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/lib/battlecode-server.jar")))) {
+				return false;
+			}
+			if (!nm.idataHash.equals(Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/idata")))) {
+				return false;
+			}
+		} catch (NoSuchAlgorithmException e) {
+			_log.log(Level.SEVERE, "Could not find SHA1 algorithm", e);
+			return false;
+		} catch (IOException e) {
+			_log.log(Level.SEVERE, "Error hashing battlecode install files", e);
+			return false;
+		}
+		return true;
+	}
+
 	private boolean haveMap(BSMap map) {
 		File mapFile = new File(config.install_dir + "/battlecode/maps/" + map.getMapName() + ".xml");
-		return mapFile.exists();
+		if (mapFile.exists()) {
+			try {
+				return map.getHash().equals(Util.convertToHex(Util.SHA1Checksum(mapFile.getAbsolutePath())));
+			} catch (NoSuchAlgorithmException e) {
+				_log.log(Level.SEVERE, "Can't find SHA1 hash!", e);
+			} catch (IOException e) {
+				_log.log(Level.SEVERE, "Can't read map file!", e);
+			}
+		}
+		return false;
 	}
 
 	private boolean havePlayer(String player) {
@@ -123,9 +151,14 @@ public class Worker implements Controller, Runnable {
 	 */
 	private boolean resolveDependencies(NetworkMatch match) {
 		boolean allClear = true;
+		boolean needUpdate = false;
 		boolean needMap = false;
 		boolean needTeamA = false;
 		boolean needTeamB = false;
+		if (!battlecodeUpToDate(match)) {
+			allClear = false;
+			needUpdate = true;
+		}
 		if (!haveMap(match.map)) {
 			allClear = false;
 			needMap = true;
@@ -139,15 +172,16 @@ public class Worker implements Controller, Runnable {
 			needTeamB = true;
 		}
 		if (!allClear) {
-			_log.info("Requesting " + (needMap ? "map: " + match.map + " " : "") + 
-					(needTeamA ? "player: " + match.team_a + " " : "") + 
-					(needTeamB ? "player: " + match.team_b + " " : ""));
-			Packet requestPacket = new Packet(PacketCmd.REQUEST, new Object[]{match, needMap, needTeamA, needTeamB});
+			_log.info("Requesting " + (needUpdate ? "battlecode-server.jar & idata, " : "") + 
+					(needMap ? "map: " + match.map + ", " : "") + 
+					(needTeamA ? "player: " + match.team_a + ", " : "") + 
+					(needTeamB ? "player: " + match.team_b : ""));
+			Packet requestPacket = new Packet(PacketCmd.REQUEST, new Object[]{match, needUpdate, needMap, needTeamA, needTeamB});
 			network.send(requestPacket);
 		}
 		return allClear;
 	}
-	
+
 	private boolean fileEqualsData(File file, byte[] data) throws IOException {
 		if (file.length() != data.length) {
 			return false;
@@ -157,55 +191,40 @@ public class Worker implements Controller, Runnable {
 		fis.read(fileData);
 		return Arrays.equals(fileData, data);
 	}
+	
+	private void writeDataToFile(byte[] data, String fileName) throws IOException {
+		_log.info("Writing file: " + fileName);
+		File outputFile = new File(fileName);
+		if (outputFile.exists()) {
+			if (!fileEqualsData(outputFile, data)){
+				outputFile.delete();
+			}
+		}
+		FileOutputStream ostream = new FileOutputStream(fileName);
+		ostream.write(data);
+		ostream.close();
+	}
 
 	private void writeDependencies(Dependencies dep) {
 		if (dep == null) {
 			return;
 		}
-		String fileName;
-		File outputFile;
-		FileOutputStream ostream;
 		try {
+			if (dep.battlecodeServer != null) {
+				writeDataToFile(dep.battlecodeServer, config.install_dir + "/battlecode/lib/battlecode-server.jar");
+			}
+			if (dep.idata != null) {
+				writeDataToFile(dep.idata, config.install_dir + "/battlecode/idata");
+			}
 			if (dep.map != null) {
-				fileName = config.install_dir + "/battlecode/maps/" + dep.mapName + ".xml";
-				_log.info("Writing file: " + fileName);
-				outputFile = new File(fileName);
-				if (outputFile.exists()) {
-					if (!fileEqualsData(outputFile, dep.map)){
-						outputFile.delete();
-					}
-				}
-				ostream = new FileOutputStream(fileName);
-				ostream.write(dep.map);
-				ostream.close();
+				writeDataToFile(dep.map, config.install_dir + "/battlecode/maps/" + dep.mapName + ".xml");
 			}
 			if (dep.teamA != null) {
-				fileName = config.install_dir + "/battlecode/teams/" + dep.teamAName + ".jar";
-				_log.info("Writing file: " + fileName);
-				outputFile = new File(fileName);
-				if (outputFile.exists()) {
-					if (!fileEqualsData(outputFile, dep.teamA)) {
-						outputFile.delete();
-					}
-				}
-				ostream = new FileOutputStream(fileName);
-				ostream.write(dep.teamA);
-				ostream.close();
+				writeDataToFile(dep.teamA, config.install_dir + "/battlecode/teams/" + dep.teamAName + ".jar");
 			}
 			if (dep.teamB != null) {
-				fileName = config.install_dir + "/battlecode/teams/" + dep.teamBName + ".jar";
-				_log.info("Writing file: " + fileName);
-				outputFile = new File(fileName);
-				if (outputFile.exists()) {
-					if (!fileEqualsData(outputFile, dep.teamB)) {
-						outputFile.delete();
-					}
-				}
-				ostream = new FileOutputStream(fileName);
-				ostream.write(dep.teamB);
-				ostream.close();
+				writeDataToFile(dep.teamB, config.install_dir + "/battlecode/teams/" + dep.teamBName + ".jar");
 			}
-		} catch (FileNotFoundException e) {
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Could not create player or map file", e);
 		}

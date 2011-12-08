@@ -13,6 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -33,7 +34,8 @@ public class BSRun {
 	private List<BSMatch> matches;
 
 	@Id
-	@GeneratedValue(strategy=GenerationType.SEQUENCE)
+	@GeneratedValue(strategy=GenerationType.AUTO, generator="run_id_gen")
+	@SequenceGenerator(name="run_id_gen", sequenceName="RUN_ID_GEN")
 	public Long getId() {
 		return id;
 	}

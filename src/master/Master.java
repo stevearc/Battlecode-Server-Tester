@@ -1,9 +1,11 @@
 package master;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -43,6 +45,10 @@ public class Master {
 	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
 	private Date mapsLastModifiedDate;
 	private WebPollHandler wph;
+	private File pendingBattlecodeServerFile;
+	private File pendingIdataFile;
+	private String battlecodeServerHash;
+	private String idataHash;
 
 	public Master() throws Exception {
 		config = Config.getConfig();
@@ -53,9 +59,13 @@ public class Master {
 
 	/**
 	 * Start running the master
+	 * @throws IOException 
+	 * @throws NoSuchAlgorithmException 
 	 */
-	public synchronized void start() {
+	public synchronized void start() throws NoSuchAlgorithmException, IOException {
 		new Thread(handler).start();
+		battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/lib/battlecode-server.jar"));
+		idataHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/idata"));
 		startRun();
 		new Thread(new Runnable() {
 			@Override
@@ -108,6 +118,45 @@ public class Master {
 		startRun();
 	}
 
+	public synchronized void updateBattlecodeFiles(File battlecode_server, File idata) {
+		pendingBattlecodeServerFile = battlecode_server;
+		pendingIdataFile = idata;
+		if (getCurrentRun() == null) {
+			writeBattlecodeFiles();
+		}
+	}
+
+	private void writeBattlecodeFiles() {
+		try {
+			if (pendingBattlecodeServerFile != null && pendingIdataFile != null) {
+				_log.info("Writing updated battlecode files");
+				FileInputStream istream = new FileInputStream(pendingBattlecodeServerFile);
+				FileOutputStream ostream = new FileOutputStream(config.install_dir + "/battlecode/lib/battlecode-server.jar");
+				byte[] buffer = new byte[1024];
+				int len = 0;
+				while ((len = istream.read(buffer)) != -1) {
+					ostream.write(buffer, 0, len);
+				}
+				istream.close();
+				ostream.close();
+				
+				istream = new FileInputStream(pendingIdataFile);
+				ostream = new FileOutputStream(config.install_dir + "/battlecode/idata");
+				while ((len = istream.read(buffer)) != -1) {
+					ostream.write(buffer, 0, len);
+				}
+				istream.close();
+				ostream.close();
+				battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/lib/battlecode-server.jar"));
+				idataHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/idata"));
+			}
+		} catch (IOException e) {
+			_log.log(Level.SEVERE, "Error updating battlecode version", e);
+		} catch (NoSuchAlgorithmException e) {
+			_log.log(Level.SEVERE, "Error updating battlecode file hash", e);
+		}
+	}
+
 	/**
 	 * Delete run data
 	 * @param runId
@@ -127,7 +176,7 @@ public class Master {
 			em.createQuery("delete from BSMatch match where match.run = ?").setParameter(1, run).executeUpdate();
 			em.flush();
 			em.getTransaction().commit();
-			
+
 			em.getTransaction().begin();
 			em.remove(run);
 			em.flush();
@@ -229,6 +278,8 @@ public class Master {
 		for (int i = 0; i < queuedMatches.size() && worker.isFree(); i++) {
 			BSMatch m = queuedMatches.get(i);
 			NetworkMatch nm = m.buildNetworkMatch();
+			nm.battlecodeServerHash = battlecodeServerHash;
+			nm.idataHash = idataHash;
 			_log.info("Sending match " + nm + " to worker " + worker);
 			wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
 			worker.runMatch(nm);
@@ -249,6 +300,8 @@ public class Master {
 			.getResultList();
 			while (!runningMatches.isEmpty() && worker.isFree()) {
 				NetworkMatch nm = runningMatches.get(r.nextInt(runningMatches.size())).buildNetworkMatch();
+				nm.battlecodeServerHash = battlecodeServerHash;
+				nm.idataHash = idataHash;
 				_log.info("Sending match " + nm + " to worker " + worker);
 				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
 				worker.runMatch(nm);
@@ -257,12 +310,18 @@ public class Master {
 		em.close();
 	}
 
-	public synchronized void sendWorkerMatchDependencies(WorkerRepr worker, NetworkMatch match, boolean needMap, boolean needTeamA, boolean needTeamB) {
+	public synchronized void sendWorkerMatchDependencies(WorkerRepr worker, NetworkMatch match, boolean needUpdate, boolean needMap, boolean needTeamA, boolean needTeamB) {
 		Dependencies dep;
 		byte[] map = null;
 		byte[] teamA = null;
 		byte[] teamB = null;
+		byte[] battlecodeServer = null;
+		byte[] idata = null;
 		try {
+			if (needUpdate) {
+				battlecodeServer = Util.getFileData(config.install_dir + "/battlecode/lib/battlecode-server.jar");
+				idata = Util.getFileData(config.install_dir + "/battlecode/idata");
+			}
 			if (needMap) {
 				map = Util.getFileData(config.install_dir + "/battlecode/maps/" + match.map.getMapName() + ".xml");
 			}
@@ -272,7 +331,7 @@ public class Master {
 			if (needTeamB) {
 				teamB = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_b + ".jar");
 			}
-			dep = new Dependencies(match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
+			dep = new Dependencies(battlecodeServer, idata, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);
 			worker.runMatchWithDependencies(match, dep);
 		} catch (IOException e) {
@@ -339,7 +398,7 @@ public class Master {
 		em.getTransaction().begin();
 		em.flush();
 		em.getTransaction().commit();
-		
+
 		// Remove unfinished matches
 		em.getTransaction().begin();
 		em.createQuery("delete from BSMatch m where m.run = ? and m.status != ?")
@@ -354,6 +413,7 @@ public class Master {
 		for (WorkerRepr c: workers) {
 			c.stopAllMatches();
 		}
+		writeBattlecodeFiles();
 	}
 
 	/**
@@ -378,7 +438,7 @@ public class Master {
 				_log.log(Level.WARNING, "Error parsing map", e);
 			}
 		}
-		
+
 		EntityManager em = HibernateUtil.getEntityManager();
 		for (BSMap map: newMaps) {
 			em.persist(map);

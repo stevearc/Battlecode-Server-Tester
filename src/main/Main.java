@@ -5,7 +5,6 @@ import java.io.IOException;
 import javax.persistence.EntityManager;
 
 import master.Master;
-import master.MasterMethodCaller;
 import model.BSUser;
 
 import org.apache.commons.cli.CommandLine;
@@ -76,9 +75,9 @@ public class Main {
 
 				Master m = new Master();
 				Config.setMaster(m);
-				MasterMethodCaller.startMaster();
 				new Thread(new ProxyServer()).start();
 				new Thread(new WebServer()).start();
+				m.start();
 			} // Start the worker
 			else if (cmd.hasOption('w')){
 				Config c = new Config(false);

@@ -13,7 +13,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import master.MasterMethodCaller;
 import model.BSPlayer;
+import model.BSRun;
 
 import common.Config;
 
@@ -45,12 +47,11 @@ public class UploadServlet extends HttpServlet {
 		out.println("<body>");
 
 		WebUtil.writeTabs(response, out, toString());
-		out.println("<div>Compile your player using");
-		out.println("<p class=\"code\">ant jar -Dteam=teamXXX</p>");
-		out.println("where teamXXX is your team number.  Then upload it here.</div><br/>");
+		out.println("<div id='instructions' style='margin:10px; font-size:14px'>Compile your player using");
+		out.println("<div class='code'>ant jar -Dteam=teamXXX</div>");
+		out.println("where teamXXX is your team number.  Then upload it here.</div>");
 
-		String submit = request.getParameter("submit");
-		if (submit != null) {
+		if (request.getParameter("submit-player") != null) {
 			File player = (File) request.getAttribute("player");
 			String playerName = request.getParameter("player_name").trim();
 			if (player == null || !player.exists()) {
@@ -92,16 +93,68 @@ public class UploadServlet extends HttpServlet {
 				}
 				em.close();
 			}
+		} else if (request.getParameter("submit-update") != null) {
+			File idata = (File) request.getAttribute("idata");
+			File battlecode_server = (File) request.getAttribute("battlecode-server");
+			if (idata == null || !idata.exists() || idata.isDirectory()) {
+				// file doesn't exist
+				warn(response, "Please select a valid idata file");
+			} else if (battlecode_server == null || !battlecode_server.exists() || battlecode_server.isDirectory()) {
+				// file doesn't exist
+				warn(response, "Please select a valid battlecode-server.jar file");
+			} else {
+				MasterMethodCaller.updateBattlecodeFiles(battlecode_server, idata);
+				EntityManager em = HibernateUtil.getEntityManager();
+				Long numRunning = em.createQuery("select count(*) from BSRun run where run.status = ?", Long.class)
+				.setParameter(1, BSRun.STATUS.RUNNING)
+				.getSingleResult();
+				if (numRunning == 0) {
+					out.println("<p>Successfully updated battlecode version!</p>");
+				} else {
+					out.println("<p>Successfully updated battlecode version!  Changes will take place after current run finishes</p>");
+				}
+				em.close();
+			}
 		}
 
-		out.println("<div>");
-		out.println("<form action=\"" + toString() + "\" method=\"post\" enctype=\"multipart/form-data\">");
-		out.println("<input type=\"file\" name=\"player\"><br/>");
-		out.println("Player Name:<input type=\"text\" name=\"player_name\" size=\"20\" /><br/>");
-		out.println("<input type=\"submit\" name=\"submit\" value=\"Upload\"/>");
+		// Form for uploading your player
+		out.println("<div style='margin:20px 10px 10px 10px; font-size:12px'>");
+		out.println("<form action=\"" + NAME + "\" method=\"post\" enctype=\"multipart/form-data\">");
+		out.println("<table>");
+		out.println("<tr><th colspan='2'>Upload your player</th></tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>Player jar:</td>" +
+				"<td><input type=\"file\" name=\"player\"></td>" +
+				"</tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>Player Name:</td>" +
+				"<td><input type=\"text\" name=\"player_name\" size=\"20\" /></td>" +
+				"</tr>");
+		out.println("<tr><td></td>" +
+				"<td><input type=\"submit\" name=\"submit-player\" value=\"Upload\"/></td>" +
+				"</tr>");
+		out.println("</table>");
 		out.println("</form>");
-
-
+		out.println("</div>");
+		
+		// Form for uploading a new battlecode version
+		out.println("<div style='margin:40px 10px 10px 10px; font-size:12px'>");
+		out.println("<form action=\"" + NAME + "\" method=\"post\" enctype=\"multipart/form-data\">");
+		out.println("<table>");
+		out.println("<tr><th colspan='2'>Upload new battlecode files</th></tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>battlecode-server.jar file:</td>" +
+				"<td><input type=\"file\" name=\"battlecode-server\"></td>" +
+				"</tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>idata file:</td>" +
+				"<td><input type=\"file\" name=\"idata\"></td>" +
+				"</tr>");
+		out.println("<tr><td></td>" +
+				"<td><input type=\"submit\" name=\"submit-update\" value=\"Upload\"/></td>" +
+				"</tr>");
+		out.println("</table>");
+		out.println("</form>");
 		out.println("</div>");
 
 		out.println("</body>" +

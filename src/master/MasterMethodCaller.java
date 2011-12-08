@@ -1,5 +1,6 @@
 package master;
 
+import java.io.File;
 import java.util.List;
 
 import networking.Packet;
@@ -14,6 +15,21 @@ import common.NetworkMatch;
  */
 public class MasterMethodCaller {
 
+	/**
+	 * Update the battlecode source files
+	 * @param battlecode_server
+	 * @param idata
+	 */
+	public static void updateBattlecodeFiles(final File battlecode_server, final File idata) {
+		new Thread(new Runnable(){
+
+			@Override
+			public void run() {
+				Config.getMaster().updateBattlecodeFiles(battlecode_server, idata);
+			}
+
+		}).start();
+	}
 	/**
 	 * Queues a run
 	 * @param run
@@ -41,20 +57,6 @@ public class MasterMethodCaller {
 			@Override
 			public void run() {
 				Config.getMaster().deleteRun(run_id);
-			}
-
-		}).start();
-	}
-
-	/**
-	 * Start the master if it hasn't been running
-	 */
-	public static void startMaster() {
-		new Thread(new Runnable(){
-
-			@Override
-			public void run() {
-				Config.getMaster().start();
 			}
 
 		}).start();
@@ -99,13 +101,13 @@ public class MasterMethodCaller {
 	 * @param needTeamA
 	 * @param needTeamB
 	 */
-	public static void sendWorkerMatchDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needMap, 
-			final boolean needTeamA, final boolean needTeamB) {
+	public static void sendWorkerMatchDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdate, 
+			final boolean needMap, final boolean needTeamA, final boolean needTeamB) {
 		new Thread(new Runnable() {
 			
 			@Override
 			public void run() {
-				Config.getMaster().sendWorkerMatchDependencies(worker, match, needMap, needTeamA, needTeamB);
+				Config.getMaster().sendWorkerMatchDependencies(worker, match, needUpdate, needMap, needTeamA, needTeamB);
 			}
 			
 		}).start();

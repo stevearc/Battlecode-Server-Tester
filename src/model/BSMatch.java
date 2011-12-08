@@ -9,6 +9,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
 
 import common.NetworkMatch;
 
@@ -29,7 +30,8 @@ public class BSMatch {
 	private Double bPoints;
 	
 	@Id
-	@GeneratedValue(strategy=GenerationType.SEQUENCE)
+	@GeneratedValue(strategy=GenerationType.AUTO, generator="match_id_gen")
+	@SequenceGenerator(name="match_id_gen", sequenceName="MATCH_ID_GEN")
 	public Long getId() {
 		return id;
 	}

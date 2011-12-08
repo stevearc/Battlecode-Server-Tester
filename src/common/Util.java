@@ -3,6 +3,7 @@ package common;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -13,21 +14,19 @@ import java.security.NoSuchAlgorithmException;
  *
  */
 public class Util {
-	private static String convertToHex(byte[] data) { 
-		StringBuffer buf = new StringBuffer();
-		for (int i = 0; i < data.length; i++) { 
-			int halfbyte = (data[i] >>> 4) & 0x0F;
-			int two_halfs = 0;
-			do { 
-				if ((0 <= halfbyte) && (halfbyte <= 9)) 
-					buf.append((char) ('0' + halfbyte));
-				else 
-					buf.append((char) ('a' + (halfbyte - 10)));
-				halfbyte = data[i] & 0x0F;
-			} while(two_halfs++ < 1);
-		} 
-		return buf.toString();
-	} 
+	private static final String HEXES = "0123456789ABCDEF";
+
+	public static String convertToHex(byte[] raw) {
+		if (raw == null) {
+			return null;
+		}
+		final StringBuilder hex = new StringBuilder(2 * raw.length);
+		for (final byte b: raw) {
+			hex.append(HEXES.charAt((b & 0xF0) >> 4))
+			.append(HEXES.charAt((b & 0x0F)));
+		}
+		return hex.toString();
+	}
 
 	/**
 	 * 
@@ -50,6 +49,26 @@ public class Util {
 			e.printStackTrace();
 		}
 		throw new RuntimeException("Could not complete SHA1 hash!");
+	}
+
+	/**
+	 * Calculate a SHA1 checksum of a file
+	 * @param filename
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
+	public static byte[] SHA1Checksum(String filename) throws NoSuchAlgorithmException, IOException {
+		InputStream fis =  new FileInputStream(filename);
+
+		byte[] buffer = new byte[1024];
+		MessageDigest complete = MessageDigest.getInstance("SHA1");
+		int numRead;
+		while ((numRead = fis.read(buffer)) != -1) {
+			complete.update(buffer, 0, numRead);
+		}
+		fis.close();
+		return complete.digest();
 	}
 
 	/**

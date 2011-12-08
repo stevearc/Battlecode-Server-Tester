@@ -102,10 +102,11 @@ public class WorkerRepr implements Controller {
 			break;
 		case REQUEST:
 			NetworkMatch match = (NetworkMatch) p.get(0);
-			boolean needMap = (Boolean) p.get(1);
-			boolean needTeamA = (Boolean) p.get(2);
-			boolean needTeamB = (Boolean) p.get(3);
-			MasterMethodCaller.sendWorkerMatchDependencies(this, match, needMap, needTeamA, needTeamB);
+			boolean needUpdate = (Boolean) p.get(1);
+			boolean needMap = (Boolean) p.get(2);
+			boolean needTeamA = (Boolean) p.get(3);
+			boolean needTeamB = (Boolean) p.get(4);
+			MasterMethodCaller.sendWorkerMatchDependencies(this, match, needUpdate, needMap, needTeamA, needTeamB);
 			break;
 		default:
 			_log.warning("Invalid packet command: " + p.getCmd());

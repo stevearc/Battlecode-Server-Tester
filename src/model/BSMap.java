@@ -3,12 +3,14 @@ package model;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.NoSuchAlgorithmException;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -18,6 +20,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import common.Util;
 
 /**
  * Representation of map information to be sent over network between Worker and Server
@@ -34,9 +38,11 @@ public class BSMap implements Serializable {
 	private Long width;
 	private Long rounds;
 	private SIZE size;
+	private String hash;
 	
 	@Id
-	@GeneratedValue(strategy=GenerationType.SEQUENCE)
+	@GeneratedValue(strategy=GenerationType.AUTO, generator="map_id_gen")
+	@SequenceGenerator(name="map_id_gen", sequenceName="MAP_ID_GEN")
 	public Long getId() {
 		return id;
 	}
@@ -46,24 +52,29 @@ public class BSMap implements Serializable {
 		return mapName;
 	}
 
-	@Column(nullable=false)
+	@Column(nullable=false,updatable=false)
 	public Long getHeight() {
 		return height;
 	}
 
-	@Column(nullable=false)
+	@Column(nullable=false,updatable=false)
 	public Long getWidth() {
 		return width;
 	}
 
-	@Column(nullable=false)
+	@Column(nullable=false,updatable=false)
 	public Long getRounds() {
 		return rounds;
 	}
 	
-	@Column(nullable=false)
+	@Column(nullable=false,updatable=false)
 	public SIZE getSize() {
 		return size;
+	}
+	
+	@Column(nullable=false,updatable=false)
+	public String getHash() {
+		return hash;
 	}
 	
 	public void setId(Long id) {
@@ -90,6 +101,10 @@ public class BSMap implements Serializable {
 		this.size = size;
 	}
 	
+	public void setHash(String hash) {
+		this.hash = hash;
+	}
+	
 	public SIZE calculateSize() {
 		long area = height * width;
 		if (area < 1400) {
@@ -111,8 +126,9 @@ public class BSMap implements Serializable {
 	 * @throws ParserConfigurationException
 	 * @throws SAXException
 	 * @throws IOException
+	 * @throws NoSuchAlgorithmException 
 	 */
-	public BSMap(File map) throws ParserConfigurationException, SAXException, IOException {
+	public BSMap(File map) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException {
 		this.mapName = map.getName().substring(0, map.getName().length() - 4);
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db = dbf.newDocumentBuilder();
@@ -130,6 +146,7 @@ public class BSMap implements Serializable {
 		n = nodeLst.item(0);
 		nl = n.getAttributes();
 		rounds = new Long(Integer.parseInt(nl.getNamedItem("rounds").getNodeValue()));
+		hash = Util.convertToHex(Util.SHA1Checksum(map.getAbsolutePath()));
 	}
 	
 	/**
