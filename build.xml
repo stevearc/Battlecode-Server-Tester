@@ -1,0 +1,89 @@
+<project name="BSTester" default="dist" basedir=".">
+    <description>
+        Builds the distribution for the BSTester
+    </description>
+    <property name="build" location="build"/>
+    <property name="dist" location="bs-tester"/>
+    <property name="src" location="src"/>
+    <property name="lib" location="lib"/>
+    <property name="jarfile" location="bs-tester.jar"/>
+    <path id="lib">
+        <fileset dir="lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <target name="init">
+        <!-- Create the time stamp -->
+        <tstamp/>
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${build}"/>
+    </target>
+
+    <target name="compile" depends="init"
+        description="compile the source " >
+        <javac srcdir="${src}" destdir="${build}">
+            <classpath>
+                <path refid="lib"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build" depends="compile" description="generate the executable jar" >
+        <path id="lib.classpath">
+            <fileset dir="lib">
+                <include name="*.*" />
+            </fileset>
+        </path>
+        <pathconvert property="string.classpath" pathsep=" ">
+            <path refid="lib.classpath" />
+            <map from="${build}/" to="./" />
+        </pathconvert>
+        <jar jarfile="${jarfile}" basedir="${build}">
+            <manifest>
+                <attribute name="Main-Class" value="main.Main" />
+                <attribute name="Class-Path" value="${string.classpath}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="dist" depends="build" description="generate the distribution" >
+        <mkdir dir="${dist}"/>
+        <move todir="${dist}" file="${jarfile}"/>
+        <!-- We have to use exec because Ant copy doesn't preserve the file permissions :( -->
+        <exec executable="cp" os="Linux">
+            <arg value="-pr"/>
+            <arg value="README"/>
+            <arg value="COPYING"/>
+            <arg value="run.sh"/>
+            <arg value="setup.sh"/>
+            <arg value="uninstall.sh"/>
+            <arg value="scripts"/>
+            <arg value="etc"/>
+            <arg value="lib"/>
+            <arg value="js"/>
+            <arg value="css"/>
+            <arg value="images"/>
+            <arg value="${dist}"/>
+        </exec>
+
+        <delete file="bs-tester.tar"/>
+        <delete file="bs-tester.tar.gz"/>
+        <!-- We have to use exec because Ant tar doesn't preserve the file permissions :( -->
+        <exec executable="tar" os="Linux">
+            <arg value="-cf"/>
+            <arg value="bs-tester.tar"/>
+            <arg value="bs-tester"/>
+        </exec>
+        <exec executable="gzip" os="Linux">
+            <arg value="bs-tester.tar"/>
+        </exec>
+
+    </target>
+
+    <target name="clean" description="clean up" >
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+        <delete file="bs-tester.tar.gz"/>
+    </target>
+</project>

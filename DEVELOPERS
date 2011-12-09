@@ -8,8 +8,7 @@ This is a document to aid developers in understanding and adding to the code bas
 ## Tools ##
 ###########
   * Java
-  * Eclipse
-  * Eclipse Fat Jar plugin (for packaging)
+  * Ant
 
 ##################
 ## Architecture ##
@@ -27,8 +26,8 @@ The Web Server - is an embedded server courtesy of Jetty that provides a web int
 ##############
 ## Building ##
 ##############
-Build the Jar file using the Fat Jar plugin.  Just package the source with the necessary libraries.
-Run ./pack.sh to zip up all necessary files into bs-tester.tar.gz file
+You should be able to compile the project by simply running the command "ant".  This will build
+bs-tester.tar.gz which contains everything necessary for installation.
 
 ############
 ## Thanks ##
@@ -36,7 +35,6 @@ Run ./pack.sh to zip up all necessary files into bs-tester.tar.gz file
 Thanks to the following projects for providing me with libraries and tools:
   * Jetty
   * Jakarta Commons
-  * MySQL
   * HSQLDB
+  * Hibernate
   * tinytable
-  * Fat Jar
