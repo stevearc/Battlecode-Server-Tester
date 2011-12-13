@@ -172,7 +172,8 @@ public class Master {
 			stopCurrentRun(BSRun.STATUS.CANCELED);
 			startRun();
 		} else {
-			// delete rms files
+			// otherwise, delete it
+			// first delete rms files
 			for (BSMatch match: run.getMatches()) {
 				if (match.getStatus() == BSMatch.STATUS.FINISHED) {
 					File matchFile = new File(config.install_dir + "/matches/" + match.toMatchFileName());
@@ -182,12 +183,7 @@ public class Master {
 				}
 			}
 			
-			// otherwise, delete it
-			em.getTransaction().begin();
-			em.createQuery("delete from BSMatch match where match.run = ?").setParameter(1, run).executeUpdate();
-			em.flush();
-			em.getTransaction().commit();
-
+			// Then delete database entries
 			em.getTransaction().begin();
 			em.remove(run);
 			em.flush();

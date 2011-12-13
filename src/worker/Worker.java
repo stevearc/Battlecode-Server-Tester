@@ -2,6 +2,7 @@ package worker;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -117,6 +118,9 @@ public class Worker implements Controller, Runnable {
 			}
 		} catch (NoSuchAlgorithmException e) {
 			_log.log(Level.SEVERE, "Could not find SHA1 algorithm", e);
+			return false;
+		} catch (FileNotFoundException e) {
+			// If the files don't exist, we obviously need to update them
 			return false;
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Error hashing battlecode install files", e);

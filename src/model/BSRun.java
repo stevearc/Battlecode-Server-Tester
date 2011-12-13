@@ -10,14 +10,11 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-
-import org.hibernate.annotations.IndexColumn;
 
 import common.Util;
 
@@ -65,9 +62,7 @@ public class BSRun {
 		return status;
 	}
 	
-	@OneToMany(fetch=FetchType.LAZY, orphanRemoval=true)
-	@IndexColumn(name="id")
-	@JoinColumn(name="run")
+	@OneToMany(mappedBy="run", fetch=FetchType.LAZY, orphanRemoval=true)
 	public List<BSMatch> getMatches() {
 		return matches;
 	}
