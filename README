@@ -4,7 +4,7 @@
 ##################
 ## REQUIREMENTS ##
 ##################
-    * Linux
+    * Linux (mayyyyy also work on Mac.  I haven't tested because I don't own one)
     * Java and Ant (to run the battlecode client)
 
 ##################
@@ -29,8 +29,8 @@ It should prompt you for a few parameters and automatically set up the bs-tester
 ########################
 After running setup.sh, the script should have generated a bs-worker.tar.gz file.  Copy this file
 to the worker computer (using scp or some other tool).  Then unzip it on the worker and run
-sudo ./setup.sh
-It should prompt you for just a couple fields and generate the appropriate config file.  
+./setup.sh
+It should prompt you for a couple fields and generate the appropriate config file.  
 
 #############
 ## RUNNING ##
@@ -39,8 +39,8 @@ The server and worker can be run with the run.sh file.  Type
 ./run.sh -h
 to display the available commandline arguments.  
 If you installed the daemon in the setup script, you can start the service with 
-sudo invoke-rc.d bs-tester start
+sudo /etc/init.d/bs-tester start
 
-While you *can* run both a server and a worker on the same computer, you should make sure that
+While you *can* run both a master and a worker on the same computer, you should make sure that
 only one or the other has been installed, otherwise one /etc/init.d/bs-tester file will
 overwrite the other.

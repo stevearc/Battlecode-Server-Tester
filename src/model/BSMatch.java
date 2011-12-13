@@ -105,5 +105,9 @@ public class BSMatch {
 	public NetworkMatch buildNetworkMatch() {
 		return new NetworkMatch(run.getId(), id, run.getTeamA().getPlayerName(), run.getTeamB().getPlayerName(), map, seed);
 	}
+	
+	public String toMatchFileName() {
+		return getRun().getId() + getMap().getMapName() + getSeed() + ".rms";
+	}
 
 }

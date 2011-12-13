@@ -29,6 +29,17 @@ The Web Server - is an embedded server courtesy of Jetty that provides a web int
 You should be able to compile the project by simply running the command "ant".  This will build
 bs-tester.tar.gz which contains everything necessary for installation.
 
+#############
+## Testing ##
+#############
+I recommend *not* running the program from within eclipse.  It reads and writes to a bunch of local
+directories, and I prefer not to deal with the pollution of my eclipse workspace.  Instead, I 
+create two directories elsewhere (like /tmp) that contain a copy of the master and one of the
+worker.  Then if I need to make changes in eclipse and test them, I run "ant build" to build the 
+bs-tester.jar file and copy it into the /tmp/server and /tmp/worker directories.  The same thing
+goes for the js, css, png and other static files.  If you simply copy them into the directory of
+an existing working directory, the new files should be served up automatically.
+
 ############
 ## Thanks ##
 ############

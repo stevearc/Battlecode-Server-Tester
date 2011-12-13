@@ -89,7 +89,7 @@ public class MatchesServlet extends HttpServlet {
 			out.println("<td><font color='red'>" + match.getaPoints() + "</font>/<font color='blue'>" + 
 					match.getbPoints() + "</font></td>");
 			out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
-					strId + match.getMap().getMapName() + match.getSeed() + ".rms'\"></td>");
+					match.toMatchFileName() + "'\"></td>");
 			out.println("</tr>");
 		}
 		em.close();
