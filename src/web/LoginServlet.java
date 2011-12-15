@@ -16,9 +16,9 @@ import javax.servlet.http.HttpServletResponse;
 import model.BSUser;
 
 import common.Config;
+import common.HibernateUtil;
 import common.Util;
 
-import dataAccess.HibernateUtil;
 
 /**
  * Displays the login form

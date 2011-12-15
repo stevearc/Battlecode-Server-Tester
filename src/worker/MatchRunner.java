@@ -5,11 +5,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import model.BSMatch;
 
 import common.Config;
 import common.NetworkMatch;
@@ -66,13 +65,6 @@ public class MatchRunner implements Runnable {
 	 * Runs the battlecode match
 	 */
 	public void run() {
-		String status = null;
-		int winner = 0;
-		int win_condition = 0;
-		double a_points = 0;
-		double b_points = 0;
-		byte[] data = null;
-		
 		String team_a = match.team_a.replaceAll("\\W", "_");
 		String team_b = match.team_b.replaceAll("\\W", "_");
 		try {
@@ -138,104 +130,43 @@ public class MatchRunner implements Runnable {
 				return;
 			if (curProcess.exitValue() != 0) {
 				_log.severe("Error running match\n" + output);
-				status = "error";
-				worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFailed(core, match);
 				return;
 			}
-
-			// Kind of sloppy win detection, but it works
-			int a_index = output.indexOf("(A) wins");
-			int b_index = output.indexOf("(B) wins");
-			if (a_index == -1) {
-				if (b_index == -1) {
-					status = "error";
-					_log.warning("Unknown error running match\n" + output);
-					_log.warning("^ error: a_index: " + a_index + " b_index: " + b_index);
-					if (!stop) 
-						worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
-					return;
-				}
-				// If A loses, winner = 0
-				winner = 0;
-			} else {
-				// If A wins, winner = 1
-				winner = 1;
-			}
-
-			// Detect how the match was finished
-			if (output.indexOf("Reason: The losing team was destroyed.") >= 0) {
-				win_condition = 0;
-			} else if (output.indexOf("production and Team") >= 0) {
-				win_condition = 1;
-			} else {
-				win_condition = 2;
-			}
-			String a_points_str = getMatch(output, "Team A had [0-9]+\\.[0-9]+");
-			if (!"".equals(a_points_str))
-				a_points = Double.parseDouble(a_points_str.substring("Team A had ".length()));
-			String b_points_str = getMatch(output, "Team B had [0-9]+\\.[0-9]+");
-			if (!"".equals(b_points_str))
-				b_points = Double.parseDouble(b_points_str.substring("Team B had ".length()));
 
 			_log.info("Finished: " + match);
 		} catch (Exception e) {
 			if (!stop) {
 				_log.log(Level.SEVERE, "Failed to run match", e);
-				status = "error";
-				worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFailed(core, match);
 			}
 			return;
 		}
 
 		// Read in the replay file
 		String matchFile = config.install_dir + "/battlecode/core" + core + "/" + match.map + ".rms";
+		byte[] data;
+		GameData gameData;
 		try {
 			data = Util.getFileData(matchFile);
+			gameData = new GameData(matchFile);
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
-			status = "error";
 			if (!stop)
-				worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
+				worker.matchFailed(core, match);
+			return;
+		} catch (ClassNotFoundException e) {
+			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
+			if (!stop)
+				worker.matchFailed(core, match);
 			return;
 		}
 
-		status = "ok";
-		if (!stop)
-			worker.matchFinish(core, match, status, winner, win_condition, a_points, b_points, data);
-	}
-
-	/**
-	 * Finds the first instance of a pattern in a regex and returns that
-	 * @param contents
-	 * @param regex
-	 * @return
-	 */
-	private static String getMatch(String contents, String regex){
-		return getAllMatches(contents, regex).get(0);
-	}
-
-	/**
-	 * Finds all patterns matching a regex and returns them in an array.
-	 * @param contents
-	 * @param regex
-	 * @return an array of the patterns in the contents String
-	 */
-	private static ArrayList<String> getAllMatches(String contents, String regex){
-		Pattern pattern = Pattern.compile(regex);
-		Matcher matcher = pattern.matcher(contents);
-		ArrayList<String> patterns = new ArrayList<String>();
-		while(matcher.find()){
-			String match = matcher.group();
-			if (!"".equals(match)){
-				patterns.add(matcher.group());
-			}
+		if (!stop) {
+			worker.matchFinish(core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
 		}
-		if (patterns.size() == 0){
-			patterns.add("");
-		}
-		return patterns;
 	}
-
+	
 	@Override
 	public String toString() {
 		return match.toString();

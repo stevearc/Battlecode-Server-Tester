@@ -18,8 +18,8 @@ import model.BSPlayer;
 import model.BSRun;
 
 import common.Config;
+import common.HibernateUtil;
 
-import dataAccess.HibernateUtil;
 
 /**
  * Upload players

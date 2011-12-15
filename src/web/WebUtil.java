@@ -10,7 +10,9 @@ import javax.servlet.http.HttpServletResponse;
 import model.BSMap;
 import model.BSMatch;
 import model.BSRun;
-import dataAccess.HibernateUtil;
+import model.TEAM;
+
+import common.HibernateUtil;
 
 /**
  * Utility class with static methods for common web server functions
@@ -109,8 +111,8 @@ public class WebUtil {
 	 */
 	public static float getWinPercentage(BSRun run, BSMap map) {
 		EntityManager em = HibernateUtil.getEntityManager();
-		List<Object[]> valuePairs = em.createQuery("select match.winner, count(*) from BSMatch match where match.run = ? and " +
-				"match.map = ? and match.status = ? group by match.winner", Object[].class)
+		List<Object[]> valuePairs = em.createQuery("select match.result.winner, count(*) from BSMatch match where match.run = ? and " +
+				"match.map = ? and match.status = ? group by match.result.winner", Object[].class)
 				.setParameter(1, run)
 				.setParameter(2, map)
 				.setParameter(3, BSMatch.STATUS.FINISHED)
@@ -118,9 +120,9 @@ public class WebUtil {
 		long teamAWins = 0;
 		long teamBWins = 0;
 		for (Object[] valuePair: valuePairs) {
-			if (valuePair[0] == BSMatch.TEAM.TEAM_A) {
+			if (valuePair[0] == TEAM.A) {
 				teamAWins = (Long) valuePair[1];
-			} else if (valuePair[0] == BSMatch.TEAM.TEAM_B) {
+			} else if (valuePair[0] == TEAM.B) {
 				teamBWins = (Long) valuePair[1];
 			}
 		}
@@ -145,12 +147,12 @@ public class WebUtil {
 			return "<font color='red'>" + (int) (100*percent) + "</font>";
 	}
 	
-	public static BSMatch.TEAM getWinner(Long aWins, Long bWins) {
+	public static TEAM getWinner(Long aWins, Long bWins) {
 		double percent = aWins.doubleValue()/(aWins + bWins);
 		if (percent < WIN_THRESHOLD) {
-			return BSMatch.TEAM.TEAM_B;
+			return TEAM.B;
 		} else if (percent > 1 - WIN_THRESHOLD) {
-			return BSMatch.TEAM.TEAM_A;
+			return TEAM.A;
 		} else {
 			return null;
 		}

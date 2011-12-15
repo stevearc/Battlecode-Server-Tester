@@ -14,7 +14,9 @@ import model.BSMap;
 import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
-import dataAccess.HibernateUtil;
+import model.TEAM;
+
+import common.HibernateUtil;
 
 /**
  * Displays the list of all runs
@@ -69,16 +71,16 @@ public class IndexServlet extends HttpServlet {
 			out.println("<tr>");
 			
 			// TODO: cache this data in BSRun
-			List<Object[]> wins = em.createQuery("select match.winner, count(*) from BSMatch match where match.run = ? and match.status = ? group by match.winner", Object[].class)
+			List<Object[]> wins = em.createQuery("select match.result.winner, count(*) from BSMatch match where match.run = ? and match.status = ? group by match.result.winner", Object[].class)
 			.setParameter(1, r)
 			.setParameter(2, BSMatch.STATUS.FINISHED)
 			.getResultList();
 			long aWins = 0;
 			long bWins = 0;
 			for (Object[] valuePair: wins) {
-				if (valuePair[0] == BSMatch.TEAM.TEAM_A) {
+				if (valuePair[0] == TEAM.A) {
 					aWins = (Long) valuePair[1];
-				} else if (valuePair[0] == BSMatch.TEAM.TEAM_B) {
+				} else if (valuePair[0] == TEAM.B) {
 					bWins = (Long) valuePair[1];
 				}
 			}

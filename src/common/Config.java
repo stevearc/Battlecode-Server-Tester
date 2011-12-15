@@ -20,6 +20,7 @@ import master.WebPollHandler;
  *
  */
 public class Config {
+	public static final int RESTART_STATUS = 121;
 	private static Config rootConfig;
 	private static Master rootMaster;
 	private static WebPollHandler webPollHandler;

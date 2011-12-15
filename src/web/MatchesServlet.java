@@ -12,7 +12,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.BSMatch;
 import model.BSRun;
-import dataAccess.HibernateUtil;
+import model.TEAM;
+
+import common.HibernateUtil;
 
 
 
@@ -49,7 +51,7 @@ public class MatchesServlet extends HttpServlet {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
 		out.println("<h2><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + run.getTeamB().getPlayerName() + "</font></h2>");
-		out.println("<h3>" + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
+		out.println("<h3>Wins by map: " + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
 		out.println("<br />");
 		out.println("<div class='tabbutton'>");
 		out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "\"' " +
@@ -68,7 +70,6 @@ public class MatchesServlet extends HttpServlet {
 				"<th class='desc'><h3>Winner</h3></th>" +
 				"<th class='desc'><h3>Size</h3></th>" +
 				"<th class='desc'><h3>Win condition</h3></th>" +
-				"<th class='desc'><h3>Points</h3></th>" +
 				"<th class='nosort'><h3>&nbsp;</h3></th>" +
 				"</tr>" +
 				"</thead>" +
@@ -82,12 +83,10 @@ public class MatchesServlet extends HttpServlet {
 			out.println("<tr>");
 			out.println("<td>" + match.getMap().getMapName() + "</td>");
 			out.println("<td>" + match.getSeed() + "</td>");
-			out.println("<td><font color='" + (match.getWinner() == BSMatch.TEAM.TEAM_A ? "red'>" + 
+			out.println("<td><font color='" + (match.getResult().getWinner() == TEAM.A ? "red'>" + 
 					run.getTeamA().getPlayerName() : "blue'>" + run.getTeamB().getPlayerName()) + "</font></td>");
 			out.println("<td>" + match.getMap().getSize() + "</td>");
-			out.println("<td>" + match.getWinCondition() + "</td>");
-			out.println("<td><font color='red'>" + match.getaPoints() + "</font>/<font color='blue'>" + 
-					match.getbPoints() + "</font></td>");
+			out.println("<td>" + match.getResult().getWinCondition() + "</td>");
 			out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
 					match.toMatchFileName() + "'\"></td>");
 			out.println("</tr>");

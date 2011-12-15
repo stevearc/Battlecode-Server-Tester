@@ -6,6 +6,7 @@ import javax.persistence.EntityManager;
 
 import master.Master;
 import model.BSUser;
+import model.MatchResult;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -16,12 +17,13 @@ import org.apache.commons.cli.ParseException;
 
 import web.ProxyServer;
 import web.WebServer;
+import worker.GameData;
 import worker.Worker;
 
 import common.Config;
+import common.HibernateUtil;
 import common.Util;
 
-import dataAccess.HibernateUtil;
 
 /**
  * Starts all threads and services
@@ -41,6 +43,7 @@ public class Main {
 		HelpFormatter formatter = new HelpFormatter();
 		options.addOption("s", "server", false, "run as server");
 		options.addOption("w", "worker", false, "run as worker");
+		options.addOption("a", "analyze", true, "analyze a match file");
 		options.addOption("h", "help", false, "display help text");
 		options.addOption("o", HTTP_PORT_OP, true, "what port for the http server to listen on (default 80)");
 		options.addOption("l", SSL_PORT_OP, true, "what port for the https server to listen on (default 443)");
@@ -83,6 +86,10 @@ public class Main {
 				Config c = new Config(false);
 				Config.setConfig(c);
 				new Thread(new Worker()).start();
+			} else if (cmd.hasOption('a')) {
+				GameData gameData = new GameData(cmd.getOptionValue('a'));
+				MatchResult result = gameData.analyzeMatch();
+				System.out.println(result);
 			} else {
 				System.out.println("Must specify if running as server or worker.  Do ./run.sh -h for help.");
 			}

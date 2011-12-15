@@ -9,25 +9,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 
 import common.NetworkMatch;
 
 @Entity
 public class BSMatch {
-	public static enum TEAM {TEAM_A, TEAM_B}
-	public static enum WIN_CONDITION {DESTROY, POINTS}
 	public static enum STATUS {QUEUED, RUNNING, FINISHED}
 	private Long id;
 	private BSRun run;
 	private BSMap map;
 	private Long seed;
 	private STATUS status;
-	private TEAM winner;
-	private WIN_CONDITION winCondition;
-	private Long rounds;
-	private Double aPoints;
-	private Double bPoints;
+	private MatchResult result;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="match_id_gen")
@@ -53,22 +48,9 @@ public class BSMatch {
 	public STATUS getStatus() {
 		return status;
 	}
-	@Enumerated(EnumType.STRING)
-	public TEAM getWinner() {
-		return winner;
-	}
-	@Enumerated(EnumType.STRING)
-	public WIN_CONDITION getWinCondition() {
-		return winCondition;
-	}
-	public Long getRounds() {
-		return rounds;
-	}
-	public Double getaPoints() {
-		return aPoints;
-	}
-	public Double getbPoints() {
-		return bPoints;
+	@OneToOne
+	public MatchResult getResult() {
+		return result;
 	}
 	
 	public void setId(Long id) {
@@ -86,20 +68,8 @@ public class BSMatch {
 	public void setStatus(STATUS status) {
 		this.status = status;
 	}
-	public void setWinner(TEAM winner) {
-		this.winner = winner;
-	}
-	public void setWinCondition(WIN_CONDITION winCondition) {
-		this.winCondition = winCondition;
-	}
-	public void setRounds(Long rounds) {
-		this.rounds = rounds;
-	}
-	public void setaPoints(Double aPoints) {
-		this.aPoints = aPoints;
-	}
-	public void setbPoints(Double bPoints) {
-		this.bPoints = bPoints;
+	public void setResult(MatchResult results) {
+		this.result = results;
 	}
 	
 	public NetworkMatch buildNetworkMatch() {

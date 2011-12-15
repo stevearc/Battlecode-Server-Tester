@@ -44,6 +44,7 @@ set_param() {
 setup_worker() {
     source etc/bs-tester.conf
     INSTALL_DIR=`pwd`
+    mkdir lib
 
     # Specify number of cores
     VALID=0

@@ -10,8 +10,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import common.HibernateUtil;
+
 import model.BSUser;
-import dataAccess.HibernateUtil;
 
 /**
  * Admin panel for confirming new users

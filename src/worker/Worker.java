@@ -21,6 +21,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import model.BSMap;
+import model.BSMatch;
+import model.MatchResult;
 import networking.Controller;
 import networking.Network;
 import networking.Packet;
@@ -66,6 +68,10 @@ public class Worker implements Controller, Runnable {
 		context.init(keyManagers, trustManagers, null);
 		sf = context.getSocketFactory();
 	}
+	
+	public synchronized void matchFailed(int core, NetworkMatch match) {
+		matchFinish(core, match, null, null, null);
+	}
 
 	/**
 	 * Send match data to master
@@ -78,9 +84,8 @@ public class Worker implements Controller, Runnable {
 	 * @param b_points
 	 * @param data
 	 */
-	public synchronized void matchFinish(int core, NetworkMatch match, String status, int winner, 
-			int win_condition, double a_points, double b_points, byte[] data) {
-		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, winner, win_condition, a_points, b_points, data});
+	public synchronized void matchFinish(int core, NetworkMatch match, BSMatch.STATUS status, MatchResult result, byte[] data) {
+		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, result, data});
 		network.send(p);
 		running[core].stop();
 		running[core] = null;
@@ -216,6 +221,7 @@ public class Worker implements Controller, Runnable {
 		try {
 			if (dep.battlecodeServer != null) {
 				writeDataToFile(dep.battlecodeServer, config.install_dir + "/battlecode/lib/battlecode-server.jar");
+				writeDataToFile(dep.battlecodeServer, config.install_dir + "/lib/battlecode-server.jar");
 			}
 			if (dep.idata != null) {
 				writeDataToFile(dep.idata, config.install_dir + "/battlecode/idata");
@@ -228,6 +234,12 @@ public class Worker implements Controller, Runnable {
 			}
 			if (dep.teamB != null) {
 				writeDataToFile(dep.teamB, config.install_dir + "/battlecode/teams/" + dep.teamBName + ".jar");
+			}
+			
+			// If we wrote the battlecode-server.jar file, we need to restart
+			if (dep.battlecodeServer != null) {
+				_log.info("battlecode-server.jar updated, restarting worker");
+				System.exit(Config.RESTART_STATUS);
 			}
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Could not create player or map file", e);

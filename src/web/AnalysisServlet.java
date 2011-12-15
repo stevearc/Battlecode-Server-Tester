@@ -9,7 +9,9 @@ import model.BSMap;
 import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
-import dataAccess.HibernateUtil;
+import model.TEAM;
+
+import common.HibernateUtil;
 
 /**
  * View results of one team against all teams ever run against broken down by map size
@@ -35,12 +37,12 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 	protected void writeTable(PrintWriter out, BSPlayer currentPlayer) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		
-		List<Object[]> dataSets = em.createQuery("select run, map, match.winner, count(*) from BSMatch match " +
+		List<Object[]> dataSets = em.createQuery("select run, map, match.result.winner, count(*) from BSMatch match " +
 				"inner join match.map map inner join match.run run where " +
 				"(match.run.teamA = ? or match.run.teamB = ?) and match.status = ? " +
 				"and (run.status = ? or run.status = ?) " + 
-				"group by run, map, match.winner " +
-				"order by run, map, match.winner", Object[].class)
+				"group by run, map, match.result.winner " +
+				"order by run, map, match.result.winner", Object[].class)
 				.setParameter(1, currentPlayer)
 				.setParameter(2, currentPlayer)
 				.setParameter(3, BSMatch.STATUS.FINISHED)
@@ -64,11 +66,11 @@ public class AnalysisServlet extends AbstractAnalysisServlet {
 					i++;
 				}
 				int index;
-				BSMatch.TEAM winner = WebUtil.getWinner(aCount, bCount);
-				if (winner == BSMatch.TEAM.TEAM_A) {
+				TEAM winner = WebUtil.getWinner(aCount, bCount);
+				if (winner == TEAM.A) {
 					index = (run.getTeamA().equals(currentPlayer) ? 0 : 2);
 					mapSizeResults[map.getSize().ordinal()][index]++;
-				} else if (winner == BSMatch.TEAM.TEAM_B) {
+				} else if (winner == TEAM.B) {
 					index = (run.getTeamA().equals(currentPlayer) ? 2 : 0);
 					mapSizeResults[map.getSize().ordinal()][index]++;
 				} else {

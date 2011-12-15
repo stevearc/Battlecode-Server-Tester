@@ -1,4 +1,4 @@
-package dataAccess;
+package common;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -8,6 +8,8 @@ import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
 import model.BSUser;
+import model.MatchResult;
+import model.TeamMatchResult;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
@@ -27,6 +29,7 @@ public class HibernateUtil {
 		// Uncomment this line to log SQL in the console
 		{"hibernate.show_sql", "true"},
 		{"hibernate.hbm2ddl.auto", "validate"},
+		{"hibernate.search.autoregister_listeners", "false"},
 	};
 	private static final Configuration config = buildConfiguration();
 	private static final SessionFactory sessionFactory = buildSessionFactory();
@@ -35,12 +38,13 @@ public class HibernateUtil {
 	private static Configuration buildConfiguration() {
 		try {
 			Configuration cfg = new Configuration();
-			cfg.addPackage("src.beans");
+			cfg.addPackage("src.model");
 			cfg.addAnnotatedClass(BSRun.class);
 			cfg.addAnnotatedClass(BSMap.class);
 			cfg.addAnnotatedClass(BSUser.class);
 			cfg.addAnnotatedClass(BSMatch.class);
 			cfg.addAnnotatedClass(BSPlayer.class);
+			cfg.addAnnotatedClass(MatchResult.class);
 			for (String[] keyVal: properties) {
 				cfg.setProperty(keyVal[0], keyVal[1]);
 			}
@@ -75,12 +79,14 @@ public class HibernateUtil {
 
 	private static EntityManagerFactory buildEntityManagerFactory() {
 		Ejb3Configuration cfg = new Ejb3Configuration();
-		cfg.addPackage("src.beans");
+		cfg.addPackage("src.model");
 		cfg.addAnnotatedClass(BSRun.class);
 		cfg.addAnnotatedClass(BSMap.class);
 		cfg.addAnnotatedClass(BSUser.class);
 		cfg.addAnnotatedClass(BSMatch.class);
 		cfg.addAnnotatedClass(BSPlayer.class);
+		cfg.addAnnotatedClass(MatchResult.class);
+		cfg.addAnnotatedClass(TeamMatchResult.class);
 		for (String[] keyVal: properties) {
 			cfg.setProperty(keyVal[0], keyVal[1]);
 		}

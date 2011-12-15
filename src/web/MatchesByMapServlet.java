@@ -10,10 +10,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import common.HibernateUtil;
+
 import model.BSMap;
 import model.BSMatch;
 import model.BSRun;
-import dataAccess.HibernateUtil;
 
 /**
  * Displays matches for a given run aggregated by map
@@ -68,8 +69,8 @@ public class MatchesByMapServlet extends HttpServlet {
 					"</tr>" +
 					"</thead>" +
 			"<tbody>");
-			List<Object[]> valuePairs = em.createQuery("select map, match.winner, count(*) from BSMatch match inner join match.map as map where match.run = ?" +
-					"and match.status = ? group by map, match.winner order by map, match.winner", Object[].class)
+			List<Object[]> valuePairs = em.createQuery("select map, match.result.winner, count(*) from BSMatch match inner join match.map as map where match.run = ?" +
+					"and match.status = ? group by map, match.result.winner order by map, match.result.winner", Object[].class)
 					.setParameter(1, run)
 					.setParameter(2, BSMatch.STATUS.FINISHED)
 					.getResultList();

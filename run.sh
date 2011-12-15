@@ -5,4 +5,11 @@ if [ ! -e bs-tester.jar ]; then
   exit 1
 fi
 
-java -jar bs-tester.jar $*
+
+START_EXIT_STATUS=121
+status=$START_EXIT_STATUS
+while [ "$status" = "$START_EXIT_STATUS" ]
+do
+    java -jar bs-tester.jar $*
+    status=$?
+done

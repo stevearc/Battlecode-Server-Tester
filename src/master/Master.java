@@ -22,16 +22,17 @@ import model.BSMap;
 import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
+import model.MatchResult;
 import networking.CometCmd;
 import networking.CometMessage;
 import networking.Packet;
 
 import common.Config;
 import common.Dependencies;
+import common.HibernateUtil;
 import common.NetworkMatch;
 import common.Util;
 
-import dataAccess.HibernateUtil;
 
 /**
  * Handles distribution of load to connected workers
@@ -221,25 +222,23 @@ public class Master {
 	 */
 	public synchronized void matchFinished(WorkerRepr worker, Packet p) {
 		NetworkMatch m = (NetworkMatch) p.get(0);
-		String status = (String) p.get(1);
-		int winner = (Integer) p.get(2);
-		int win_condition = (Integer) p.get(3);
-		double a_points = (Double) p.get(4);
-		double b_points = (Double) p.get(5);
-		byte[] data = (byte[]) p.get(6);
+		BSMatch.STATUS status = (BSMatch.STATUS) p.get(1);
+		MatchResult result = (MatchResult) p.get(2);
+		byte[] data = (byte[]) p.get(3);
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {worker.toHTML(), m.toMapString()}));
 		try {
 			EntityManager em = HibernateUtil.getEntityManager();
 			BSMatch match = em.find(BSMatch.class, m.id);
 			if (match.getStatus() != BSMatch.STATUS.RUNNING || match.getRun().getStatus() != BSRun.STATUS.RUNNING) {
 				// Match was already finished by another worker
-			} else if ("ok".equals(status)) {
-				match.setWinner(winner == 1 ? BSMatch.TEAM.TEAM_A : BSMatch.TEAM.TEAM_B);
-				match.setWinCondition(BSMatch.WIN_CONDITION.values()[win_condition]);
-				match.setaPoints(a_points);
-				match.setbPoints(b_points);
+			} else if (status == BSMatch.STATUS.FINISHED) {
+				em.getTransaction().begin();
+				em.persist(result);
+				em.flush();
+				em.getTransaction().commit();
+				match.setResult(result);
 				match.setStatus(BSMatch.STATUS.FINISHED);
-				_log.info("Match finished: " + m + " winner: " + (winner == 1 ? "A" : "B"));
+				_log.info("Match finished: " + m + " winner: " + result.getWinner());
 				File outFile = new File(config.install_dir + "/matches/" + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
 				outFile.createNewFile();
 				FileOutputStream fos = new FileOutputStream(outFile);
@@ -248,7 +247,7 @@ public class Master {
 				em.merge(match);
 				em.flush();
 				em.getTransaction().commit();
-				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new String[] {""+m.run_id, ""+winner}));
+				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new String[] {""+m.run_id, ""+result.getWinner()}));
 			} else {
 				_log.warning("Match " + m + " on worker " + worker + " failed");
 			}
