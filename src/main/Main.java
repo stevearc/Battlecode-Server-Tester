@@ -1,10 +1,20 @@
 package main;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
 
 import javax.persistence.EntityManager;
 
 import master.Master;
+import model.BSMatch;
+import model.BSPlayer;
+import model.BSRun;
 import model.BSUser;
 import model.MatchResult;
 
@@ -43,7 +53,11 @@ public class Main {
 		HelpFormatter formatter = new HelpFormatter();
 		options.addOption("s", "server", false, "run as server");
 		options.addOption("w", "worker", false, "run as worker");
-		options.addOption("a", "analyze", true, "analyze a match file");
+		if (Config.DEBUG) {
+			options.addOption("a", "analyze", true, "analyze a match file");
+			options.addOption("p", "populate", false, "populate the server DB with mock data");
+			options.addOption("m", "mock-worker", false, "run as a mock-worker (can be run with -s option)");
+		}
 		options.addOption("h", "help", false, "display help text");
 		options.addOption("o", HTTP_PORT_OP, true, "what port for the http server to listen on (default 80)");
 		options.addOption("l", SSL_PORT_OP, true, "what port for the https server to listen on (default 443)");
@@ -81,6 +95,9 @@ public class Main {
 				new Thread(new ProxyServer()).start();
 				new Thread(new WebServer()).start();
 				m.start();
+				if (cmd.hasOption('p')) {
+					createMockData();
+				}
 			} // Start the worker
 			else if (cmd.hasOption('w')){
 				Config c = new Config(false);
@@ -90,12 +107,85 @@ public class Main {
 				GameData gameData = new GameData(cmd.getOptionValue('a'));
 				MatchResult result = gameData.analyzeMatch();
 				System.out.println(result);
+			} else if (cmd.hasOption('m')) {
+				Config c = new Config(false);
+				Config.setConfig(c);
+				Config.MOCK_WORKER = true;
+				c.cores = 16;
+				new Thread(new Worker()).start();
 			} else {
 				System.out.println("Must specify if running as server or worker.  Do ./run.sh -h for help.");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private static void createMockData() throws IOException {
+		EntityManager em = HibernateUtil.getEntityManager();
+		File checkFile = new File(Config.getConfig().install_dir + "/battlecode/teams/mock_player.jar");
+		BSPlayer bsPlayer;
+		if (!checkFile.exists()) {
+			FileInputStream istream = new FileInputStream(new File("lib/submission.jar"));
+			FileOutputStream ostream = new FileOutputStream(Config.getConfig().install_dir + "/battlecode/teams/mock_player.jar");
+			byte[] buffer = new byte[1000];
+			int len = 0;
+			while ((len = istream.read(buffer)) != -1) {
+				ostream.write(buffer, 0, len);
+			}
+			istream.close();
+			ostream.close();
+			bsPlayer = new BSPlayer();
+			bsPlayer.setPlayerName("mock_player");
+			em.persist(bsPlayer);
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			em.refresh(bsPlayer);
+		} else {
+			bsPlayer = em.createQuery("from BSPlayer", BSPlayer.class).getResultList().get(0);
+		}
+
+		List<Long> seeds = new ArrayList<Long>();
+		Random r = new Random();
+		for (int i = 0; i < 10; i++) {
+			seeds.add(r.nextLong());
+		}
+		while (!Config.getMaster().isInitialized()) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+			}
+		}
+		Config.getMaster().updateMaps();
+		List<Long> mapIds = em.createQuery("select map.id from BSMap map", Long.class).getResultList();
+		for (int i = 0; i < 50; i++) {
+			Config.getMaster().queueRun(bsPlayer.getId(), bsPlayer.getId(), seeds, mapIds);
+		}
+		
+		em.getTransaction().begin();
+		List<BSRun> runs = em.createQuery("from BSRun", BSRun.class).getResultList();
+		for (BSRun run: runs) {
+			run.setStatus(BSRun.STATUS.COMPLETE);
+			run.setEnded(new Date(new Date().getTime() + 100000 + r.nextInt(100000000)));
+			em.merge(run);
+		}
+		em.flush();
+		em.getTransaction().commit();
+		
+		List<BSMatch> matches = em.createQuery("from BSMatch", BSMatch.class).getResultList();
+		MatchResult mock;
+		em.getTransaction().begin();
+		for (BSMatch m: matches) {
+			mock = MatchResult.constructMockMatchResult();
+			m.setResult(mock);
+			m.setStatus(BSMatch.STATUS.FINISHED);
+			em.persist(mock);
+			em.merge(m);
+		}
+		em.flush();
+		em.getTransaction().commit();
+		em.close();
 	}
 
 	/**

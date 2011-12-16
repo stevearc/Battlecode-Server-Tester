@@ -1,6 +1,7 @@
 package model;
 
 import java.io.Serializable;
+import java.util.Random;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
@@ -24,6 +25,19 @@ public class MatchResult implements Serializable {
 	private Long rounds;
 	private TeamMatchResult aResult;
 	private TeamMatchResult bResult;
+	/* TODO:
+	private Double Awesomeness;
+	 */
+	
+	public static MatchResult constructMockMatchResult() {
+		MatchResult result = new MatchResult();
+		Random r = new Random();
+		result.setWinCondition(WIN_CONDITION.values()[r.nextInt(WIN_CONDITION.values().length)]);
+		result.setWinner(TEAM.values()[r.nextInt(TEAM.values().length)]);
+		result.setRounds(new Long(r.nextInt(5000)));
+		// TODO: set TeamMatchResults
+		return result;
+	}
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="match_result_id_gen")
@@ -34,7 +48,9 @@ public class MatchResult implements Serializable {
 	@Embedded
 	@AttributeOverrides( {
 		@AttributeOverride(name="activeRobots", column = @Column(name="activeRobots_A")),
-		@AttributeOverride(name="fluxDrain", column = @Column(name="fluxDrain_A"))
+		@AttributeOverride(name="fluxDrain", column = @Column(name="fluxDrain_A")),
+		@AttributeOverride(name="fluxIncome", column = @Column(name="fluxIncome_A")),
+		@AttributeOverride(name="fluxReserve", column = @Column(name="fluxReserve_A"))
 	})
 	public TeamMatchResult getaResult() {
 		return aResult;
@@ -42,7 +58,9 @@ public class MatchResult implements Serializable {
 	@Embedded
 	@AttributeOverrides( {
 		@AttributeOverride(name="activeRobots", column = @Column(name="activeRobots_B")),
-		@AttributeOverride(name="fluxDrain", column = @Column(name="fluxDrain_B"))
+		@AttributeOverride(name="fluxDrain", column = @Column(name="fluxDrain_B")),
+		@AttributeOverride(name="fluxIncome", column = @Column(name="fluxIncome_B")),
+		@AttributeOverride(name="fluxReserve", column = @Column(name="fluxReserve_B"))
 	})
 	public TeamMatchResult getbResult() {
 		return bResult;

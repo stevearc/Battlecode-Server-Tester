@@ -2,7 +2,8 @@ package master;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import networking.Controller;
@@ -23,14 +24,14 @@ public class WorkerRepr implements Controller {
 	private Config config;
 	private Logger _log;
 	private Network net;
-	private ArrayList<NetworkMatch> runningMatches;
+	private HashSet<NetworkMatch> runningMatches;
 	private int numCores = 0;
 
 	public WorkerRepr(Socket s) throws IOException {
 		config = Config.getConfig();
 		_log = config.getLogger();
 		this.net = new Network(this, s);
-		runningMatches = new ArrayList<NetworkMatch>();
+		runningMatches = new HashSet<NetworkMatch>();
 	}
 
 	/**
@@ -83,9 +84,9 @@ public class WorkerRepr implements Controller {
 
 	/**
 	 * 
-	 * @return List of all Matches currently being run on the worker
+	 * @return Set of all Matches currently being run on the worker
 	 */
-	public synchronized ArrayList<NetworkMatch> getRunningMatches() {
+	public synchronized Set<NetworkMatch> getRunningMatches() {
 		return runningMatches;
 	}
 
@@ -115,7 +116,7 @@ public class WorkerRepr implements Controller {
 
 	@Override
 	public String toString() {
-		return net.toString() + ": " + runningMatches;
+		return net.toString();// + ": " + runningMatches;
 	}
 
 	/**

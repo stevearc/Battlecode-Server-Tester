@@ -26,8 +26,6 @@ public class HibernateUtil {
 		{"hibernate.connection.username", "sa"},
 		{"hibernate.connection.password", ""},
 		{"hibernate.connection.url", "jdbc:hsqldb:file:./BSTesterDB"},
-		// Uncomment this line to log SQL in the console
-		{"hibernate.show_sql", "true"},
 		{"hibernate.hbm2ddl.auto", "validate"},
 		{"hibernate.search.autoregister_listeners", "false"},
 	};
@@ -47,6 +45,9 @@ public class HibernateUtil {
 			cfg.addAnnotatedClass(MatchResult.class);
 			for (String[] keyVal: properties) {
 				cfg.setProperty(keyVal[0], keyVal[1]);
+			}
+			if (Config.DEBUG) {
+				cfg.setProperty("hibernate.show_sql", "true");
 			}
 			return cfg;
 		}
@@ -89,6 +90,9 @@ public class HibernateUtil {
 		cfg.addAnnotatedClass(TeamMatchResult.class);
 		for (String[] keyVal: properties) {
 			cfg.setProperty(keyVal[0], keyVal[1]);
+		}
+		if (Config.DEBUG) {
+			cfg.setProperty("hibernate.show_sql", "true");
 		}
 		return cfg.buildEntityManagerFactory();
 	}

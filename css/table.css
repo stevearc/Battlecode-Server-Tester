@@ -1,0 +1,151 @@
+table {
+    margin 0 auto;
+    width: 100%;
+    clear: both;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+table thead th {
+    padding: 3px 0px 3px 10px;
+    cursor: pointer;
+    * cursor: hand;
+}
+
+table tfoot th {
+    padding: 3px 0px 3px 10px;
+    font-weight: bold;
+    font-weight: normal;
+}
+
+div.dataTables_wrapper .ui-widget-header {
+    font-weight: normal;
+}
+
+
+/*
+* Sort arrow icon positioning
+*/
+table thead th div.DataTables_sort_wrapper {
+    position: relative;
+    padding-right: 20px;
+    padding-right: 20px;
+}
+
+table thead th div.DataTables_sort_wrapper span {
+    position: absolute;
+    top: 50%;
+    margin-top: -8px;
+    right: 0;
+}
+
+table td {
+    padding: 3px 10px;
+}
+
+table tr:hover {
+    background-color: 6FB9B9;
+}
+
+table td.center {
+    text-align: center;
+}
+
+.dataTables_wrapper {
+    position: relative;
+    min-height: 302px;
+    _height: 302px;
+    clear: both;
+}
+
+.dataTables_processing {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    width: 250px;
+    margin-left: -125px;
+    border: 1px solid #ddd;
+    text-align: center;
+    color: #999;
+    font-size: 11px;
+    padding: 2px 0;
+}
+
+.dataTables_length {
+    width: 40%;
+    float: left;
+}
+
+.dataTables_filter {
+    width: 50%;
+    float: right;
+    text-align: right;
+}
+
+.dataTables_info {
+    width: 50%;
+    float: left;
+}
+
+.dataTables_paginate {
+    float: right;
+    text-align: right;
+}
+
+/* Pagination nested */
+.paginate_disabled_previous, .paginate_enabled_previous, .paginate_disabled_next, .paginate_enabled_next {
+    height: 19px;
+    width: 19px;
+    margin-left: 3px;
+    float: left;
+}
+
+.paginate_disabled_previous {
+    background-image: url('../images/back_disabled.jpg');
+}
+
+.paginate_enabled_previous {
+    background-image: url('../images/back_enabled.jpg');
+}
+
+.paginate_disabled_next {
+    background-image: url('../images/forward_disabled.jpg');
+}
+
+.paginate_enabled_next {
+    background-image: url('../images/forward_enabled.jpg');
+}
+
+.fg-toolbar {
+    padding: 5px;
+}
+
+.odd {
+    background-color:#DFF;
+}
+
+.even {
+    background-color:#EFF;
+}
+
+.paging_two_button .ui-button {
+    float: left;
+    cursor: pointer;
+    * cursor: hand;
+}
+
+.paging_full_numbers .ui-button {
+    padding: 2px 6px;
+    margin: 0;
+    cursor: pointer;
+    * cursor: hand;
+}
+
+.dataTables_paginate .ui-button {
+    margin-right: -0.1em !important;
+}
+
+.paging_full_numbers {
+    width: 350px !important;
+}
+

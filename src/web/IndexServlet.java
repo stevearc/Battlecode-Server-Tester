@@ -34,26 +34,24 @@ public class IndexServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
-		out.println("<link rel=\"stylesheet\" href=\"/css/tinytable.css\" />");
 		out.println("<link rel=\"stylesheet\" href=\"/css/tabs.css\" />");
+		out.println("<link rel=\"stylesheet\" href=\"/css/table.css\" />");
 		out.println("</head>");
 		out.println("<body>");
 
 		WebUtil.writeTabs(response, out, toString());
+		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
-		out.println("<div id=\"tablewrapper\">");
-
-		WebUtil.printTableHeader(out, "sorter");
-		out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"table\" class=\"tinytable\">" +
+		out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"run_table\">" +
 				"<thead>" + 
 				"<tr>" +
-				"<th class='desc'><h3>Run ID</h3></th>" +
-				"<th class='desc'><h3>Team A</h3></th>" +
-				"<th class='desc'><h3>Team B</h3></th>" +
-				"<th class='desc'><h3>Wins</h3></th>" +
-				"<th class='desc'><h3>Status</h3></th>" +
-				"<th class='desc'><h3>Time</h3></th>" +
-				"<th class='nosort'><h3>Control</h3></th>" +
+				"<th>Run ID</th>" +
+				"<th>Team A</th>" +
+				"<th>Team B</th>" +
+				"<th>Wins</th>" +
+				"<th>Status</th>" +
+				"<th>Time</th>" +
+				"<th>Control</th>" +
 				"</tr>" +
 				"</thead>" +
 		"<tbody>");
@@ -102,7 +100,7 @@ public class IndexServlet extends HttpServlet {
 				break;
 			case COMPLETE:
 				out.println(td + "Complete</td>");
-				out.println(td + r.printTimeTaken() + "</td>");
+				out.println(td + "<span style='display:none'>" + r.calculateTimeTaken()/10000000. + "</span>" + r.printTimeTaken() + "</td>");
 				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", true)\"></td>");
 				break;
 			case ERROR:
@@ -124,18 +122,13 @@ public class IndexServlet extends HttpServlet {
 		}
 		out.println("</tbody>");
 		out.println("</table>");
-		WebUtil.printTableFooter(out, "sorter");
 
 		// Begin the New Run form
 		List<BSPlayer> players = em.createQuery("from BSPlayer player order by player.playerName desc", BSPlayer.class).getResultList();
-		out.println("<br /><br />");
 		String background = "#CEFFFC";
 		out.println("<div class='tabbutton'>");
 		out.println("<a onClick='toggleNewRun()' " +
 		"style='cursor:pointer;'><span>New Run</span></a>");
-		out.println("<p>&nbsp;</p>");
-		out.println("<p>&nbsp;</p>");
-		out.println("<p style='background:" + background + "'>&nbsp;</p>");
 		out.println("<form id='add_run' class=\"removed\" action=\"" + response.encodeURL(RunServlet.NAME) + "\" " +
 				"style='background:" + background + "'>");
 		out.println("<select id='team_a_button'>");
@@ -168,12 +161,12 @@ public class IndexServlet extends HttpServlet {
 		}
 
 		// Table of maps
-		out.println("<table style='width:50%;margin:0 auto;' cellpadding='0' cellspacing='0' border='0' id='map_table' class='tinytable'>");
+		out.println("<table cellpadding='0' cellspacing='0' border='0' id='map_table'>");
 		out.println("<thead>");
-		out.println("<tr><th class='nosort' style='text-align:center'><input id='maps_checkbox' " +
+		out.println("<tr><th><input id='maps_checkbox' " +
 				"onClick='toggleAllMaps()' type='checkbox'></th>" +
-				"<th class='desc'><h3>Map</h3></th>" +
-		"<th class='desc'><h3>Size</h3></th></tr>");
+				"<th>Map</th>" +
+		"<th>Size</th></tr>");
 		out.println("</thead><tbody>");
 		List<BSMap> maps = em.createQuery("from BSMap", BSMap.class).getResultList();
 		for (BSMap m: maps) {
@@ -211,8 +204,6 @@ public class IndexServlet extends HttpServlet {
 		out.println("<script type=\"text/javascript\" src=\"js/countdown.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/async.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/index.js\"></script>");
-		out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
-		out.println("<script type=\"text/javascript\" src=\"js/init_table.js\"></script>");
 		out.println("</body></html>");
 		em.close();
 	}

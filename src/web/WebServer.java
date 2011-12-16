@@ -88,6 +88,11 @@ public class WebServer implements Runnable {
 			imgContext.setContextPath("/images");
 			imgContext.setHandler(new ImageHandler("images"));
 			
+			// Serve static image files
+			ContextHandler imgContext2 = new ContextHandler();
+			imgContext2.setContextPath("/css/images");
+			imgContext2.setHandler(new ImageHandler("images"));
+			
 			// Serve static match files
 			ContextHandler matchContext = new ContextHandler();
 			matchContext.setContextPath("/matches");
@@ -95,7 +100,7 @@ public class WebServer implements Runnable {
 			
 			// Add contexts
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.setHandlers(new Handler[] {jsContext, cssContext, imgContext, matchContext, context});
+			contexts.setHandlers(new Handler[] {jsContext, cssContext, imgContext, imgContext2, matchContext, context});
 			server.setHandler(contexts);
 			
 			SslSelectChannelConnector ssl_connector = new SslSelectChannelConnector();

@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import javax.persistence.PersistenceException;
 
 import model.BSMap;
 import model.BSMatch;
@@ -50,6 +49,7 @@ public class Master {
 	private File pendingIdataFile;
 	private String battlecodeServerHash;
 	private String idataHash;
+	private boolean initialized;
 
 	public Master() throws Exception {
 		config = Config.getConfig();
@@ -80,6 +80,11 @@ public class Master {
 				}
 			}
 		}).start();
+		initialized = true;
+	}
+	
+	public synchronized boolean isInitialized() {
+		return initialized;
 	}
 
 	/**
@@ -117,6 +122,7 @@ public class Master {
 		wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {""+newRun.getId(), 
 				teamA.getPlayerName(), teamB.getPlayerName()}));
 		startRun();
+		_log.info("Queued new run: " + newRun);
 	}
 
 	public synchronized void updateBattlecodeFiles(File battlecode_server, File idata) {
@@ -275,14 +281,13 @@ public class Master {
 	 */
 	public synchronized void sendWorkerMatches(WorkerRepr worker) {
 		EntityManager em = HibernateUtil.getEntityManager();
-		BSRun currentRun = getCurrentRun();
-		List<BSMatch> queuedMatches = em.createQuery("from BSMatch match inner join fetch match.map where match.run = ? and match.status = ?", BSMatch.class)
-		.setParameter(1, currentRun)
-		.setParameter(2, BSMatch.STATUS.QUEUED)
+		List<BSMatch> queuedMatches = em.createQuery("from BSMatch match inner join fetch match.map inner join fetch match.run " +
+				"where match.status = ? and match.run.status = ?", BSMatch.class)
+		.setParameter(1, BSMatch.STATUS.QUEUED)
+		.setParameter(2, BSRun.STATUS.RUNNING)
 		.getResultList();
 
-		for (int i = 0; i < queuedMatches.size() && worker.isFree(); i++) {
-			BSMatch m = queuedMatches.get(i);
+		for (BSMatch m: queuedMatches) {
 			NetworkMatch nm = m.buildNetworkMatch();
 			nm.battlecodeServerHash = battlecodeServerHash;
 			nm.idataHash = idataHash;
@@ -300,15 +305,22 @@ public class Master {
 		// Sending this worker random maps that other workers are currently running
 		if (worker.isFree()) {
 			Random r = new Random();
-			List<BSMatch> runningMatches = em.createQuery("from BSMatch match inner join fetch match.map where match.run = ? and match.status = ?", BSMatch.class)
-			.setParameter(1, currentRun)
-			.setParameter(2, BSMatch.STATUS.RUNNING)
+			List<BSMatch> runningMatches = em.createQuery("from BSMatch match inner join fetch match.map inner join fetch match.run " +
+					"where match.status = ? and match.run.status = ?", BSMatch.class)
+			.setParameter(1, BSMatch.STATUS.RUNNING)
+			.setParameter(2, BSRun.STATUS.RUNNING)
 			.getResultList();
-			while (!runningMatches.isEmpty() && worker.isFree()) {
-				NetworkMatch nm = runningMatches.get(r.nextInt(runningMatches.size())).buildNetworkMatch();
+			while (!runningMatches.isEmpty() && worker.isFree() && 
+					worker.getRunningMatches().size() < runningMatches.size()) {
+				BSMatch m = null;
+				NetworkMatch nm = null;
+				do {
+					m = runningMatches.get(r.nextInt(runningMatches.size()));
+					nm = m.buildNetworkMatch();
+				} while (worker.getRunningMatches().contains(nm));
 				nm.battlecodeServerHash = battlecodeServerHash;
 				nm.idataHash = idataHash;
-				_log.info("Sending match " + nm + " to worker " + worker);
+				_log.info("Sending redundant match " + nm + " to worker " + worker);
 				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
 				worker.runMatch(nm);
 			}
@@ -446,20 +458,16 @@ public class Master {
 		}
 
 		EntityManager em = HibernateUtil.getEntityManager();
+		
+		List<String> mapNames = em.createQuery("select map.mapName from BSMap map", String.class).getResultList();
 		for (BSMap map: newMaps) {
-			em.persist(map);
+			if (!mapNames.contains(map.getMapName())) {
+				em.persist(map);
+			}
 		}
 		em.getTransaction().begin();
-		try {
-			em.flush();
-		} catch (PersistenceException e) {
-			// Those maps already exist; don't worry about it.
-		}
-		if (em.getTransaction().getRollbackOnly()) {
-			em.getTransaction().rollback();
-		} else {
-			em.getTransaction().commit();
-		}
+		em.flush();
+		em.getTransaction().commit();
 		em.close();
 	}
 

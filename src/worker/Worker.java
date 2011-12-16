@@ -69,8 +69,8 @@ public class Worker implements Controller, Runnable {
 		sf = context.getSocketFactory();
 	}
 	
-	public synchronized void matchFailed(int core, NetworkMatch match) {
-		matchFinish(core, match, null, null, null);
+	public synchronized void matchFailed(MatchRunner runner, int core, NetworkMatch match) {
+		matchFinish(runner, core, match, null, null, null);
 	}
 
 	/**
@@ -84,7 +84,11 @@ public class Worker implements Controller, Runnable {
 	 * @param b_points
 	 * @param data
 	 */
-	public synchronized void matchFinish(int core, NetworkMatch match, BSMatch.STATUS status, MatchResult result, byte[] data) {
+	public synchronized void matchFinish(MatchRunner runner, int core, NetworkMatch match, BSMatch.STATUS status, MatchResult result, byte[] data) {
+		// If the runner is out of date, we should ignore it
+		if (running[core] != runner) {
+			return;
+		}
 		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, result, data});
 		network.send(p);
 		running[core].stop();

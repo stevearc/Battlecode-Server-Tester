@@ -39,13 +39,13 @@ public class GameData {
 	// Maps robotID to info
 	private HashMap<Integer, RobotStat> robots = new HashMap<Integer, RobotStat>();
 	// Maps mineID to info
-	private HashMap<Integer, MineInfo> mines = new HashMap<Integer, MineInfo>();
+	private HashMap<Integer, MapLocation> minesToLocs = new HashMap<Integer, MapLocation>();
 	// Maps MapLocation to mine info
-	private HashMap<MapLocation, MineInfo> minesByLocation = new HashMap<MapLocation, MineInfo>();
+	private HashMap<MapLocation, Team> lastSpawn = new HashMap<MapLocation, Team>();
 	
 	private ArrayList<RoundDelta> rounds = new ArrayList<RoundDelta>();
 	private MatchFooter footer;
-
+	
 	public GameData(String filename) throws IOException, ClassNotFoundException {
 		ObjectInputStream input = null;
 		input = XStreamProxy.getXStream().createObjectInputStream(new GZIPInputStream(new FileInputStream(filename)));
@@ -105,15 +105,15 @@ public class GameData {
 					currentFluxDrain[s.getTeam().ordinal()] += s.getType().upkeep;
 					r = new RobotStat(s.getTeam(), s.getType());
 					robots.put(s.getRobotID(), r);
-					MineInfo mi = minesByLocation.get(s.getLoc());
-					if (mi != null) {
-						mi.ownedTeam = s.getTeam();
-					}
+					lastSpawn.put(s.getLoc(), s.getTeam());
 					currentFluxReserve[s.getTeam().ordinal()] -= s.getType().cost;
 				} 
 				else if(signal instanceof EquipSignal) {
 					EquipSignal s = (EquipSignal) signal;
-					currentFluxReserve[robots.get(s.builderID).team.ordinal()] += s.component.cost;
+					r = robots.get(s.builderID);
+					if (r == null)
+						r = robots.get(s.robotID);
+					currentFluxReserve[r.team.ordinal()] += s.component.cost;
 				} 
 				else if(signal instanceof MovementSignal) {
 					// pass for now
@@ -145,15 +145,13 @@ public class GameData {
 				}
 				else if (signal instanceof MineDepletionSignal) {
 					MineDepletionSignal s = (MineDepletionSignal) signal;
-					MineInfo mi = mines.get(s.id);
-					currentFluxReserve[mi.ownedTeam.ordinal()] += getMineAmount(s.roundsAvaliable);
-					currentFluxIncome[mi.ownedTeam.ordinal()] += getMineAmount(s.roundsAvaliable);
+					Team t = lastSpawn.get(minesToLocs.get(s.id));
+					currentFluxReserve[t.ordinal()] += getMineAmount(s.roundsAvaliable);
+					currentFluxIncome[t.ordinal()] += getMineAmount(s.roundsAvaliable);
 				}
 				else if (signal instanceof MineBirthSignal) {
 					MineBirthSignal s = (MineBirthSignal) signal;
-					MineInfo mi = new MineInfo();
-					mines.put(s.id, mi);
-					minesByLocation.put(s.location, mi);
+					minesToLocs.put(s.id, s.location);
 				}
 			}
 			for (RobotStat robot: robots.values()) {
@@ -218,7 +216,4 @@ public class GameData {
 		}
 	}
 	
-	private class MineInfo {
-		public Team ownedTeam;
-	}
 }

@@ -21,6 +21,8 @@ import master.WebPollHandler;
  */
 public class Config {
 	public static final int RESTART_STATUS = 121;
+	public static final boolean DEBUG = true;
+	public static boolean MOCK_WORKER = false;
 	private static Config rootConfig;
 	private static Master rootMaster;
 	private static WebPollHandler webPollHandler;

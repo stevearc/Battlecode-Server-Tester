@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import model.BSMatch;
+import model.MatchResult;
 
 import common.Config;
 import common.NetworkMatch;
@@ -65,10 +66,15 @@ public class MatchRunner implements Runnable {
 	 * Runs the battlecode match
 	 */
 	public void run() {
+		_log.info("Running: " + match);
+		if (Config.MOCK_WORKER) {
+			worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, MatchResult.constructMockMatchResult(), new byte[0]);
+			return;
+		}
+		
 		String team_a = match.team_a.replaceAll("\\W", "_");
 		String team_b = match.team_b.replaceAll("\\W", "_");
 		try {
-			_log.info("Running: " + match);
 			String output_file = config.install_dir + "/battlecode/core" + core + "/" + match.map + match.seed + ".out";
 			Runtime run = Runtime.getRuntime();
 
@@ -130,7 +136,7 @@ public class MatchRunner implements Runnable {
 				return;
 			if (curProcess.exitValue() != 0) {
 				_log.severe("Error running match\n" + output);
-				worker.matchFailed(core, match);
+				worker.matchFailed(this, core, match);
 				return;
 			}
 
@@ -138,7 +144,7 @@ public class MatchRunner implements Runnable {
 		} catch (Exception e) {
 			if (!stop) {
 				_log.log(Level.SEVERE, "Failed to run match", e);
-				worker.matchFailed(core, match);
+				worker.matchFailed(this, core, match);
 			}
 			return;
 		}
@@ -151,19 +157,21 @@ public class MatchRunner implements Runnable {
 			data = Util.getFileData(matchFile);
 			gameData = new GameData(matchFile);
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
-			if (!stop)
-				worker.matchFailed(core, match);
+			if (!stop) {
+				_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
+				worker.matchFailed(this, core, match);
+			}
 			return;
 		} catch (ClassNotFoundException e) {
-			_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
-			if (!stop)
-				worker.matchFailed(core, match);
+			if (!stop) {
+				_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
+				worker.matchFailed(this, core, match);
+			}
 			return;
 		}
 
 		if (!stop) {
-			worker.matchFinish(core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
+			worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
 		}
 	}
 	

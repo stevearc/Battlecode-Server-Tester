@@ -1,11 +1,18 @@
+body {
+    font-family: 'Lucida Grande', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    width:980px;
+    margin: 0px auto;
+    background:#fff url(/images/bg.gif) repeat-x
+}
+
 #tabs {
-	width:980px;
+	width:100%;
 	font-size:93%;
 	border-bottom:2px solid #2763A5;
 	line-height:normal;
-  padding-bottom:2.7em;
-  margin:0 auto;
-	}
+    padding-bottom:15px;
+}
 
 #tabs ul {
 	margin:0;
@@ -50,6 +57,10 @@
 #tabs a:hover span {
 	background-position:100% -42px;
 	}
+
+.dataTables_wrapper {
+    margin: 40px 20px;
+}
 
 .hidden {
   visibility:hidden;
@@ -101,7 +112,7 @@
 }
 
 .warning {
-	color:#FF0000;
+	color:#F00;
 }
 
 .code {

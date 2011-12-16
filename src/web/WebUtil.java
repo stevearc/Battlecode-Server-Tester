@@ -29,6 +29,9 @@ public class WebUtil {
 	 * @param current Name of the current tab (to be highlighted)
 	 */
 	public static void writeTabs(HttpServletResponse response, PrintWriter out, String current) {
+		out.println("<script src='/js/jquery-1.7.1.min.js'></script>");
+		out.println("<script src='/js/jquery-ui-1.8.16.custom.min.js'></script>");
+		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");
 		out.println("<a href='" + LogoutServlet.NAME + "'>logout</a>");
 		// Header with tabs
 		out.println("<div id=\"tabs\"><h2>");
@@ -40,8 +43,6 @@ public class WebUtil {
 		writeTab(out, response, current, AdminServlet.NAME, "Admin");
 		out.println("</ul>");
 		out.println("</h2></div>");
-		out.println("<p>&nbsp;</p>");
-		out.println("<p>&nbsp;</p>");
 	}
 
 	private static void writeTab(PrintWriter out, HttpServletResponse response, String current, String url, String title) {

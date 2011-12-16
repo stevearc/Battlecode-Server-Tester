@@ -31,7 +31,6 @@ public class NetworkMatch implements Serializable {
 		this.seed = seed;
 	}
 	
-	// TODO: remove references to hashCode and equals
 	@Override
 	public int hashCode() {
 		return id.intValue();
@@ -48,7 +47,7 @@ public class NetworkMatch implements Serializable {
 	
 	@Override
 	public String toString() {
-		return map + " (" + seed + "): " + team_a + " vs. " + team_b;
+		return id + ":" + map + " (" + seed + "): " + team_a + " vs. " + team_b;
 	}
 	
 	public String toMapString() {

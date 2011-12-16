@@ -1,10 +1,23 @@
 var column_map = {'ID' : 0, 'TEAM_A' : 1, 'TEAM_B' : 2, 'WINS' : 3, 'STATUS' : 4, 'TIME' : 5, 'CONTROL' : 6};
 var lastheard = -1;
 var lastheard_update = -1;
-document.getElementById('seed_selector').selectedIndex=0;
-document.getElementById("maps_checkbox").checked=false;
+$(function() {
+    $("#seed_selector").prop("selectedIndex", 0);
+    $("#maps_checkbox").attr("checked", false);
+    init();
+    handleServerResponse("");
+    var runTable = $('#run_table').dataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+    });
+    runTable.fnSort( [ [0,'desc'] ] );
 
-// Round a number to "digits" digits
+    $(window).bind('resize', function () {
+        runTable.fnAdjustColumnSizing();
+    } );
+});
+
+// Round a number to a specific number of digits
 function roundNumber(number, digits) {
   var multiple = Math.pow(10, digits);
   var rndedNum = Math.round(number * multiple) / multiple;
@@ -13,7 +26,7 @@ function roundNumber(number, digits) {
 
 // Put the progress percentage for the current run in the table
 function init() {
-  table = document.getElementById("table");
+  table = document.getElementById("run_table");
   for (var i = 1; i < table.rows.length; i++) {
     var status_row = table.rows[i].cells[column_map['STATUS']];
     if (status_row.innerHTML == 'Running') {
@@ -326,5 +339,3 @@ function listenForTeamsUpdate(response) {
   setTimeout("poll(listenForTeamsUpdate, \"teams_update\", lastheard_update);",100);
 }
 
-init();
-handleServerResponse("");
