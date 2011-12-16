@@ -85,5 +85,6 @@
         <delete dir="${build}"/>
         <delete dir="${dist}"/>
         <delete file="bs-tester.tar.gz"/>
+        <delete file="bs-tester.jar"/>
     </target>
 </project>

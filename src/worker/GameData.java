@@ -9,10 +9,12 @@ import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 
 import model.MatchResult;
+import model.MatchResult.WIN_CONDITION;
 import model.TEAM;
 import model.TeamMatchResult;
-import model.MatchResult.WIN_CONDITION;
 import battlecode.common.Chassis;
+import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
 import battlecode.common.Team;
 import battlecode.engine.signal.Signal;
 import battlecode.serial.MatchFooter;
@@ -21,6 +23,8 @@ import battlecode.server.proxy.XStreamProxy;
 import battlecode.world.signal.AttackSignal;
 import battlecode.world.signal.DeathSignal;
 import battlecode.world.signal.EquipSignal;
+import battlecode.world.signal.MineBirthSignal;
+import battlecode.world.signal.MineDepletionSignal;
 import battlecode.world.signal.MovementSignal;
 import battlecode.world.signal.SpawnSignal;
 import battlecode.world.signal.TurnOffSignal;
@@ -32,8 +36,13 @@ import battlecode.world.signal.TurnOnSignal;
  *
  */
 public class GameData {
-	// Maps robotID to location
+	// Maps robotID to info
 	private HashMap<Integer, RobotStat> robots = new HashMap<Integer, RobotStat>();
+	// Maps mineID to info
+	private HashMap<Integer, MineInfo> mines = new HashMap<Integer, MineInfo>();
+	// Maps MapLocation to mine info
+	private HashMap<MapLocation, MineInfo> minesByLocation = new HashMap<MapLocation, MineInfo>();
+	
 	private ArrayList<RoundDelta> rounds = new ArrayList<RoundDelta>();
 	private MatchFooter footer;
 
@@ -65,6 +74,10 @@ public class GameData {
 		Integer[] currentActiveRobots = new Integer[teams.length];
 		ArrayList<Double>[] fluxDrain = new ArrayList[teams.length];
 		Double[] currentFluxDrain = new Double[teams.length];
+		ArrayList<Double>[] fluxIncome = new ArrayList[teams.length];
+		Double[] currentFluxIncome = new Double[teams.length];
+		ArrayList<Double>[] fluxReserve = new ArrayList[teams.length];
+		Double[] currentFluxReserve = new Double[teams.length];
 
 		for (int i = 0; i < teams.length; i++) {
 			teamResults[i] = new TeamMatchResult();
@@ -72,10 +85,17 @@ public class GameData {
 			currentActiveRobots[i] = 0;
 			fluxDrain[i] = new ArrayList<Double>();
 			currentFluxDrain[i] = 0.0;
+			fluxIncome[i] = new ArrayList<Double>();
+			currentFluxIncome[i] = 0.0;
+			fluxReserve[i] = new ArrayList<Double>();
+			currentFluxReserve[i] = 0.0;
 		}
 
 		for (RoundDelta round: rounds) {
 			Signal[] signals = round.getSignals();
+			for (int i = 0; i < teams.length; i++) {
+				currentFluxIncome[i] = 0.0;
+			}
 
 			for (int i = 0; i < signals.length; i++) {
 				Signal signal = signals[i];
@@ -85,40 +105,75 @@ public class GameData {
 					currentFluxDrain[s.getTeam().ordinal()] += s.getType().upkeep;
 					r = new RobotStat(s.getTeam(), s.getType());
 					robots.put(s.getRobotID(), r);
-				} else if(signal instanceof EquipSignal) {
+					MineInfo mi = minesByLocation.get(s.getLoc());
+					if (mi != null) {
+						mi.ownedTeam = s.getTeam();
+					}
+					currentFluxReserve[s.getTeam().ordinal()] -= s.getType().cost;
+				} 
+				else if(signal instanceof EquipSignal) {
+					EquipSignal s = (EquipSignal) signal;
+					currentFluxReserve[robots.get(s.builderID).team.ordinal()] += s.component.cost;
+				} 
+				else if(signal instanceof MovementSignal) {
 					// pass for now
-				} else if(signal instanceof MovementSignal) {
+				} 
+				else if(signal instanceof AttackSignal) {
 					// pass for now
-				} else if(signal instanceof AttackSignal) {
-					// pass for now
-				} else if(signal instanceof DeathSignal) {
+				} 
+				else if(signal instanceof DeathSignal) {
 					DeathSignal s = (DeathSignal)signal;
 					r = robots.remove(s.getObjectID());
 					currentActiveRobots[r.team.ordinal()]--;
 					currentFluxDrain[r.team.ordinal()] -= r.type.upkeep;
-				} else if (signal instanceof TurnOffSignal) {
+				} 
+				else if (signal instanceof TurnOffSignal) {
 					TurnOffSignal s = (TurnOffSignal)signal;
 					r = robots.get(s.robotID);
+					r.on = false;
 					currentActiveRobots[r.team.ordinal()]--;
 					currentFluxDrain[r.team.ordinal()] -= r.type.upkeep;
-				} else if (signal instanceof TurnOnSignal) {
+				} 
+				else if (signal instanceof TurnOnSignal) {
 					TurnOnSignal s = (TurnOnSignal)signal;
 					for (Integer id: s.robotIDs) {
 						r = robots.get(id);
+						r.on = true;
 						currentActiveRobots[r.team.ordinal()]++;
 						currentFluxDrain[r.team.ordinal()] += r.type.upkeep;
 					}
+				}
+				else if (signal instanceof MineDepletionSignal) {
+					MineDepletionSignal s = (MineDepletionSignal) signal;
+					MineInfo mi = mines.get(s.id);
+					currentFluxReserve[mi.ownedTeam.ordinal()] += getMineAmount(s.roundsAvaliable);
+					currentFluxIncome[mi.ownedTeam.ordinal()] += getMineAmount(s.roundsAvaliable);
+				}
+				else if (signal instanceof MineBirthSignal) {
+					MineBirthSignal s = (MineBirthSignal) signal;
+					MineInfo mi = new MineInfo();
+					mines.put(s.id, mi);
+					minesByLocation.put(s.location, mi);
+				}
+			}
+			for (RobotStat robot: robots.values()) {
+				if (robot.on) {
+					currentFluxReserve[robot.team.ordinal()] -= robot.type.upkeep;
 				}
 			}
 
 			for (int i = 0; i < teams.length; i++) {
 				activeRobots[i].add(currentActiveRobots[i]);
 				fluxDrain[i].add(currentFluxDrain[i]);
+				fluxIncome[i].add(currentFluxIncome[i]);
+				fluxReserve[i].add(currentFluxReserve[i]);
 			}
 		}
 		for (int i = 0; i < teams.length; i++) {
 			teamResults[i].setActiveRobots(activeRobots[i]);
 			teamResults[i].setFluxDrain(fluxDrain[i]);
+			teamResults[i].setFluxIncome(fluxIncome[i]);
+			teamResults[i].setFluxReserve(fluxReserve[i]);
 		}
 
 		matchResult.setRounds(new Long(rounds.size()));
@@ -144,18 +199,26 @@ public class GameData {
 		}
 	}
 	
+	private double getMineAmount(int roundsLeft) {
+		if (roundsLeft > 0)
+            return GameConstants.MINE_RESOURCES;
+        else
+            return Math.max(GameConstants.MINE_DEPLETED_RESOURCES, GameConstants.MINE_RESOURCES + roundsLeft / GameConstants.MINE_DEPLETION_RATE * 0.01);
+	}
+	
 	private class RobotStat {
-		public Chassis type;
+		public final Chassis type;
 		public final Team team;
+		public boolean on;
 
 		public RobotStat(Team team, Chassis type) {
 			this.team = team;
-			transform(type);
+			this.type = type;
+			on = true;
 		}
-
-		public void transform(Chassis type) {
-			this.type=type;
-		}
-
+	}
+	
+	private class MineInfo {
+		public Team ownedTeam;
 	}
 }
