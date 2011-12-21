@@ -29,20 +29,18 @@ public class ConnectionsServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
-		out.println("<link rel=\"stylesheet\" href=\"css/tinytable.css\" />");
-		out.println("<link rel=\"stylesheet\" href=\"css/tabs.css\" />");
+		out.println("<link rel=\"stylesheet\" href=\"css/table.css\" />");
 		out.println("</head>");
 		out.println("<body>");
 
 		WebUtil.writeTabs(response, out, toString());
+		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
-		out.println("<div id=\"tablewrapper\">");
-		WebUtil.printTableHeader(out, "conn_sorter");
-		out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"conn_table\" class=\"tinytable\">" +
+		out.println("<table id=\"conn_table\" class='datatable'>" +
 		"<thead>");
 		out.println("<tr>" +
-				"<th class='desc'><h3>Worker</h3></th>" +
-				"<th class='desc'><h3>Map</h3></th>" +
+				"<th>Worker</th>" +
+				"<th>Maps</th>" +
 		"</tr>");
 		out.println("</thead>");
 		out.println("<tbody>");
@@ -63,11 +61,7 @@ public class ConnectionsServlet extends HttpServlet {
 		}
 		out.println("</tbody>");
 		out.println("</table>");
-		WebUtil.printTableFooter(out, "conn_sorter");
-		out.println("</div>");
 
-		out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
-		out.println("<script type=\"text/javascript\" src=\"js/connections_init_table.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/async.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/connections.js\"></script>");
 		out.println("</body>" +

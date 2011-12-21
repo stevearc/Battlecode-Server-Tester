@@ -1,17 +1,23 @@
 package web;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Level;
 
 import javax.persistence.EntityManager;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSMap;
 import model.BSMatch;
 import model.BSRun;
+import model.BSUser;
 import model.TEAM;
 
+import common.Config;
 import common.HibernateUtil;
 
 /**
@@ -21,6 +27,7 @@ import common.HibernateUtil;
  */
 public class WebUtil {
 	public static final double WIN_THRESHOLD = 0.3;
+	public static final String COOKIE_NAME = "bs-tester";
 
 	/**
 	 * Write the HTML for the tabs at the top of the page
@@ -32,22 +39,22 @@ public class WebUtil {
 		out.println("<script src='/js/jquery-1.7.1.min.js'></script>");
 		out.println("<script src='/js/jquery-ui-1.8.16.custom.min.js'></script>");
 		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");
-		out.println("<a href='" + LogoutServlet.NAME + "'>logout</a>");
+		out.println("<link rel='stylesheet' href='/css/jquery-ui.css' />");
 		// Header with tabs
-		out.println("<div id=\"tabs\"><h2>");
-		out.println("<ul>");
+		out.println("<div id=\"tabs\" class='ui-tabs ui-widget ui-widget-content ui-corner-all' style='margin: 30px 0'>");
+		out.println("<a href='" + LogoutServlet.NAME + "' style='float:right; margin: 0 10px'>sign out</a>");
+		out.println("<ul class='ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all'>");
 		writeTab(out, response, current, IndexServlet.NAME, "Home");
 		writeTab(out, response, current, ConnectionsServlet.NAME, "Connections");
-		writeTab(out, response, current, AnalysisServlet.NAME, "Analysis");
 		writeTab(out, response, current, UploadServlet.NAME, "Upload");
 		writeTab(out, response, current, AdminServlet.NAME, "Admin");
 		out.println("</ul>");
-		out.println("</h2></div>");
+		out.println("</div>");
 	}
 
 	private static void writeTab(PrintWriter out, HttpServletResponse response, String current, String url, String title) {
-		String tabTitle = (current.equals(url) ? "<font color='yellow'>" + title + "</font>" : title);
-		out.println("<li><a href='" + response.encodeURL(url) + "'><span>" + tabTitle + "</span></a></li>");
+		out.println("<li class='ui-state-default ui-corner-top" + (current.equals(url) ? "ui-tabs-selected ui-state-active" : "") + 
+				"'><a href='" + response.encodeURL(url) + "'><span>" + title + "</span></a></li>");
 	}
 
 	/**
@@ -215,6 +222,50 @@ public class WebUtil {
 		out.println("</div>");
 		out.println("<div class=\"page\">Page <span id=\"currentpage\"></span> of <span id=\"totalpages\"></span></div>");
 		out.println("</div></div>");
+	}
+
+	/**
+	 * Checks the session cookie to see if the user is currently logged in; sets the user in the session if so
+	 * @param request
+	 * @param response
+	 * @return True if authenticated, false otherwise
+	 * @throws IOException 
+	 */
+	public static BSUser getUserFromCookie(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String cookieVal = null;
+		Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (Cookie c: cookies) {
+				if (COOKIE_NAME.equals(c.getName())) {
+					cookieVal = c.getValue();
+					break;
+				}
+			}
+		}
+		if (cookieVal == null) {
+			return null;
+		}
+		// Cookie is encoded as [userid]$[session token]
+		Long userId = new Long(-1);
+		String token = "";
+		try {
+			userId = new Long(Integer.parseInt(cookieVal.substring(0, cookieVal.indexOf("$"))));
+			token = cookieVal.substring(cookieVal.indexOf("$") + 1);
+		} catch (Exception e) {
+			Config.getConfig().getLogger().log(Level.WARNING, "Login cookie with bad format: " + cookieVal, e);
+		}
+		// Check cookie value
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSUser user = em.find(BSUser.class, userId);
+		if (user == null) {
+			return null;
+		}
+		if (token.equals(user.getSession())) {
+			request.getSession(true).setAttribute("user", user);
+			return user;
+		}
+			
+		return null;
 	}
 
 }

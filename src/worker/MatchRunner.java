@@ -68,6 +68,10 @@ public class MatchRunner implements Runnable {
 	public void run() {
 		_log.info("Running: " + match);
 		if (Config.MOCK_WORKER) {
+			try {
+				Thread.sleep(1000 * Config.MOCK_WORKER_SLEEP);
+			} catch (InterruptedException e) {
+			}
 			worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, MatchResult.constructMockMatchResult(), new byte[0]);
 			return;
 		}

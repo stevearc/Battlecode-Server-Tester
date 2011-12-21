@@ -25,10 +25,10 @@ public class AdminActionServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = (BSUser) request.getSession().getAttribute("user");
+		BSUser user = WebUtil.getUserFromCookie(request, response);
 		Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
 		String cmd = request.getParameter("cmd");
-		response.setContentType("text/json");
+		response.setContentType("text/plain");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
 		EntityManager em = HibernateUtil.getEntityManager();

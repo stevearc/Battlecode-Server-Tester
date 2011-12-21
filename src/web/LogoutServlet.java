@@ -37,9 +37,10 @@ public class LogoutServlet extends HttpServlet {
 		em.close();
 
 		out.println("<script type='text/javascript'>\n" +
-				"document.cookie = '" + LoginServlet.COOKIE_NAME + "=; expires=Fri, 27 Jul 2001 00:00:00 UTC; path=/';\n" +
+				"document.cookie = '" + WebUtil.COOKIE_NAME + "=; expires=Fri, 27 Jul 2001 00:00:00 UTC; path=/';\n" +
 				"document.location='" + response.encodeURL(LoginServlet.NAME) + "';\n" +
 		"</script>");
+		request.getSession().setAttribute("user", null);
 	}
 	
 	@Override

@@ -2,7 +2,6 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.logging.Level;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -15,7 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
 
-import common.Config;
 import common.HibernateUtil;
 import common.Util;
 
@@ -28,14 +26,16 @@ import common.Util;
 public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 4347939279807133754L;
 	public static final String NAME = "login.html";
-	public static final String COOKIE_NAME = "bs-tester";
 	private static final char[] BLACKLIST = {' ', '<', '>', '\'', '"', '`', '\t', '\n'};
+	
+	private void warn(PrintWriter out, String message) {
+		out.println("<span class='ui-state-error' style='padding:10px'>" + message + "</span>");
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		BSUser user = checkLogin(request, response);
+		BSUser user = WebUtil.getUserFromCookie(request, response);
 		if (user != null) {
-			System.out.println("Setting user in session");
 			request.getSession(true).setAttribute("user", user);
 			response.sendRedirect("/" + IndexServlet.NAME);
 			return;
@@ -47,46 +47,53 @@ public class LoginServlet extends HttpServlet {
 		name_param = (name_param == null ? "" : name_param);
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
-		out.println("<link rel=\"stylesheet\" href=\"/css/tinytable.css\" />");
-		out.println("<link rel=\"stylesheet\" href=\"/css/tabs.css\" />");
 		out.println("</head>");
 		out.println("<body>");	
-		String background = "#CEFFFC";
-		out.println("<div class='center' style='background:" + background + "'>");	
-		out.println("<form id='login' method='post'>" +
-				"<p>" +
-				"<p><label for=\"username\">Username:</label>" +
-				"<input type=\"text\" name=\"username\" id=\"username\" value='" + name_param + "' size=\"15\"></p>" +
-				"<p><label for=\"password\">Password: </label>" +
-				"<input type=\"password\" name=\"password\" id=\"password\" size=\"15\"></p>" + 
-				"<input type=\"hidden\" id=\"seed\"></p>" + 
-				"<p><label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>" +
-				"<input type='submit' value='Login' name='login'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-				"<input type='submit' value='Register' name='register'>" +
-				"</p>" +
-				"</p></form>"
+		
+		WebUtil.writeTabs(response, out, toString());
+		
+		out.println("<div class='center' style='width:400px'>");	
+		out.println("<form id='login' method='post' style='width:200px; margin: 10px auto'>" +
+				"<table>" +
+				"<tr>" +
+				"<td style='text-align:right'>Username:</td>" +
+				"<td><input type='text' name='username' id='username' value='" + name_param + "' size='15' /></td>" +
+				"</tr>" +
+				"<tr>" + 
+				"<td style='text-align:right'>Password:</td>" +
+				"<td><input type='password' name='password' id='password' size='15' /></td>" +
+				"</tr>" +
+				"<tr>" +
+				"<td style='text-align:right'>" +
+				"<input type='submit' value='Login' name='login' />" +
+				"</td>" +
+				"<td><input type='submit' value='Register' name='register' /></td>" +
+				"</tr>" +
+				"</table>" + 
+				"</form>"
 		);
 
 		String error = (String) request.getAttribute("error");
 		if ("no_username".equals(error)) {
-			out.println("<font color='red'>Must enter a username</font>");
+			warn(out, "Must enter a username");
 		} else if ("no_password".equals(error)) {
-			out.println("<font color='red'>Must enter a password</font>");
+			warn(out, "Must enter a password");
 		} else if ("bad_auth".equals(error)) {
-			out.println("<font color='red'>Bad username or password</font>");
+			warn(out, "Bad username or password");
 		} else if ("name_taken".equals(error)) {
-			out.println("<font color='red'>Username already taken</font>");
+			warn(out, "Username already taken");
 		} else if ("name_length".equals(error)) {
-			out.println("<font color='red'>Username is too long</font>");
+			warn(out, "Username is too long");
 		} else if ("bad_char".equals(error)) {
-			out.print("<font color='red'>Username contains illegal characters (");
+			String msg = "Username contains illegal characters (";
 			for (char c: BLACKLIST)
-				out.print(c);
-			out.println(")</font>");
+				msg += c;
+			msg += ")";
+			warn(out, msg);
 		}
 
 		if ("success".equals(request.getAttribute("register"))) {
-			out.println("<font color='red'>Registration successful!  Wait for admin to confirm your credentials</font>");
+			out.println("<span class='ui-state-highlight' style='padding:10px'>Registration successful!  Wait for admin to confirm your credentials</span>");
 		}
 		out.println("<script type='text/javascript'>\n" +
 				"document.getElementById('seed').value=Math.random();\n" +
@@ -162,11 +169,10 @@ public class LoginServlet extends HttpServlet {
 				em.getTransaction().commit();
 				em.close();
 				// Cookie is encoded as [userid]$[session token]
-				Cookie c = new Cookie(COOKIE_NAME, user.getId() + "$" + salt);
+				Cookie c = new Cookie(WebUtil.COOKIE_NAME, user.getId() + "$" + salt);
 				c.setSecure(true);
 				response.addCookie(c);
 				response.setStatus(HttpServletResponse.SC_OK);
-				request.getSession(true).setAttribute("user", user);
 				response.sendRedirect("/" + IndexServlet.NAME);
 				response.setContentType("text/html");
 				return;
@@ -187,54 +193,10 @@ public class LoginServlet extends HttpServlet {
 				return user;
 			}
 		} catch (NoResultException e) {
-			e.printStackTrace();
 		}
 		return null;
 	}
 	
-	/**
-	 * 
-	 * @param request
-	 * @param response
-	 * @return True if authenticated, false otherwise
-	 * @throws IOException 
-	 */
-	private BSUser checkLogin(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		String cookieVal = null;
-		Cookie[] cookies = request.getCookies();
-		if (cookies != null) {
-			for (Cookie c: cookies) {
-				if (COOKIE_NAME.equals(c.getName())) {
-					cookieVal = c.getValue();
-					break;
-				}
-			}
-		}
-		if (cookieVal == null) {
-			return null;
-		}
-		// Cookie is encoded as [userid]$[session token]
-		Long userId = new Long(-1);
-		String token = "";
-		try {
-			userId = new Long(Integer.parseInt(cookieVal.substring(0, cookieVal.indexOf("$"))));
-			token = cookieVal.substring(cookieVal.indexOf("$") + 1);
-		} catch (Exception e) {
-			Config.getConfig().getLogger().log(Level.WARNING, "Login cookie with bad format: " + cookieVal, e);
-		}
-		// Check cookie value
-		EntityManager em = HibernateUtil.getEntityManager();
-		BSUser user = em.find(BSUser.class, userId);
-		if (user == null) {
-			return null;
-		}
-		if (token.equals(user.getSession())) {
-			return user;
-		}
-			
-		return null;
-	}
-
 	@Override
 	public String toString() {
 		return NAME;

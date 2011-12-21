@@ -35,7 +35,6 @@ public class WebServer implements Runnable {
 			new DeleteServlet(),
 			new MatchesServlet(),
 			new RunServlet(),
-			new AnalysisServlet(),
 			new MatchesByMapServlet(),
 			new LoginServlet(),
 			new AdminServlet(),
@@ -113,6 +112,9 @@ public class WebServer implements Runnable {
 			server.join();
 		} catch (Exception e) {
 			_log.log(Level.SEVERE, "Error running webserver", e);
+			_log.warning("You need root permissions to run the webserver on ports 80 and 443, or you can specify different ports.  " +
+					"Run with -h for more details.");
+			System.exit(1);
 		}
 	}
 	

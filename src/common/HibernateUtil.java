@@ -46,7 +46,7 @@ public class HibernateUtil {
 			for (String[] keyVal: properties) {
 				cfg.setProperty(keyVal[0], keyVal[1]);
 			}
-			if (Config.DEBUG) {
+			if (Config.DEBUG && Config.SHOW_SQL) {
 				cfg.setProperty("hibernate.show_sql", "true");
 			}
 			return cfg;
@@ -91,7 +91,7 @@ public class HibernateUtil {
 		for (String[] keyVal: properties) {
 			cfg.setProperty(keyVal[0], keyVal[1]);
 		}
-		if (Config.DEBUG) {
+		if (Config.DEBUG && Config.SHOW_SQL) {
 			cfg.setProperty("hibernate.show_sql", "true");
 		}
 		return cfg.buildEntityManagerFactory();

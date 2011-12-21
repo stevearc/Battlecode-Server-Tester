@@ -125,7 +125,7 @@ public class WorkerRepr implements Controller {
 	 */
 	public String toHTML() {
 		String[] addrs = net.toString().split("/");
-			return "<a>" + addrs[1] + "</a>";
+			return addrs[1];
 	}
 
 	@Override

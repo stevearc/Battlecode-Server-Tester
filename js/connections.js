@@ -1,73 +1,83 @@
 var row_map = {'CONN' : 0, 'MAPS' : 1};
 var lastheard = -1;
 
+$(function() {
+    var connTable = $('#conn_table').dataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "aoColumnDefs": [ 
+            { "bSortable": false, "aTargets": [ 1 ] }
+        ],
+    });
+});
+
 // Find what row the connection is in
 function getRow(conn) {
-  var table = document.getElementById("conn_table");
-	for (var i = 1; i < table.rows.length; i++) {
-    id = table.rows[i].cells[row_map['CONN']].innerHTML;
-    if (id == conn) {
-      return table.rows[i];
-		}
-	}
-	return null;
+    var table = $('#conn_table').dataTable();
+    var row_index;
+    var rows = table.fnGetNodes();
+    for (row_index in rows) {
+        if ($($(rows[row_index]).children()[0]).html() === conn) {
+            return row_index;
+        }
+    }
+    return;
 }
 
 // Remove a map from the list of maps a connection is running
 function removeMap(conn, map) {
-  var table = document.getElementById("conn_table");
-	var row = getRow(conn);
-	var maps = row.cells[row_map['MAPS']].innerHTML;
-	var new_maps = maps.split(", ");
-	var index = new_maps.indexOf(map);
-	if (index > -1)
-		new_maps.splice(index, 1);
-  // Make sure there is a nbsp if there are no maps
-  if (new_maps.length == 0)
-    new_maps.push("&nbsp;");
-	row.cells[row_map['MAPS']].innerHTML = new_maps.join(", ");
+    var table = $("#conn_table").dataTable();
+    var rowIndex = getRow(conn);
+    var row = table.fnGetData(rowIndex);
+    var new_maps = row[1].split(", ");
+    var index = new_maps.indexOf(map);
+    if (index > -1) {
+        new_maps.splice(index, 1);
+    }
+    if (new_maps.length > 1) {
+        table.fnUpdate(new_maps.join(", "), rowIndex, 1);
+    } else {
+        table.fnUpdate("", rowIndex, 1);
+    }
 }
 
 // Add a map to the list of maps a connection is running
 function addMap(conn, map) {
-	var row = getRow(conn);
-	var maps = row.cells[row_map['MAPS']].innerHTML;
-	var new_maps = maps.split(", ");
-  // Trim out the nbsp if it's there
-  if (new_maps[0] == "&nbsp;")
-    new_maps.splice(0, 1);
-	new_maps.push(map);
-	row.cells[row_map['MAPS']].innerHTML = new_maps.join(", ");
+    var table = $("#conn_table").dataTable();
+    var rowIndex = getRow(conn);
+    var row = table.fnGetData(rowIndex);
+    var newMapsCol;
+    if (row[1] === "") {
+        newMapsCol = map;
+    } else {
+        var new_maps = row[1].split(", ");
+        new_maps.push(map);
+        newMapsCol = new_maps.join(", ");
+    }
+    table.fnUpdate(newMapsCol, rowIndex, 1);
 }
 
 // Add a new connection to the table
 function addConn(conn) {
-  var table = document.getElementById("conn_table");
-  var row = table.insertRow(1);
-  var conn_row = row.insertCell(row_map['CONN']);
-  conn_row.innerHTML = conn;
-  var maps_row = row.insertCell(row_map['MAPS']);
-  maps_row.innerHTML = "&nbsp;";
+    var table = $("#conn_table").dataTable();
+    table.fnAddData([
+        conn,
+        "",
+    ]);
 }
 
 // Remove a connection from the table
 function removeConn(conn) {
-  var table = document.getElementById("conn_table");
-  for (var i = 1; i < table.rows.length; i++) {
-    id = table.rows[i].cells[row_map['CONN']].innerHTML;
-    if (id == conn) {
-      table.deleteRow(i);
-      break;
-    }
-  }
+    var table = $("#conn_table").dataTable();
+    table.fnDeleteRow(getRow(conn));
 }
 
 // Remove all maps from all connections
 function clearMaps() {
-  var table = document.getElementById("conn_table");
-  for (var i = 1; i < table.rows.length; i++) {
-    table.rows[i].cells[row_map['MAPS']].innerHTML = "&nbsp;";
-  }
+    var table = $("#conn_table").dataTable();
+    for (index in table.fnGetNodes()) {
+        table.fnUpdate("", index, 1);
+    }
 }
 
 // Direct the server's Comet response appropriately
@@ -78,12 +88,8 @@ function handleServerResponse(response) {
     lastheard = args[1];
     if (cmd == "DELETE_TABLE_ROW") {
       removeConn(args[2]);
-      conn_sorter.init();
-      conn_sorter.search('query');
     } else if (cmd == "INSERT_TABLE_ROW") {
       addConn(args[2]);
-      conn_sorter.init();
-      conn_sorter.search('query');
     } else if (cmd == "ADD_MAP") {
       addMap(args[2], args[3]);
     } else if (cmd == "REMOVE_MAP") {

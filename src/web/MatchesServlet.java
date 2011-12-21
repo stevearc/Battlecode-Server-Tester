@@ -34,12 +34,12 @@ public class MatchesServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
-		out.println("<link rel=\"stylesheet\" href=\"css/tinytable.css\" />");
-		out.println("<link rel=\"stylesheet\" href=\"css/tabs.css\" />");
+		out.println("<link rel=\"stylesheet\" href=\"css/table.css\" />");
 		out.println("</head>");
 		out.println("<body>");
 
 		WebUtil.writeTabs(response, out, toString());
+		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
@@ -47,30 +47,32 @@ public class MatchesServlet extends HttpServlet {
 			return;
 		}
 		long id = new Long(Integer.parseInt(strId));
-		out.println("<div id=\"tablewrapper\">");
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
 		out.println("<h2><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + run.getTeamB().getPlayerName() + "</font></h2>");
 		out.println("<h3>Wins by map: " + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
 		out.println("<br />");
-		out.println("<div class='tabbutton'>");
-		out.println("<a onClick='document.location=\"" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "\"' " +
-		"style='cursor:pointer;'><span>View by map</span></a>");
-		out.println("<p>&nbsp;</p>");
-		out.println("<p>&nbsp;</p>");
-		out.println("<p>&nbsp;</p>");
-		out.println("</div>");
+		out.println("<div id='viewStyle' style='margin-left:20px'>" +
+				"<input type='radio' id='byMatch' name='byMatch' checked='checked' /><label for='byMatch'>By Match</label>" +
+				"<input type='radio' id='byMap' name='byMap' /><label for='byMap'>By Map</label>" +
+				" </div>");
+		out.println("<script type='text/javascript'>" +
+				"$(function() {" +
+				"$('#byMap').click(function() {" +
+				"document.location = '" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "';" + 
+				"});" +
+				"});" + 
+				"</script>");
 
-		WebUtil.printTableHeader(out, "matches_sorter");
-		out.println("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" id=\"matches_table\" class=\"tinytable\">" +
+		out.println("<table id=\"matches_table\" class='datatable'>" +
 				"<thead>" + 
 				"<tr>" +
-				"<th class='desc'><h3>Map</h3></th>" +
-				"<th class='desc'><h3>Map seed</h3></th>" +
-				"<th class='desc'><h3>Winner</h3></th>" +
-				"<th class='desc'><h3>Size</h3></th>" +
-				"<th class='desc'><h3>Win condition</h3></th>" +
-				"<th class='nosort'><h3>&nbsp;</h3></th>" +
+				"<th>Map</th>" +
+				"<th>Map seed</th>" +
+				"<th>Winner</th>" +
+				"<th>Size</th>" +
+				"<th>Win condition</th>" +
+				"<th>&nbsp;</th>" +
 				"</tr>" +
 				"</thead>" +
 		"<tbody>");
@@ -94,10 +96,8 @@ public class MatchesServlet extends HttpServlet {
 		em.close();
 		out.println("</tbody>");
 		out.println("</table>");
-		WebUtil.printTableFooter(out, "matches_sorter");
 
-		out.println("<script type=\"text/javascript\" src=\"js/script.js\"></script>");
-		out.println("<script type=\"text/javascript\" src=\"js/matches_init_table.js\"></script>");
+		out.println("<script type=\"text/javascript\" src=\"js/matches.js\"></script>");
 		out.println("</body></html>");
 	}
 

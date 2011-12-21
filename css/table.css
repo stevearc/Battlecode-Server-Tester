@@ -1,4 +1,4 @@
-table {
+.datatable {
     margin 0 auto;
     width: 100%;
     clear: both;
@@ -6,13 +6,13 @@ table {
     font-size: 13px;
 }
 
-table thead th {
+.datatable thead th {
     padding: 3px 0px 3px 10px;
     cursor: pointer;
     * cursor: hand;
 }
 
-table tfoot th {
+.datatable tfoot th {
     padding: 3px 0px 3px 10px;
     font-weight: bold;
     font-weight: normal;
@@ -26,28 +26,28 @@ div.dataTables_wrapper .ui-widget-header {
 /*
 * Sort arrow icon positioning
 */
-table thead th div.DataTables_sort_wrapper {
+.datatable thead th div.DataTables_sort_wrapper {
     position: relative;
     padding-right: 20px;
     padding-right: 20px;
 }
 
-table thead th div.DataTables_sort_wrapper span {
+.datatable thead th div.DataTables_sort_wrapper span {
     position: absolute;
     top: 50%;
     margin-top: -8px;
     right: 0;
 }
 
-table td {
+.datatable td {
     padding: 3px 10px;
 }
 
-table tr:hover {
+.datatable-clickable tr:hover {
     background-color: 6FB9B9;
 }
 
-table td.center {
+.datatable td.center {
     text-align: center;
 }
 

@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import master.MasterMethodCaller;
 import model.BSPlayer;
-import model.BSRun;
+import model.STATUS;
 
 import common.Config;
 import common.HibernateUtil;
@@ -31,7 +31,7 @@ public class UploadServlet extends HttpServlet {
 	public static final String NAME = "upload.html";
 
 	private void warn(HttpServletResponse response, String warning) throws IOException {
-		response.getWriter().println("<p class=\"warning\">" + warning + "</p>");
+		response.getWriter().println("<p class='ui-state-error' style='padding:10px'>" + warning + "</p>");
 	}
 
 	@Override
@@ -41,8 +41,7 @@ public class UploadServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
-		out.println("<link rel=\"stylesheet\" href=\"css/tinytable.css\" />");
-		out.println("<link rel=\"stylesheet\" href=\"css/tabs.css\" />");
+		out.println("<link rel=\"stylesheet\" href=\"css/table.css\" />");
 		out.println("</head>");
 		out.println("<body>");
 
@@ -106,7 +105,7 @@ public class UploadServlet extends HttpServlet {
 				MasterMethodCaller.updateBattlecodeFiles(battlecode_server, idata);
 				EntityManager em = HibernateUtil.getEntityManager();
 				Long numRunning = em.createQuery("select count(*) from BSRun run where run.status = ?", Long.class)
-				.setParameter(1, BSRun.STATUS.RUNNING)
+				.setParameter(1, STATUS.RUNNING)
 				.getSingleResult();
 				if (numRunning == 0) {
 					out.println("<p>Successfully updated battlecode version!</p>");
@@ -119,7 +118,7 @@ public class UploadServlet extends HttpServlet {
 
 		// Form for uploading your player
 		out.println("<div style='margin:20px 10px 10px 10px; font-size:12px'>");
-		out.println("<form action=\"" + NAME + "\" method=\"post\" enctype=\"multipart/form-data\">");
+		out.println("<form action=\"" + NAME + "\" method=\"post\" enctype=\"multipart/form-data\" style='float:left'>");
 		out.println("<table>");
 		out.println("<tr><th colspan='2'>Upload your player</th></tr>");
 		out.println("<tr>" +
@@ -138,7 +137,7 @@ public class UploadServlet extends HttpServlet {
 		out.println("</div>");
 		
 		// Form for uploading a new battlecode version
-		out.println("<div style='margin:40px 10px 10px 10px; font-size:12px'>");
+		out.println("<div style='margin:0px 10px 10px 10px; font-size:12px; float:right;'>");
 		out.println("<form action=\"" + NAME + "\" method=\"post\" enctype=\"multipart/form-data\">");
 		out.println("<table>");
 		out.println("<tr><th colspan='2'>Upload new battlecode files</th></tr>");

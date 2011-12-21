@@ -4,17 +4,52 @@ var lastheard_update = -1;
 $(function() {
     $("#seed_selector").prop("selectedIndex", 0);
     $("#maps_checkbox").attr("checked", false);
-    init();
-    handleServerResponse("");
     var runTable = $('#run_table').dataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
+        "aoColumnDefs": [ 
+            { "bSortable": false, "aTargets": [ 6 ] }
+        ],
     });
     runTable.fnSort( [ [0,'desc'] ] );
+
+    var mapTable = $('#map_table').dataTable({
+        "bJQueryUI": true,
+        "bFilter": false,
+        "bSearchable": false,
+        "bInfo": false,
+        "bLengthChange": false,
+        "iDisplayLength": 1000,
+        "aoColumnDefs": [ 
+            { "bSortable": false, "aTargets": [ 0 ] }
+        ],
+        "fnDrawCallback":function(){
+            $('#map_table_paginate').attr('style',"display:none");
+        }
+    });
+    mapTable.fnSort( [ [1,'asc'] ] );
+    $("#maps_checkbox").click(toggleAllMaps);
 
     $(window).bind('resize', function () {
         runTable.fnAdjustColumnSizing();
     } );
+
+    $("#newRunButton").button();
+    $("#newRunButton").click(function() {
+        $("#newRunForm").show();
+    });
+    $(".overlay").click(function() {
+        $("#newRunForm").hide();
+    });
+    $("#startButton").button();
+    $("#startButton").click(function() { 
+        if (newRun()) {
+            $("#newRunForm").hide();
+        }
+    });
+
+    init();
+    handleServerResponse("");
 });
 
 // Round a number to a specific number of digits
@@ -26,98 +61,74 @@ function roundNumber(number, digits) {
 
 // Put the progress percentage for the current run in the table
 function init() {
-  table = document.getElementById("run_table");
-  for (var i = 1; i < table.rows.length; i++) {
-    var status_row = table.rows[i].cells[column_map['STATUS']];
-    if (status_row.innerHTML == 'Running') {
-      status_row.innerHTML = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
-      break;
+    var table = $('#run_table').dataTable();
+    var rowIndex;
+    var rows = table.fnGetNodes();
+    var percentString = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
+    for (rowIndex in rows) {
+        if ($($(rows[rowIndex]).children()[4]).html() === "Running") {
+            table.fnUpdate(percentString, parseInt(rowIndex), 4);
+            break;
+        }
     }
-  }
 }
 
 // Navigate to view all matches for a run
 function doNavMatches(id) {
-  document.location="matches.html?id="+id;
+    document.location="matches.html?id="+id;
 }
 
 // Toggle all of the checkboxes in the New Run selection
 function toggleAllMaps() {
-  var maps_checkbox = document.getElementById("maps_checkbox");
-  var checked = maps_checkbox.checked;
-  var table = document.getElementById("map_table");
-  for (var i = 1; i < table.rows.length; i++) {
-    var cell = table.rows[i].cells[0];
-    cell.getElementsByTagName("input")[0].checked = checked;
-  }
-}
-
-// Toggle all of the checkboxes in the New Run selection for a specific size map
-function toggleMaps(size) {
-  var maps_checkbox = document.getElementById("maps_checkbox_" + size);
-  var checked = maps_checkbox.checked;
-  var table = document.getElementById("map_table");
-  for (var i = 1; i < table.rows.length; i++) {
-    var toCheck = checked;
-    var cell = table.rows[i].cells[0];
-    var isCellChecked = cell.getElementsByTagName("input")[0].checked;
-    if (table.rows[i].cells[2].innerHTML != size) {
-      toCheck = isCellChecked;
-    }
-    cell.getElementsByTagName("input")[0].checked = toCheck;
-  }
+    var maps_checkbox = $("#maps_checkbox");
+    var checked = maps_checkbox.attr("checked") === "checked";
+    $("#map_table tbody input").each(function() {
+        if (checked) {
+            $(this).attr("checked", "checked");
+        } else {
+            $(this).removeAttr("checked");
+        }
+    });
 }
 
 // When the number of seeds is changed, make the appropriate seed fields visible
 function numSeedsChange() {
-  var num_seeds = parseInt(document.getElementById('seed_selector').value);
-  for(var i = 1; i < 11; i++) {
-    var seed = document.getElementById('seed' + i);
-    if (i <= num_seeds) {
-      seed.className = '';
-    } else {
-      seed.className = 'removed';
+    var num_seeds = parseInt($('#seed_selector').attr("value"));
+    for(var i = 1; i < 11; i++) {
+        var seed = $('#seed' + i);
+        if (i <= num_seeds) {
+            seed.removeClass('ui-helper-hidden');
+        } else {
+            seed.addClass('ui-helper-hidden');
+        }
     }
-  }
-}
-
-// Toggle display of the New Run fields
-function toggleNewRun() {
-  var form = document.getElementById("add_run");
-  if (form.className == "removed") {
-    form.className = "";
-    document.getElementById("team_a_button").focus();
-  } else {
-    form.className = "removed";
-  }
 }
 
 // Pull form data and send query to server to start a new run
 function newRun() {
-  var team_a = document.getElementById("team_a_button").value;
-  var team_b = document.getElementById("team_b_button").value;
-  var num_matches = parseInt(document.getElementById("seed_selector").value);
-  var seeds = [];
-  for (var i = 1; i <= num_matches; i++) {
-    var seed = document.getElementById("seed" + i).getElementsByTagName("input")[0].value;
-    if (isNaN(seed) || seed <= 0) {
-      alert("Map seeds must be positive integers");
-      return false;
+    var team_a = $("#team_a_button").attr("value");
+    var team_b = $("#team_b_button").attr("value");
+    var num_matches = parseInt($("#seed_selector").attr("value"));
+    var seeds = [];
+    for (var i = 1; i <= num_matches; i++) {
+        var seed = $('#seed' + i + " input:first").attr("value");
+        if (isNaN(seed) || seed <= 0) {
+            alert("Map seeds must be positive integers");
+            return false;
+        }
+        seeds.push(seed);
     }
-    seeds.push(seed);
-  }
-  var maps = [];
-  var table = document.getElementById("map_table");
-  for (var i = 1; i < table.rows.length; i++) {
-    var cell = table.rows[i].cells[0];
-    if (cell.getElementsByTagName("input")[0].checked) {
-      maps.push(cell.getElementsByTagName("input")[0].value);
+    var maps = [];
+    $("#map_table tbody tr").each(function() {
+        var box = $(this).find('input');
+        if (box.attr("checked") === "checked") {
+            maps.push(box.attr('value'));
+        }
+    });
+    if (maps.length == 0) {
+        alert("Must select at least one map");
+        return false;
     }
-  }
-  if (maps.length == 0) {
-    alert("Must select at least one map");
-    return false;
-  }
   var url = "run.html?team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
 
 	if (team_a.length==0 || team_b.length==0) {
@@ -145,7 +156,7 @@ function newRun() {
 	}
 	xmlhttp1.open("GET",url,true);
 	xmlhttp1.send();
-  return true;
+    return true;
 }
 
 // Send query to server to delete a run
@@ -167,83 +178,73 @@ function delRun(id, ask) {
 
 // Delete selected row of the table
 function deleteTableRow(rowid) {
-  table = document.getElementById("table");
-  for (var i = 1; i < table.rows.length; i++) {
-    id = table.rows[i].cells[0].innerHTML;
-    if (id == rowid) {
-      table.deleteRow(i);
-      break;
+    var table = $("#run_table").dataTable();
+    var rowIndex;
+    var rows = table.fnGetNodes();
+    for (rowIndex in rows) {
+        if ($($(rows[rowIndex]).children()[0]).html() === rowid) {
+            table.fnDeleteRow(rowIndex);
+            break;
+        }
     }
-  }
+    return;
 }
 
 // Change table to reflect that a new run is starting
 function startRun(rowid, num_matches) {
-  total_num_matches = num_matches;
-  current_num_matches = 0;
-  var clickEvent = 'doNavMatches("' + rowid + '")';
-  var style = 'cursor:pointer';
-  table = document.getElementById("table");
-  for (var i = 1; i < table.rows.length; i++) {
-    id = table.rows[i].cells[0].innerHTML;
-    if (id == rowid) {
-      for (key in column_map) {
-        // Don't make the control column clickable, since it contains buttons
-        if (key == 'CONTROL')
-          continue;
-        table.rows[i].cells[column_map[key]].setAttribute('onClick', clickEvent);
-        table.rows[i].cells[column_map[key]].setAttribute('style', style);
-      }
-      var status_row = table.rows[i].cells[column_map['STATUS']];
-      status_row.innerHTML = "0%";
-      var time_row = table.rows[i].cells[column_map['TIME']];
-      time_row.innerHTML = "<a id=\"cntdwn\" name=\"0\"></a>";
-      var control_row = table.rows[i].cells[column_map['CONTROL']];
-      control_row.innerHTML = "<input type=\"button\" value=\"cancel\" onclick=\"delRun(" + rowid + ", false)\">";
-      break;
+    total_num_matches = num_matches;
+    current_num_matches = 0;
+    var table = $("#run_table").dataTable();
+    var rowIndex = indexFromRowid(rowid);
+    table.fnUpdate("0%", rowIndex, 4);
+    table.fnUpdate("<a id='cntdwn' />", rowIndex, 5);
+    $("#cntdwn").attr("name", "0");
+    table.fnUpdate("<input type='button' id='temp1' />", rowIndex, 6);
+    $("#temp1").removeAttr("id").attr("value", "cancel").click(function() {
+        delRun(rowid, false);
+    });
+}
+
+function indexFromRowid(rowid) {
+    var table = $('#run_table').dataTable();
+    var rowIndex;
+    var rows = table.fnGetNodes();
+    for (rowIndex in rows) {
+        if ($($(rows[rowIndex]).children()[0]).html() === rowid) {
+            return parseInt(rowIndex);
+        }
     }
-  }
 }
 
 // Change status of running match to finished
 function finishRun(rowid, run_status) {
-  table = document.getElementById("table");
-  for (var i = 1; i < table.rows.length; i++) {
-    id = table.rows[i].cells[0].innerHTML;
-    if (id == rowid) {
-      var status_row = table.rows[i].cells[column_map['STATUS']];
-      if (run_status == 2)
-        status_row.innerHTML = "Complete";
-      else if (run_status == 4)
-        status_row.innerHTML = "Canceled";
-      var time_row = table.rows[i].cells[column_map['TIME']];
-      var time = document.getElementById("cntdwn").innerHTML;
-      time_row.innerHTML = time;
-      var control_row = table.rows[i].cells[column_map['CONTROL']];
-      control_row.innerHTML = "<input type=\"button\" value=\"delete\" onclick=\"delRun(" + rowid + ", true)\">";
-      break;
-    }
-  }
+    var table = $("#run_table").dataTable();
+    var rowIndex = indexFromRowid(rowid);
+    table.fnUpdate(run_status, rowIndex, 4);
+    table.fnUpdate($("#cntdwn").html(), rowIndex, 5);
+    table.fnUpdate("<input type='button' id='temp1' />", rowIndex, 6);
+    $("#temp1").removeAttr("id").attr('value', 'delete').click(function() {
+        delRun(rowid, true);
+    });
 }
 
 // Create a new row in the table
 function insertTableRow(rowid, team_a, team_b) {
-  table = document.getElementById("table");
-  var row = table.insertRow(1);
-  var id_row = row.insertCell(column_map['ID']);
-  id_row.innerHTML = rowid;
-  var team_a_row = row.insertCell(column_map['TEAM_A']);
-  team_a_row.innerHTML = team_a;
-  var team_b_row = row.insertCell(column_map['TEAM_B']);
-  team_b_row.innerHTML = team_b;
-  var wins_row = row.insertCell(column_map['WINS']);
-  wins_row.innerHTML = "0/0";
-  var status_row = row.insertCell(column_map['STATUS']);
-  status_row.innerHTML = "Queued";
-  var time_row = row.insertCell(column_map['TIME']);
-  time_row.innerHTML="&nbsp;";
-  var control_row = row.insertCell(column_map['CONTROL']);
-  control_row.innerHTML="<input type=\"button\" value=\"dequeue\" onclick=\"delRun(" + rowid + ", false)\">";
+    var table = $("#run_table").dataTable();
+    table.fnAddData([
+        rowid,
+        team_a,
+        team_b,
+        "0/0",
+        "Queued",
+        "",
+        "<input type='button' id='temp1' />",
+    ]);
+    $('#temp1').attr('value', 'dequeue')
+    .click(function() {
+        delRun(rowid, false);
+    })
+    .removeAttr('id');
 }
 
 // Update the progress for the current run
@@ -292,12 +293,8 @@ function handleServerResponse(response) {
     lastheard = args[1];
     if (cmd == "DELETE_TABLE_ROW") {
       deleteTableRow(args[2]);
-      sorter.init();
-      sorter.search('query');
     } else if (cmd == "INSERT_TABLE_ROW") {
       insertTableRow(args[2], args[3], args[4]);
-      sorter.init();
-      sorter.search('query');
     } else if (cmd == "START_RUN") {
       startRun(args[2], args[3]);
     } else if (cmd == "FINISH_RUN") {
@@ -312,15 +309,6 @@ function handleServerResponse(response) {
   }
 
   setTimeout("poll(handleServerResponse, \"matches\", lastheard);",100);
-}
-
-// Tell the server to update the repository
-function doRepoUpdate() {
-  listenForTeamsUpdate("");
-  query("GET", "admin_action", "cmd=update", null);
-  var button = document.getElementById("update_button");
-  button.value = "updating...";
-  button.onclick = "";
 }
 
 // Poll the server for information

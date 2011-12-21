@@ -17,6 +17,7 @@ import model.BSPlayer;
 import model.BSRun;
 import model.BSUser;
 import model.MatchResult;
+import model.STATUS;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -56,7 +57,8 @@ public class Main {
 		if (Config.DEBUG) {
 			options.addOption("a", "analyze", true, "analyze a match file");
 			options.addOption("p", "populate", false, "populate the server DB with mock data");
-			options.addOption("m", "mock-worker", false, "run as a mock-worker (can be run with -s option)");
+			options.addOption("m", "mock-worker", false, "run as a mock-worker");
+			options.addOption("n", "mock-worker-sleep", true, "when running as mock-worker, time in seconds to take per match");
 		}
 		options.addOption("h", "help", false, "display help text");
 		options.addOption("o", HTTP_PORT_OP, true, "what port for the http server to listen on (default 80)");
@@ -111,7 +113,10 @@ public class Main {
 				Config c = new Config(false);
 				Config.setConfig(c);
 				Config.MOCK_WORKER = true;
-				c.cores = 16;
+				if (cmd.hasOption('n')) {
+					Config.MOCK_WORKER_SLEEP = Integer.parseInt(cmd.getOptionValue('n'));
+				}
+				c.cores = 4;
 				new Thread(new Worker()).start();
 			} else {
 				System.out.println("Must specify if running as server or worker.  Do ./run.sh -h for help.");
@@ -126,7 +131,7 @@ public class Main {
 		File checkFile = new File(Config.getConfig().install_dir + "/battlecode/teams/mock_player.jar");
 		BSPlayer bsPlayer;
 		if (!checkFile.exists()) {
-			FileInputStream istream = new FileInputStream(new File("lib/submission.jar"));
+			FileInputStream istream = new FileInputStream(new File("lib/mock_player.jar"));
 			FileOutputStream ostream = new FileOutputStream(Config.getConfig().install_dir + "/battlecode/teams/mock_player.jar");
 			byte[] buffer = new byte[1000];
 			int len = 0;
@@ -166,7 +171,7 @@ public class Main {
 		em.getTransaction().begin();
 		List<BSRun> runs = em.createQuery("from BSRun", BSRun.class).getResultList();
 		for (BSRun run: runs) {
-			run.setStatus(BSRun.STATUS.COMPLETE);
+			run.setStatus(STATUS.COMPLETE);
 			run.setEnded(new Date(new Date().getTime() + 100000 + r.nextInt(100000000)));
 			em.merge(run);
 		}

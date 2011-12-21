@@ -22,6 +22,7 @@ import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
 import model.MatchResult;
+import model.STATUS;
 import networking.CometCmd;
 import networking.CometMessage;
 import networking.Packet;
@@ -100,7 +101,7 @@ public class Master {
 		BSPlayer teamB = em.find(BSPlayer.class, teamBId);
 		newRun.setTeamA(teamA);
 		newRun.setTeamB(teamB);
-		newRun.setStatus(BSRun.STATUS.QUEUED);
+		newRun.setStatus(STATUS.QUEUED);
 		newRun.setStarted(new Date());
 		em.persist(newRun);
 
@@ -174,9 +175,9 @@ public class Master {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, runId);
 		// If it's running right now, just cancel it
-		if (run.getStatus() == BSRun.STATUS.RUNNING) {
+		if (run.getStatus() == STATUS.RUNNING) {
 			_log.info("canceling run");
-			stopCurrentRun(BSRun.STATUS.CANCELED);
+			stopCurrentRun(STATUS.CANCELED);
 			startRun();
 		} else {
 			// otherwise, delete it
@@ -235,7 +236,7 @@ public class Master {
 		try {
 			EntityManager em = HibernateUtil.getEntityManager();
 			BSMatch match = em.find(BSMatch.class, m.id);
-			if (match.getStatus() != BSMatch.STATUS.RUNNING || match.getRun().getStatus() != BSRun.STATUS.RUNNING) {
+			if (match.getStatus() != BSMatch.STATUS.RUNNING || match.getRun().getStatus() != STATUS.RUNNING) {
 				// Match was already finished by another worker
 			} else if (status == BSMatch.STATUS.FINISHED) {
 				em.getTransaction().begin();
@@ -264,7 +265,7 @@ public class Master {
 			.getSingleResult();
 			// If finished, start next run
 			if (matchesLeft == 0) {
-				stopCurrentRun(BSRun.STATUS.COMPLETE);
+				stopCurrentRun(STATUS.COMPLETE);
 				startRun();
 			} else {
 				sendWorkerMatches(worker);
@@ -284,10 +285,12 @@ public class Master {
 		List<BSMatch> queuedMatches = em.createQuery("from BSMatch match inner join fetch match.map inner join fetch match.run " +
 				"where match.status = ? and match.run.status = ?", BSMatch.class)
 		.setParameter(1, BSMatch.STATUS.QUEUED)
-		.setParameter(2, BSRun.STATUS.RUNNING)
+		.setParameter(2, STATUS.RUNNING)
 		.getResultList();
 
 		for (BSMatch m: queuedMatches) {
+			if (!worker.isFree())
+				break;
 			NetworkMatch nm = m.buildNetworkMatch();
 			nm.battlecodeServerHash = battlecodeServerHash;
 			nm.idataHash = idataHash;
@@ -308,7 +311,7 @@ public class Master {
 			List<BSMatch> runningMatches = em.createQuery("from BSMatch match inner join fetch match.map inner join fetch match.run " +
 					"where match.status = ? and match.run.status = ?", BSMatch.class)
 			.setParameter(1, BSMatch.STATUS.RUNNING)
-			.setParameter(2, BSRun.STATUS.RUNNING)
+			.setParameter(2, STATUS.RUNNING)
 			.getResultList();
 			while (!runningMatches.isEmpty() && worker.isFree() && 
 					worker.getRunningMatches().size() < runningMatches.size()) {
@@ -369,7 +372,7 @@ public class Master {
 		BSRun nextRun = null;
 		try {
 			List<BSRun> queued = em.createQuery("from BSRun run where run.status = ? order by run.id asc limit 1", BSRun.class)
-			.setParameter(1, BSRun.STATUS.QUEUED)
+			.setParameter(1, STATUS.QUEUED)
 			.getResultList();
 			if (queued.size() > 0) {
 				nextRun = queued.get(0);
@@ -378,7 +381,7 @@ public class Master {
 			// pass
 		}
 		if (nextRun != null) {
-			nextRun.setStatus(BSRun.STATUS.RUNNING);
+			nextRun.setStatus(STATUS.RUNNING);
 			nextRun.setStarted(new Date());
 			em.merge(nextRun);
 			em.getTransaction().begin();
@@ -397,7 +400,7 @@ public class Master {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun currentRun = null;
 		try {
-			currentRun = em.createQuery("from BSRun run where run.status = ?", BSRun.class).setParameter(1, BSRun.STATUS.RUNNING).getSingleResult();
+			currentRun = em.createQuery("from BSRun run where run.status = ?", BSRun.class).setParameter(1, STATUS.RUNNING).getSingleResult();
 		} catch (NoResultException e) {
 			// pass
 		} finally {
@@ -406,7 +409,7 @@ public class Master {
 		return currentRun;
 	}
 
-	private void stopCurrentRun(BSRun.STATUS status) {
+	private void stopCurrentRun(STATUS status) {
 		_log.info("Stopping current run");
 		BSRun currentRun = getCurrentRun();
 		EntityManager em = HibernateUtil.getEntityManager();
@@ -426,7 +429,7 @@ public class Master {
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
-		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+currentRun.getId(), ""+status}));
+		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+currentRun.getId(), status.toString()}));
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.FINISH_RUN, new String[] {}));
 		for (WorkerRepr c: workers) {
 			c.stopAllMatches();

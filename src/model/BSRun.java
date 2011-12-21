@@ -20,8 +20,6 @@ import common.Util;
 
 @Entity
 public class BSRun {
-	public static enum STATUS {QUEUED, RUNNING, COMPLETE, ERROR, CANCELED};
-	
 	private Long id;
 	private BSPlayer teamA;
 	private BSPlayer teamB;
