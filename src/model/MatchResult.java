@@ -34,8 +34,9 @@ public class MatchResult implements Serializable {
 		Random r = new Random();
 		result.setWinCondition(WIN_CONDITION.values()[r.nextInt(WIN_CONDITION.values().length)]);
 		result.setWinner(TEAM.values()[r.nextInt(TEAM.values().length)]);
-		result.setRounds(new Long(r.nextInt(5000)));
-		// TODO: set TeamMatchResults
+		result.setRounds(900 + new Long(r.nextInt(201)));
+		result.setaResult(TeamMatchResult.constructTeamMatchResult(result.getRounds()));
+		result.setbResult(TeamMatchResult.constructTeamMatchResult(result.getRounds()));
 		return result;
 	}
 	

@@ -22,7 +22,7 @@ import master.WebPollHandler;
 public class Config {
 	public static final int RESTART_STATUS = 121;
 	public static final boolean DEBUG = true;
-	public static final boolean SHOW_SQL = false;
+	public static final boolean SHOW_SQL = true;
 	public static boolean MOCK_WORKER = false;
 	public static int MOCK_WORKER_SLEEP = 0;
 	private static Config rootConfig;

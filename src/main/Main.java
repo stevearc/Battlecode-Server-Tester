@@ -1,8 +1,6 @@
 package main;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -127,19 +125,12 @@ public class Main {
 	}
 	
 	private static void createMockData() throws IOException {
+		Config.getConfig().getLogger().info("Populating database with mock data...");
 		EntityManager em = HibernateUtil.getEntityManager();
 		File checkFile = new File(Config.getConfig().install_dir + "/battlecode/teams/mock_player.jar");
 		BSPlayer bsPlayer;
 		if (!checkFile.exists()) {
-			FileInputStream istream = new FileInputStream(new File("lib/mock_player.jar"));
-			FileOutputStream ostream = new FileOutputStream(Config.getConfig().install_dir + "/battlecode/teams/mock_player.jar");
-			byte[] buffer = new byte[1000];
-			int len = 0;
-			while ((len = istream.read(buffer)) != -1) {
-				ostream.write(buffer, 0, len);
-			}
-			istream.close();
-			ostream.close();
+			checkFile.createNewFile();
 			bsPlayer = new BSPlayer();
 			bsPlayer.setPlayerName("mock_player");
 			em.persist(bsPlayer);
@@ -164,7 +155,7 @@ public class Main {
 		}
 		Config.getMaster().updateMaps();
 		List<Long> mapIds = em.createQuery("select map.id from BSMap map", Long.class).getResultList();
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 5; i++) {
 			Config.getMaster().queueRun(bsPlayer.getId(), bsPlayer.getId(), seeds, mapIds);
 		}
 		
@@ -180,17 +171,24 @@ public class Main {
 		
 		List<BSMatch> matches = em.createQuery("from BSMatch", BSMatch.class).getResultList();
 		MatchResult mock;
-		em.getTransaction().begin();
+		int i = 0;
 		for (BSMatch m: matches) {
 			mock = MatchResult.constructMockMatchResult();
 			m.setResult(mock);
 			m.setStatus(BSMatch.STATUS.FINISHED);
 			em.persist(mock);
 			em.merge(m);
+			if (i++ % 50 == 0) {
+				em.getTransaction().begin();
+				em.flush();
+				em.getTransaction().commit();
+			}
 		}
+		em.getTransaction().begin();
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
+		Config.getConfig().getLogger().info("Finished creating mock data!");
 	}
 
 	/**

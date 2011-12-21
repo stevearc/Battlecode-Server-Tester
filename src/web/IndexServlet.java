@@ -128,7 +128,7 @@ public class IndexServlet extends HttpServlet {
 			// Make runs with data clickable
 			//TODO: move this into js
 			if (r.getStatus() == STATUS.RUNNING || r.getStatus() == STATUS.COMPLETE || r.getStatus() == STATUS.CANCELED)
-				td = "<td onClick='doNavMatches(" + r.getId() + ")' style='cursor:pointer'>";
+				td = "<td onClick='doNavMatches(" + r.getId() + ")'>";
 			else
 				td = "<td>";
 			out.println("<tr>");

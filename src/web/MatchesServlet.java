@@ -64,7 +64,7 @@ public class MatchesServlet extends HttpServlet {
 				"});" + 
 				"</script>");
 
-		out.println("<table id=\"matches_table\" class='datatable'>" +
+		out.println("<table id=\"matches_table\" class='datatable datatable-clickable'>" +
 				"<thead>" + 
 				"<tr>" +
 				"<th>Map</th>" +
@@ -83,12 +83,12 @@ public class MatchesServlet extends HttpServlet {
 		.getResultList();
 		for (BSMatch match: matches) {
 			out.println("<tr>");
-			out.println("<td>" + match.getMap().getMapName() + "</td>");
-			out.println("<td>" + match.getSeed() + "</td>");
-			out.println("<td><font color='" + (match.getResult().getWinner() == TEAM.A ? "red'>" + 
+			out.println(td(match) + match.getMap().getMapName() + "</td>");
+			out.println(td(match) + match.getSeed() + "</td>");
+			out.println(td(match) + "<font color='" + (match.getResult().getWinner() == TEAM.A ? "red'>" + 
 					run.getTeamA().getPlayerName() : "blue'>" + run.getTeamB().getPlayerName()) + "</font></td>");
-			out.println("<td>" + match.getMap().getSize() + "</td>");
-			out.println("<td>" + match.getResult().getWinCondition() + "</td>");
+			out.println(td(match) + match.getMap().getSize() + "</td>");
+			out.println(td(match) + match.getResult().getWinCondition() + "</td>");
 			out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
 					match.toMatchFileName() + "'\"></td>");
 			out.println("</tr>");
@@ -99,6 +99,10 @@ public class MatchesServlet extends HttpServlet {
 
 		out.println("<script type=\"text/javascript\" src=\"js/matches.js\"></script>");
 		out.println("</body></html>");
+	}
+	
+	public String td(BSMatch match) {
+		return "<td onclick='rowClick(" + match.getId() + ")'>";
 	}
 
 	@Override

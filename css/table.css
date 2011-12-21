@@ -45,6 +45,7 @@ div.dataTables_wrapper .ui-widget-header {
 
 .datatable-clickable tr:hover {
     background-color: 6FB9B9;
+    cursor: pointer;
 }
 
 .datatable td.center {

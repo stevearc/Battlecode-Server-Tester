@@ -41,6 +41,8 @@ public class WebServer implements Runnable {
 			new LogoutServlet(),
 			new AdminActionServlet(),
 			new UploadServlet(),
+			new AnalysisServlet(),
+			new AnalysisContentServlet(),
 			};
 
 	public WebServer() {
