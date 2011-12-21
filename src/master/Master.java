@@ -66,8 +66,8 @@ public class Master {
 	 */
 	public synchronized void start() throws NoSuchAlgorithmException, IOException {
 		new Thread(handler).start();
-		battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/lib/battlecode-server.jar"));
-		idataHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/idata"));
+		battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/lib/battlecode-server.jar"));
+		idataHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/idata"));
 		startRun();
 		new Thread(new Runnable() {
 			@Override
@@ -139,7 +139,7 @@ public class Master {
 			if (pendingBattlecodeServerFile != null && pendingIdataFile != null) {
 				_log.info("Writing updated battlecode files");
 				FileInputStream istream = new FileInputStream(pendingBattlecodeServerFile);
-				FileOutputStream ostream = new FileOutputStream(config.install_dir + "/battlecode/lib/battlecode-server.jar");
+				FileOutputStream ostream = new FileOutputStream("./battlecode/lib/battlecode-server.jar");
 				byte[] buffer = new byte[1024];
 				int len = 0;
 				while ((len = istream.read(buffer)) != -1) {
@@ -149,14 +149,14 @@ public class Master {
 				ostream.close();
 				
 				istream = new FileInputStream(pendingIdataFile);
-				ostream = new FileOutputStream(config.install_dir + "/battlecode/idata");
+				ostream = new FileOutputStream("./battlecode/idata");
 				while ((len = istream.read(buffer)) != -1) {
 					ostream.write(buffer, 0, len);
 				}
 				istream.close();
 				ostream.close();
-				battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/lib/battlecode-server.jar"));
-				idataHash = Util.convertToHex(Util.SHA1Checksum(config.install_dir + "/battlecode/idata"));
+				battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/lib/battlecode-server.jar"));
+				idataHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/idata"));
 				pendingBattlecodeServerFile = null;
 				pendingIdataFile = null;
 			}
@@ -184,7 +184,7 @@ public class Master {
 			// first delete rms files
 			for (BSMatch match: run.getMatches()) {
 				if (match.getStatus() == BSMatch.STATUS.FINISHED) {
-					File matchFile = new File(config.install_dir + "/matches/" + match.toMatchFileName());
+					File matchFile = new File("./matches/" + match.toMatchFileName());
 					if (matchFile.exists()) {
 						matchFile.delete();
 					}
@@ -246,7 +246,7 @@ public class Master {
 				match.setResult(result);
 				match.setStatus(BSMatch.STATUS.FINISHED);
 				_log.info("Match finished: " + m + " winner: " + result.getWinner());
-				File outFile = new File(config.install_dir + "/matches/" + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
+				File outFile = new File("./matches/" + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
 				outFile.createNewFile();
 				FileOutputStream fos = new FileOutputStream(outFile);
 				fos.write(data);
@@ -340,17 +340,17 @@ public class Master {
 		byte[] idata = null;
 		try {
 			if (needUpdate) {
-				battlecodeServer = Util.getFileData(config.install_dir + "/battlecode/lib/battlecode-server.jar");
-				idata = Util.getFileData(config.install_dir + "/battlecode/idata");
+				battlecodeServer = Util.getFileData("./battlecode/lib/battlecode-server.jar");
+				idata = Util.getFileData("./battlecode/idata");
 			}
 			if (needMap) {
-				map = Util.getFileData(config.install_dir + "/battlecode/maps/" + match.map.getMapName() + ".xml");
+				map = Util.getFileData("./battlecode/maps/" + match.map.getMapName() + ".xml");
 			}
 			if (needTeamA) {
-				teamA = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_a + ".jar");
+				teamA = Util.getFileData("./battlecode/teams/" + match.team_a + ".jar");
 			}
 			if (needTeamB) {
-				teamB = Util.getFileData(config.install_dir + "/battlecode/teams/" + match.team_b + ".jar");
+				teamB = Util.getFileData("./battlecode/teams/" + match.team_b + ".jar");
 			}
 			dep = new Dependencies(battlecodeServer, idata, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);

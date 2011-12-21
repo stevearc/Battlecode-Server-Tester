@@ -17,7 +17,6 @@ import master.MasterMethodCaller;
 import model.BSPlayer;
 import model.STATUS;
 
-import common.Config;
 import common.HibernateUtil;
 
 
@@ -32,6 +31,10 @@ public class UploadServlet extends HttpServlet {
 
 	private void warn(HttpServletResponse response, String warning) throws IOException {
 		response.getWriter().println("<p class='ui-state-error' style='padding:10px'>" + warning + "</p>");
+	}
+	
+	private void highlight(HttpServletResponse response, String msg) throws IOException {
+		response.getWriter().println("<p class='ui-state-highlight' style='padding:10px'>" + msg + "</p>");
 	}
 
 	@Override
@@ -65,7 +68,7 @@ public class UploadServlet extends HttpServlet {
 				warn(response, "Player name is too long");
 			} else {
 				FileInputStream istream = new FileInputStream(player);
-				FileOutputStream ostream = new FileOutputStream(Config.getConfig().install_dir + "/battlecode/teams/" + playerName + ".jar");
+				FileOutputStream ostream = new FileOutputStream("./battlecode/teams/" + playerName + ".jar");
 				byte[] buffer = new byte[1000];
 				int len = 0;
 				while ((len = istream.read(buffer)) != -1) {
@@ -80,7 +83,7 @@ public class UploadServlet extends HttpServlet {
 				em.getTransaction().begin();
 				try {
 					em.flush();
-					out.println("<p>Successfully uploaded player: " + playerName + "</p>");
+					highlight(response, "Successfully uploaded player: " + playerName);
 				} catch (PersistenceException e) {
 					// player name already exists
 					warn(response, "Player name already exists");
@@ -108,9 +111,9 @@ public class UploadServlet extends HttpServlet {
 				.setParameter(1, STATUS.RUNNING)
 				.getSingleResult();
 				if (numRunning == 0) {
-					out.println("<p>Successfully updated battlecode version!</p>");
+					highlight(response, "Successfully updated battlecode version!");
 				} else {
-					out.println("<p>Successfully updated battlecode version!  Changes will take place after current run finishes</p>");
+					highlight(response, "Successfully updated battlecode version!  Changes will take place after current run finishes.");
 				}
 				em.close();
 			}

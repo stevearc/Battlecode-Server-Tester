@@ -120,7 +120,7 @@ public class Main {
 	private static void createMockData() throws IOException {
 		Config.getConfig().getLogger().info("Populating database with mock data...");
 		EntityManager em = HibernateUtil.getEntityManager();
-		File checkFile = new File(Config.getConfig().install_dir + "/battlecode/teams/mock_player.jar");
+		File checkFile = new File("./battlecode/teams/mock_player.jar");
 		BSPlayer bsPlayer;
 		if (!checkFile.exists()) {
 			checkFile.createNewFile();
@@ -206,13 +206,6 @@ public class Main {
 			em.flush();
 			em.getTransaction().commit();
 			em.close();
-
-			// Now remove the user information from the config file
-			try {
-				Runtime.getRuntime().exec(config.cmd_clean_config_file);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 

@@ -23,6 +23,7 @@ public class Config {
 	public static final int RESTART_STATUS = 121;
 	public static final boolean DEBUG = true;
 	public static final boolean SHOW_SQL = true;
+	public static final boolean PRINT_WORKER_OUTPUT = true;
 	public static boolean MOCK_WORKER = false;
 	public static int MOCK_WORKER_SLEEP = 0;
 	private static Config rootConfig;
@@ -38,8 +39,6 @@ public class Config {
 	private static final String log_dir = "./log";
 
 	/* These options are specified in the battlecode.conf file */
-	/** The directory the application is installed into */
-	public String install_dir = "";
 	/** The port number of the server to connect to (or listen on, if running as server) */
 	public int port = 8888;
 	/** WORKER ONLY: The internet address of the master to connect to */
@@ -163,10 +162,7 @@ public class Config {
 	 */
 	private void parse(String option, String value) {
 		option = option.toLowerCase();
-		if (option.equals("install_dir")) {
-			install_dir = value;
-		}
-		else if (option.equals("admin")) {
+		if (option.equals("admin")) {
 			admin = value;
 		}
 		else if (option.equals("admin_pass")) {
@@ -184,14 +180,8 @@ public class Config {
 		else if (option.equals("map_cutoff_medium")) {
 			map_cutoff_medium = Integer.parseInt(value);
 		} 
-		else if (option.equals("repo_addr")) {
-			// pass
-		}
 		else if (option.equals("cores")) {
 			cores = Integer.parseInt(value);
-		}
-		else if (option.equals("team")) {
-			// This is only used in the commandline scripts
 		}
 		else {
 			System.err.println("Unrecognized option: " + option);
@@ -204,8 +194,6 @@ public class Config {
 	 */
 	private void validate() throws InvalidConfigException {
 		// Check the server and worker values
-		if (!new File(install_dir).exists())
-			throw new InvalidConfigException("Invalid install directory " + install_dir);
 
 		if (port < 1 || port > 65535)
 			throw new InvalidConfigException("Invalid port number " + port);

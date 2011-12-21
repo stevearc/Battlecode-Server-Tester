@@ -77,12 +77,12 @@ public class WebServer implements Runnable {
 			// Serve static javascript files
 			ContextHandler jsContext = new ContextHandler();
 			jsContext.setContextPath("/js");
-			jsContext.setHandler(new StaticFileHandler("text/javascript", ".+\\.js", config.install_dir + "/js"));
+			jsContext.setHandler(new StaticFileHandler("text/javascript", ".+\\.js", "./js"));
 			
 			// Serve static css files
 			ContextHandler cssContext = new ContextHandler();
 			cssContext.setContextPath("/css");
-			cssContext.setHandler(new StaticFileHandler("text/css", ".+\\.css", config.install_dir + "/css"));
+			cssContext.setHandler(new StaticFileHandler("text/css", ".+\\.css", "./css"));
 			
 			// Serve static image files
 			ContextHandler imgContext = new ContextHandler();
@@ -97,7 +97,7 @@ public class WebServer implements Runnable {
 			// Serve static match files
 			ContextHandler matchContext = new ContextHandler();
 			matchContext.setContextPath("/matches");
-			matchContext.setHandler(new StaticFileHandler("application/octet-stream", ".+\\.rms", config.install_dir + "/matches"));
+			matchContext.setHandler(new StaticFileHandler("application/octet-stream", ".+\\.rms", "./matches"));
 			
 			// Add contexts
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
