@@ -7,18 +7,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.SocketFactory;
 
 import model.BSMap;
 import model.BSMatch;
@@ -44,29 +38,14 @@ public class Worker implements Controller, Runnable {
 	private Network network;
 	private MatchRunner[] running;
 	private boolean runWorker = true;
-	private SSLSocketFactory sf;
+	private SocketFactory sf;
 
 	public Worker() throws Exception{
 		config = Config.getConfig();
 		_log = config.getLogger();
 		running = new MatchRunner[config.cores];
 
-		// Connect to the master using the certificate in the keystore
-		KeyStore keystore = KeyStore.getInstance("JKS");
-		keystore.load(new FileInputStream(config.keystore), config.keystore_pass.toCharArray());
-
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-		tmf.init(keystore);
-
-		SSLContext context = SSLContext.getInstance("TLS");
-		TrustManager[] trustManagers = tmf.getTrustManagers();
-
-		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-		kmf.init(keystore, config.keystore_pass.toCharArray());
-		KeyManager[] keyManagers = kmf.getKeyManagers();
-
-		context.init(keyManagers, trustManagers, null);
-		sf = context.getSocketFactory();
+		sf = SocketFactory.getDefault();
 	}
 	
 	public synchronized void matchFailed(MatchRunner runner, int core, NetworkMatch match) {

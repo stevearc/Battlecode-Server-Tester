@@ -11,8 +11,8 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.session.HashSessionIdManager;
-import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -104,12 +104,9 @@ public class WebServer implements Runnable {
 			contexts.setHandlers(new Handler[] {jsContext, cssContext, imgContext, imgContext2, matchContext, context});
 			server.setHandler(contexts);
 			
-			SslSelectChannelConnector ssl_connector = new SslSelectChannelConnector();
-			ssl_connector.setPort(config.https_port);
-			ssl_connector.setKeystore(config.keystore);
-			ssl_connector.setPassword(config.keystore_pass);
-			
-			server.setConnectors(new Connector[]{ssl_connector});
+			SelectChannelConnector connector = new SelectChannelConnector();
+			connector.setPort(config.http_port);
+			server.setConnectors(new Connector[]{connector});
 			server.start();
 			server.join();
 		} catch (Exception e) {

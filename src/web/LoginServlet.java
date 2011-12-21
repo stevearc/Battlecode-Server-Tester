@@ -170,7 +170,6 @@ public class LoginServlet extends HttpServlet {
 				em.close();
 				// Cookie is encoded as [userid]$[session token]
 				Cookie c = new Cookie(WebUtil.COOKIE_NAME, user.getId() + "$" + salt);
-				c.setSecure(true);
 				response.addCookie(c);
 				response.setStatus(HttpServletResponse.SC_OK);
 				response.sendRedirect("/" + IndexServlet.NAME);

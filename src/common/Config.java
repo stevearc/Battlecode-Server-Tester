@@ -35,14 +35,9 @@ public class Config {
 	/* These options are only specified on the command line */
 	private boolean isServer;
 	public int http_port = 80;
-	public int https_port = 443;
-	public String keystore = "";
+	private static final String log_dir = "./log";
 
 	/* These options are specified in the battlecode.conf file */
-	/** The password to the keystore */
-	public String keystore_pass = "";
-	/** The directory to place log files */
-	private String log_dir = "/var/log";
 	/** The directory the application is installed into */
 	public String install_dir = "";
 	/** The port number of the server to connect to (or listen on, if running as server) */
@@ -75,19 +70,16 @@ public class Config {
 
 	public Config(boolean isMaster) throws IOException {
 		this.isServer = isMaster;
-		File file = new File("/etc/bs-tester.conf");
+		File file = new File("./etc/bs-tester.conf");
 		if (!file.exists()) {
-			// First try the hacked config file
-			file = new File("./etc/bs-tester.conf");
-			log_dir = "./var/log";
 			if (!file.exists()) {
-				throw new IOException("Config file /etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
+				throw new IOException("Config file ./etc/bs-tester.conf does not exist.  Make sure you have run setup.sh");
 			}
-			File logDir = new File(log_dir);
-			if (!logDir.exists()) {
-				System.out.println("Creating log dir: " + log_dir);
-				logDir.mkdirs();
-			}
+		}
+		File logDir = new File(log_dir);
+		if (!logDir.exists()) {
+			System.out.println("Creating log dir: " + log_dir);
+			logDir.mkdirs();
 		}
 		FileInputStream f = new FileInputStream(file);
 		BufferedReader read = new BufferedReader(new InputStreamReader(f));
@@ -173,19 +165,12 @@ public class Config {
 		option = option.toLowerCase();
 		if (option.equals("install_dir")) {
 			install_dir = value;
-			keystore = install_dir + "/keystore";
-		}
-		else if (option.equals("keystore_pass")) {
-			keystore_pass = value;
 		}
 		else if (option.equals("admin")) {
 			admin = value;
 		}
 		else if (option.equals("admin_pass")) {
 			admin_pass = value;
-		}
-		else if (option.equals("log_dir")) {
-			log_dir = value;
 		}
 		else if (option.equals("server")) {
 			server = value;
@@ -219,12 +204,6 @@ public class Config {
 	 */
 	private void validate() throws InvalidConfigException {
 		// Check the server and worker values
-		if (!new File(log_dir).exists())
-			throw new InvalidConfigException("Invalid log directory " + log_dir);
-
-		if ("".equals(keystore_pass))
-			throw new InvalidConfigException("Keystore password cannot be blank");
-
 		if (!new File(install_dir).exists())
 			throw new InvalidConfigException("Invalid install directory " + install_dir);
 

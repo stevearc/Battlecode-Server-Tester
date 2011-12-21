@@ -57,7 +57,6 @@
             <arg value="COPYING"/>
             <arg value="run.sh"/>
             <arg value="setup.sh"/>
-            <arg value="uninstall.sh"/>
             <arg value="scripts"/>
             <arg value="etc"/>
             <arg value="lib"/>

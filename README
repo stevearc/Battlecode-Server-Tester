@@ -38,9 +38,6 @@ It should prompt you for a couple fields and generate the appropriate config fil
 The server and worker can be run with the run.sh file.  Type
 ./run.sh -h
 to display the available commandline arguments.  
-If you installed the daemon in the setup script, you can start the service with 
-sudo /etc/init.d/bs-tester start
 
-While you *can* run both a master and a worker on the same computer, you should make sure that
-only one or the other has been installed, otherwise one /etc/init.d/bs-tester file will
-overwrite the other.
+While you *can* run both a master and a worker on the same computer, you should not run them from
+the same directory.

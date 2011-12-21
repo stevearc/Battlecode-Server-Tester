@@ -24,7 +24,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import web.ProxyServer;
 import web.WebServer;
 import worker.GameData;
 import worker.Worker;
@@ -42,7 +41,6 @@ import common.Util;
 
 public class Main {
 	private static final String HTTP_PORT_OP = "http-port";
-	private static final String SSL_PORT_OP = "ssl-port";
 
 	/**
 	 * @param args
@@ -60,7 +58,6 @@ public class Main {
 		}
 		options.addOption("h", "help", false, "display help text");
 		options.addOption("o", HTTP_PORT_OP, true, "what port for the http server to listen on (default 80)");
-		options.addOption("l", SSL_PORT_OP, true, "what port for the https server to listen on (default 443)");
 
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
@@ -83,16 +80,12 @@ public class Main {
 				if (cmd.hasOption(HTTP_PORT_OP)) {
 					config.http_port = Integer.parseInt(cmd.getOptionValue(HTTP_PORT_OP));
 				}
-				if (cmd.hasOption(SSL_PORT_OP)) {
-					config.https_port = Integer.parseInt(cmd.getOptionValue(SSL_PORT_OP));
-				}
 				// If this is the first run, make sure the initial admin is in the DB
 				if (!config.admin.trim().equals(""))
 					createWebAdmin();
 
 				Master m = new Master();
 				Config.setMaster(m);
-				new Thread(new ProxyServer()).start();
 				new Thread(new WebServer()).start();
 				m.start();
 				if (cmd.hasOption('p')) {
