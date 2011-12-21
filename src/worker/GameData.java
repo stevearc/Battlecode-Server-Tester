@@ -9,9 +9,9 @@ import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 
 import model.MatchResult;
-import model.MatchResult.WIN_CONDITION;
 import model.TEAM;
 import model.TeamMatchResult;
+import model.MatchResult.WIN_CONDITION;
 import battlecode.common.Chassis;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
@@ -20,12 +20,11 @@ import battlecode.engine.signal.Signal;
 import battlecode.serial.MatchFooter;
 import battlecode.serial.RoundDelta;
 import battlecode.server.proxy.XStreamProxy;
-import battlecode.world.signal.AttackSignal;
+import battlecode.world.signal.BroadcastSignal;
 import battlecode.world.signal.DeathSignal;
 import battlecode.world.signal.EquipSignal;
 import battlecode.world.signal.MineBirthSignal;
 import battlecode.world.signal.MineDepletionSignal;
-import battlecode.world.signal.MovementSignal;
 import battlecode.world.signal.SpawnSignal;
 import battlecode.world.signal.TurnOffSignal;
 import battlecode.world.signal.TurnOnSignal;
@@ -88,21 +87,24 @@ public class GameData {
 			fluxIncome[i] = new ArrayList<Double>();
 			currentFluxIncome[i] = 0.0;
 			fluxReserve[i] = new ArrayList<Double>();
-			currentFluxReserve[i] = 0.0;
+			currentFluxReserve[i] = GameConstants.INITIAL_FLUX;
 		}
 
+		int rNum = 0;
 		for (RoundDelta round: rounds) {
+			rNum++;
 			Signal[] signals = round.getSignals();
 			for (int i = 0; i < teams.length; i++) {
 				currentFluxIncome[i] = 0.0;
 			}
-
+			
 			for (int i = 0; i < signals.length; i++) {
 				Signal signal = signals[i];
 				if (signal instanceof SpawnSignal) {
 					SpawnSignal s = (SpawnSignal)signal;
 					currentActiveRobots[s.getTeam().ordinal()]++;
 					currentFluxDrain[s.getTeam().ordinal()] += s.getType().upkeep;
+					
 					r = new RobotStat(s.getTeam(), s.getType());
 					robots.put(s.getRobotID(), r);
 					lastSpawn.put(s.getLoc(), s.getTeam());
@@ -114,18 +116,19 @@ public class GameData {
 					if (r == null)
 						r = robots.get(s.robotID);
 					currentFluxReserve[r.team.ordinal()] += s.component.cost;
-				} 
-				else if(signal instanceof MovementSignal) {
-					// pass for now
-				} 
-				else if(signal instanceof AttackSignal) {
-					// pass for now
-				} 
+				}
+				else if (signal instanceof BroadcastSignal) {
+					BroadcastSignal s = (BroadcastSignal) signal;
+					int team = robots.get(s.robotID).team.ordinal();
+					currentFluxReserve[team] -= GameConstants.BROADCAST_FIXED_COST;
+				}
 				else if(signal instanceof DeathSignal) {
 					DeathSignal s = (DeathSignal)signal;
 					r = robots.remove(s.getObjectID());
-					currentActiveRobots[r.team.ordinal()]--;
-					currentFluxDrain[r.team.ordinal()] -= r.type.upkeep;
+					if (r.on) {
+						currentActiveRobots[r.team.ordinal()]--;
+						currentFluxDrain[r.team.ordinal()] -= r.type.upkeep;
+					}
 				} 
 				else if (signal instanceof TurnOffSignal) {
 					TurnOffSignal s = (TurnOffSignal)signal;
@@ -138,15 +141,16 @@ public class GameData {
 					TurnOnSignal s = (TurnOnSignal)signal;
 					for (Integer id: s.robotIDs) {
 						r = robots.get(id);
-						r.on = true;
-						currentActiveRobots[r.team.ordinal()]++;
-						currentFluxDrain[r.team.ordinal()] += r.type.upkeep;
+						if (!r.on) {
+							r.on = true;
+							currentActiveRobots[r.team.ordinal()]++;
+							currentFluxDrain[r.team.ordinal()] += r.type.upkeep;
+						}
 					}
 				}
 				else if (signal instanceof MineDepletionSignal) {
 					MineDepletionSignal s = (MineDepletionSignal) signal;
 					Team t = lastSpawn.get(minesToLocs.get(s.id));
-					currentFluxReserve[t.ordinal()] += getMineAmount(s.roundsAvaliable);
 					currentFluxIncome[t.ordinal()] += getMineAmount(s.roundsAvaliable);
 				}
 				else if (signal instanceof MineBirthSignal) {
@@ -154,17 +158,12 @@ public class GameData {
 					minesToLocs.put(s.id, s.location);
 				}
 			}
-			for (RobotStat robot: robots.values()) {
-				if (robot.on) {
-					currentFluxReserve[robot.team.ordinal()] -= robot.type.upkeep;
-				}
-			}
 
 			for (int i = 0; i < teams.length; i++) {
 				activeRobots[i].add(currentActiveRobots[i]);
 				fluxDrain[i].add(currentFluxDrain[i]);
 				fluxIncome[i].add(currentFluxIncome[i]);
-				fluxReserve[i].add(currentFluxReserve[i]);
+				fluxReserve[i].add(currentFluxReserve[i] + currentFluxIncome[i] - currentFluxDrain[i]);
 			}
 		}
 		for (int i = 0; i < teams.length; i++) {
