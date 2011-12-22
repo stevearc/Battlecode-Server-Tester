@@ -21,15 +21,13 @@ import common.NetworkMatch;
  *
  */
 public class WorkerRepr implements Controller {
-	private Config config;
 	private Logger _log;
 	private Network net;
 	private HashSet<NetworkMatch> runningMatches;
 	private int numCores = 0;
 
 	public WorkerRepr(Socket s) throws IOException {
-		config = Config.getConfig();
-		_log = config.getLogger();
+		_log = Config.getLogger();
 		this.net = new Network(this, s);
 		runningMatches = new HashSet<NetworkMatch>();
 	}

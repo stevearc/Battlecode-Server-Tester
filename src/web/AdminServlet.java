@@ -12,7 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
 
-import common.Config;
 import common.HibernateUtil;
 
 /**
@@ -36,16 +35,16 @@ public class AdminServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, toString());	
+		WebUtil.writeTabs(request, response, out, toString());	
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		if (user == null || user.getPrivs() != BSUser.PRIVS.ADMIN) {
 			out.println("<h1>You are not an admin</h1>");
 			out.println("</body></html>");
-			Config.getConfig().getLogger().info("privs: " + user.getPrivs());
 			return;
 		}
 
+		out.println("<div style='clear:both; width:100%; text-align:center'><button id='download'>Download worker</button></div>");
 		out.println("<div style='float:left'>");
 		out.println("<table id='new_user_table' class='datatable' style='width:470px'>");
 		out.println("<thead>");

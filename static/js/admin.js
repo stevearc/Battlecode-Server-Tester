@@ -15,6 +15,9 @@ $(function() {
     });
 
     $('.dataTables_wrapper').attr("style", "width:470px; margin:8");
+    $('#download').button().click(function() {
+        document.location='/bs-worker.tar.gz';
+    });
     
 });
 

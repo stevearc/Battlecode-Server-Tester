@@ -17,27 +17,28 @@ user queues and views matches.  The user can install this software on an arbitra
 sends the appropriate matches to the workers, and they send back the results.  The more workers, 
 the faster the results.
 
-#######################
-## INSTALLING SERVER ##
-#######################
-To install the server, simply run
-./setup.sh
-It should prompt you for a few parameters and automatically set up the bs-tester.conf file.
+####################
+## RUNNING SERVER ##
+####################
+The entry point is run.sh.  Use ./run.sh -h to view the options, but the basic way to start the
+server is:
 
-########################
-## INSTALLING WORKERS ##
-########################
-After running setup.sh, the script should have generated a bs-worker.tar.gz file.  Copy this file
-to the worker computer (using scp or some other tool).  Then unzip it on the worker and run
-./setup.sh
-It should prompt you for a couple fields and generate the appropriate config file.  
+./run.sh -s
 
-#############
-## RUNNING ##
-#############
-The server and worker can be run with the run.sh file.  Type
-./run.sh -h
-to display the available commandline arguments.  
+On the first run it will prompt you to create an admin user.  This is used for the web login.
+
+#####################
+## RUNNING WORKERS ##
+#####################
+The first run of the server will also generate a file named bs-worker.tar.gz.  You can either copy
+this file by hand or download it via the web interface (under the Admin tab).  Once you have that
+file on a worker machine, you simply unzip it and run it the same way you ran the server.  
+
+./run.sh -w [hostname]
+
+where [hostname] is the address of the master.  If your machine has multiple cores you can also 
+use the -c [cores] option to run multiple matches simultaneously.  Be warned that each running
+match eats up a lot of memory.
 
 While you *can* run both a master and a worker on the same computer, you should not run them from
 the same directory.

@@ -19,11 +19,9 @@ public class Network implements Runnable{
 	protected Socket socket;
 	protected boolean finish = false;
 	protected Controller controller;
-	protected Config config;
 
 	public Network (Controller controller, Socket socket) throws IOException{
-		config = Config.getConfig();
-		_log = config.getLogger();
+		_log = Config.getLogger();
 		this.socket = socket;
 		this.controller = controller;
 	}

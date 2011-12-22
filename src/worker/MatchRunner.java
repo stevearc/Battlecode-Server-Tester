@@ -23,7 +23,6 @@ import common.Util;
 
 public class MatchRunner implements Runnable {
 	private Logger _log;
-	private Config config;
 	private Worker worker;
 	private NetworkMatch match;
 	private boolean stop = false;
@@ -31,11 +30,10 @@ public class MatchRunner implements Runnable {
 	private int core;
 
 	public MatchRunner(Worker worker, NetworkMatch match, int core) {
-		config = Config.getConfig();
 		this.match = match;
 		this.worker = worker;
 		this.core = core;
-		_log = config.getLogger();
+		_log = Config.getLogger();
 	}
 
 	/**
@@ -84,7 +82,7 @@ public class MatchRunner implements Runnable {
 			if (stop)
 				return;
 			// Generate the bc.conf file
-			curProcess = run.exec(new String[] {config.cmd_gen_conf, 
+			curProcess = run.exec(new String[] {Config.cmd_gen_conf, 
 					"./battlecode/core" + core, 
 					match.map.getMapName(),
 					"A" + team_a,
@@ -96,7 +94,7 @@ public class MatchRunner implements Runnable {
 				return;
 			
 			// Rename team A in the source
-			curProcess = run.exec(new String[] {config.cmd_rename_team, 
+			curProcess = run.exec(new String[] {Config.cmd_rename_team, 
 					"./battlecode/core" + core, 
 					"A" + team_a, 
 					"./battlecode/teams/" + match.team_a + ".jar"});
@@ -106,7 +104,7 @@ public class MatchRunner implements Runnable {
 				return;
 			
 			// Rename team B in the source
-			curProcess = run.exec(new String[] {config.cmd_rename_team, 
+			curProcess = run.exec(new String[] {Config.cmd_rename_team, 
 					"./battlecode/core" + core, 
 					"B" + team_b, 
 					"./battlecode/teams/" + match.team_b + ".jar"});
@@ -116,18 +114,11 @@ public class MatchRunner implements Runnable {
 				return;
 			
 			// Run the match
-			curProcess = run.exec(new String[] {config.cmd_run_match, "./battlecode/core" + core, output_file});
+			curProcess = run.exec(new String[] {Config.cmd_run_match, "./battlecode/core" + core, output_file});
 			curProcess.waitFor();
 			printOutput();
 			if (stop)
 				return;
-			/*
-			new Thread(new Callback(Thread.currentThread(), curProcess)).start();
-			try {
-				Thread.sleep(config.timeout);
-			} catch (InterruptedException e) {
-			}
-			*/
 
 			// Read in the output file
 			BufferedReader reader = new BufferedReader(new FileReader(output_file));
@@ -148,7 +139,6 @@ public class MatchRunner implements Runnable {
 				return;
 			}
 
-			_log.info("Finished: " + match);
 		} catch (Exception e) {
 			if (!stop) {
 				_log.log(Level.SEVERE, "Failed to run match", e);
@@ -179,6 +169,7 @@ public class MatchRunner implements Runnable {
 		}
 
 		if (!stop) {
+			_log.info("Finished: " + match);
 			worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
 		}
 	}

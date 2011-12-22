@@ -48,30 +48,8 @@ $(function() {
         }
     });
 
-    init();
     handleServerResponse("");
 });
-
-// Round a number to a specific number of digits
-function roundNumber(number, digits) {
-  var multiple = Math.pow(10, digits);
-  var rndedNum = Math.round(number * multiple) / multiple;
-  return rndedNum;
-}
-
-// Put the progress percentage for the current run in the table
-function init() {
-    var table = $('#run_table').dataTable();
-    var rowIndex;
-    var rows = table.fnGetNodes();
-    var percentString = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
-    for (rowIndex in rows) {
-        if ($($(rows[rowIndex]).children()[4]).html() === "Running") {
-            table.fnUpdate(percentString, parseInt(rowIndex), 4);
-            break;
-        }
-    }
-}
 
 // Navigate to view all matches for a run
 function doNavMatches(id) {
@@ -240,6 +218,11 @@ function insertTableRow(rowid, team_a, team_b) {
         "",
         "<input type='button' id='temp1' />",
     ]);
+    $('#temp1').parent().parent().children().click(function() {
+        if ($(this).parent().children().index(this) != 6) {
+            doNavMatches(rowid);
+        }
+    });
     $('#temp1').attr('value', 'dequeue')
     .click(function() {
         delRun(rowid, false);
@@ -248,41 +231,11 @@ function insertTableRow(rowid, team_a, team_b) {
 }
 
 // Update the progress for the current run
-function matchFinished(rowid, win) {
-  current_num_matches += 1;
-  table = document.getElementById("table");
-  for (var i = 1; i < table.rows.length; i++) {
-    id = table.rows[i].cells[0].innerHTML;
-    if (id == rowid) {
-      var wins_row = table.rows[i].cells[column_map['WINS']];
-      split = wins_row.innerHTML.split("/");
-      wins = parseInt(split[0]);
-      losses = parseInt(split[1]);
-      if (win)
-        wins += 1;
-      else
-        losses += 1;
-      wins_row.innerHTML = wins + "/" + losses;
-      var status_row = table.rows[i].cells[column_map['STATUS']];
-      status_row.innerHTML = roundNumber((100*current_num_matches/total_num_matches), 2) + "%";
-      break;
-    }
-  }
-}
-
-// Change the status of the run to an error
-function runError(rowid) {
-  table = document.getElementById("table");
-  for (var i = 1; i < table.rows.length; i++) {
-    id = table.rows[i].cells[0].innerHTML;
-    if (id == rowid) {
-      var status_row = table.rows[i].cells[column_map['STATUS']];
-      status_row.innerHTML = "Error";
-      var control_row = table.rows[i].cells[column_map['CONTROL']];
-      control_row.innerHTML = "<input type=\"button\" value=\"delete\" onclick=\"delRun(" + rowid + ", false)\">";
-      break;
-    }
-  }
+function matchFinished(rowid, percent, wins) {
+    var table = $("#run_table").dataTable();
+    var rowIndex = indexFromRowid(rowid);
+    table.fnUpdate(percent, rowIndex, 4);
+    table.fnUpdate(wins, rowIndex, 3);
 }
 
 // Direct the server's Comet response appropriately
@@ -300,15 +253,13 @@ function handleServerResponse(response) {
     } else if (cmd == "FINISH_RUN") {
       finishRun(args[2], args[3]);
     } else if (cmd == "MATCH_FINISHED") {
-      matchFinished(args[2], parseInt(args[3]));
-    } else if (cmd == "RUN_ERROR") {
-      runError(args[2]);
+      matchFinished(args[2], args[3], args[4]);
     } else {
-      //alert(response);
+      console.log("Unknown command: " + response);
     }
   }
 
-  setTimeout("poll(handleServerResponse, \"matches\", lastheard);",100);
+  setTimeout("poll(handleServerResponse, 'matches', lastheard);",100);
 }
 
 // Poll the server for information

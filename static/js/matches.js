@@ -24,24 +24,19 @@ function rowClick(matchId) {
     $('#graphs').remove();
     $('#closeButton').remove();
     $('#navButton').remove();
-    $("<iframe id='graphs' />")
-    .attr("src", 'analysis_content.html?id=' + matchId)
-    .attr("style", "width:1000px; height:600px; margin-left: -10px; position:absolute; top:100px;")
-    .appendTo("body")
-    ;
-
-    $("<button id='closeButton'>Close</button>")
-    .attr("style", "position:absolute; top:650px; left: 920px;")
-    .button()
-    .click(function() {
+    var div = $("<div/>").attr('class','overlay').attr('id', 'overlay').click(function() {
+        $('#overlay').remove();
         $('#graphs').remove();
         $('#closeButton').remove();
         $('#navButton').remove();
-    })
+    }).appendTo("body");
+    $("<iframe id='graphs' />")
+    .attr("src", 'analysis_content.html?id=' + matchId)
+    .attr("style", "width:1000px; height:600px; margin-left: -10px; position:fixed; top:100px; z-index:1010")
     .appendTo("body");
 
-    $("<button id='navButton'>View as page</button>")
-    .attr("style", "position:absolute; top:650px; left: 1300px;")
+    $("<button id='navButton'>View in full page</button>")
+    .attr("style", "position:fixed; top:660px; left: 900px; z-index:1020")
     .button()
     .click(function() {
         document.location='analysis.html?id=' + matchId;

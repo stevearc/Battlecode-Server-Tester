@@ -17,7 +17,6 @@ import common.Config;
  */
 public class NetworkHandler implements Runnable {
 	private ServerSocket serverSocket;
-	private Config config;
 	private Logger _log;
 	private ServerSocketFactory ssf;
 
@@ -27,8 +26,7 @@ public class NetworkHandler implements Runnable {
 	 * @param config The configuration parameters
 	 */
 	public NetworkHandler() throws Exception {
-		this.config = Config.getConfig();
-		this._log = config.getLogger();
+		this._log = Config.getLogger();
 		
 		ssf = ServerSocketFactory.getDefault();
 	}
@@ -39,9 +37,9 @@ public class NetworkHandler implements Runnable {
 	 */
 	public void run() {
 		try {
-			serverSocket = ssf.createServerSocket(config.port);
+			serverSocket = ssf.createServerSocket(Config.dataPort);
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Could not listen on port: " + config.port, e);
+			_log.log(Level.SEVERE, "Could not listen on port: " + Config.dataPort, e);
 			System.exit(1);
 		}
 		while (true) {

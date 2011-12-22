@@ -49,6 +49,7 @@ public class AnalysisContentServlet extends HttpServlet {
 
 		out.println("<h2 style='text-align:center'><font color='red'>" + match.getRun().getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
 				match.getRun().getTeamB().getPlayerName() + "</font></h2>");
+		out.println("<h2 style='text-align:center'>" + match.getMap().getMapName() + "</h2>");
 		
 		out.println("<script type='text/javascript'>" +
 				"var dataMap = [];" +

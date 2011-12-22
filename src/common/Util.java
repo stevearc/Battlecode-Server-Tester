@@ -2,6 +2,7 @@ package common;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -121,5 +122,17 @@ public class Util {
 		sb.append(s + "s");
 
 		return sb.toString();
+	}
+	
+	public static void writeFileData(File dataFile, String targetFile) throws IOException {
+		FileInputStream istream = new FileInputStream(dataFile);
+		FileOutputStream ostream = new FileOutputStream(targetFile);
+		byte[] buffer = new byte[1024];
+		int len = 0;
+		while ((len = istream.read(buffer)) != -1) {
+			ostream.write(buffer, 0, len);
+		}
+		istream.close();
+		ostream.close();
 	}
 }

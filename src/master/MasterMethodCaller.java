@@ -20,12 +20,12 @@ public class MasterMethodCaller {
 	 * @param battlecode_server
 	 * @param idata
 	 */
-	public static void updateBattlecodeFiles(final File battlecode_server, final File idata) {
+	public static void updateBattlecodeFiles(final File battlecode_server, final File idata, final File build, final File bc_conf) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				Config.getMaster().updateBattlecodeFiles(battlecode_server, idata);
+				Config.getMaster().updateBattlecodeFiles(battlecode_server, idata, build, bc_conf);
 			}
 
 		}).start();
@@ -108,6 +108,17 @@ public class MasterMethodCaller {
 			@Override
 			public void run() {
 				Config.getMaster().sendWorkerMatchDependencies(worker, match, needUpdate, needMap, needTeamA, needTeamB);
+			}
+			
+		}).start();
+	}
+	
+	public static void updateMaps() {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				Config.getMaster().updateMaps();
 			}
 			
 		}).start();

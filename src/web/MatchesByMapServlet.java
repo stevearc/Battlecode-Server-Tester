@@ -35,7 +35,7 @@ public class MatchesByMapServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, toString());
+		WebUtil.writeTabs(request, response, out, toString());
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		String strId = request.getParameter("id");
@@ -47,9 +47,9 @@ public class MatchesByMapServlet extends HttpServlet {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
 
-		out.println("<h2><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
+		out.println("<h2 style='text-align:center'><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
 				run.getTeamB().getPlayerName() + "</font></h2>");
-		out.println("<h3>Wins by map: " + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
+		out.println("<h3 style='text-align:center'>Wins by map: " + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
 		out.println("<br />");
 
 		out.println("<div id='viewStyle' style='margin-left:20px'>" +

@@ -1,7 +1,6 @@
 package master;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -23,6 +22,7 @@ import model.BSPlayer;
 import model.BSRun;
 import model.MatchResult;
 import model.STATUS;
+import model.TEAM;
 import networking.CometCmd;
 import networking.CometMessage;
 import networking.Packet;
@@ -40,7 +40,6 @@ import common.Util;
  *
  */
 public class Master {
-	private Config config;
 	private Logger _log;
 	private NetworkHandler handler;
 	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
@@ -48,14 +47,13 @@ public class Master {
 	private WebPollHandler wph;
 	private File pendingBattlecodeServerFile;
 	private File pendingIdataFile;
-	private String battlecodeServerHash;
-	private String idataHash;
+	private File pendingBuildFile;
+	private File pendingConfFile;
 	private boolean initialized;
 
 	public Master() throws Exception {
-		config = Config.getConfig();
 		wph = Config.getWebPollHandler();
-		_log = config.getLogger();
+		_log = Config.getLogger();
 		handler = new NetworkHandler();
 	}
 
@@ -66,8 +64,6 @@ public class Master {
 	 */
 	public synchronized void start() throws NoSuchAlgorithmException, IOException {
 		new Thread(handler).start();
-		battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/lib/battlecode-server.jar"));
-		idataHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/idata"));
 		startRun();
 		new Thread(new Runnable() {
 			@Override
@@ -101,6 +97,8 @@ public class Master {
 		BSPlayer teamB = em.find(BSPlayer.class, teamBId);
 		newRun.setTeamA(teamA);
 		newRun.setTeamB(teamB);
+		newRun.setaWins(0l);
+		newRun.setbWins(0l);
 		newRun.setStatus(STATUS.QUEUED);
 		newRun.setStarted(new Date());
 		em.persist(newRun);
@@ -126,44 +124,31 @@ public class Master {
 		_log.info("Queued new run: " + newRun);
 	}
 
-	public synchronized void updateBattlecodeFiles(File battlecode_server, File idata) {
+	public synchronized void updateBattlecodeFiles(File battlecode_server, File idata, File build, File bc_conf) {
 		pendingBattlecodeServerFile = battlecode_server;
 		pendingIdataFile = idata;
+		pendingBuildFile = build;
+		pendingConfFile = bc_conf;
 		if (getCurrentRun() == null) {
 			writeBattlecodeFiles();
 		}
 	}
-
+	
 	private void writeBattlecodeFiles() {
 		try {
 			if (pendingBattlecodeServerFile != null && pendingIdataFile != null) {
 				_log.info("Writing updated battlecode files");
-				FileInputStream istream = new FileInputStream(pendingBattlecodeServerFile);
-				FileOutputStream ostream = new FileOutputStream("./battlecode/lib/battlecode-server.jar");
-				byte[] buffer = new byte[1024];
-				int len = 0;
-				while ((len = istream.read(buffer)) != -1) {
-					ostream.write(buffer, 0, len);
-				}
-				istream.close();
-				ostream.close();
-				
-				istream = new FileInputStream(pendingIdataFile);
-				ostream = new FileOutputStream("./battlecode/idata");
-				while ((len = istream.read(buffer)) != -1) {
-					ostream.write(buffer, 0, len);
-				}
-				istream.close();
-				ostream.close();
-				battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/lib/battlecode-server.jar"));
-				idataHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/idata"));
+				Util.writeFileData(pendingBattlecodeServerFile, "./battlecode/lib/battlecode-server.jar");
+				Util.writeFileData(pendingIdataFile, "./battlecode/idata");
+				Util.writeFileData(pendingBuildFile, "./battlecode/build.xml");
+				Util.writeFileData(pendingConfFile, "./battlecode/bc.conf");
 				pendingBattlecodeServerFile = null;
 				pendingIdataFile = null;
+				pendingBuildFile = null;
+				pendingConfFile = null;
 			}
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Error updating battlecode version", e);
-		} catch (NoSuchAlgorithmException e) {
-			_log.log(Level.SEVERE, "Error updating battlecode file hash", e);
 		}
 	}
 
@@ -209,7 +194,6 @@ public class Master {
 		_log.info("Worker connected: " + worker);
 		workers.add(worker);
 		wph.broadcastMsg("connections", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {worker.toHTML()}));
-		sendWorkerMatches(worker);
 	}
 
 	/**
@@ -245,16 +229,38 @@ public class Master {
 				em.getTransaction().commit();
 				match.setResult(result);
 				match.setStatus(BSMatch.STATUS.FINISHED);
+				BSRun run = match.getRun();
+				if (match.getResult().getWinner() == TEAM.A) {
+					run.setaWins(run.getaWins() + 1);
+				} else {
+					run.setbWins(run.getbWins() + 1);
+				}
 				_log.info("Match finished: " + m + " winner: " + result.getWinner());
-				File outFile = new File("./matches/" + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
+				File outFile = new File("./static/matches/" + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
 				outFile.createNewFile();
 				FileOutputStream fos = new FileOutputStream(outFile);
 				fos.write(data);
 				em.getTransaction().begin();
 				em.merge(match);
+				em.merge(run);
 				em.flush();
 				em.getTransaction().commit();
-				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new String[] {""+m.run_id, ""+result.getWinner()}));
+				
+				// Calculate percent finished and find win status
+				String winRecord = run.getaWins() + "/" + run.getbWins();
+				List<Object[]> resultList = em.createQuery("select match.status, count(*) from BSMatch match where match.run.status = ? group by match.status", Object[].class)
+				.setParameter(1, STATUS.RUNNING)
+				.getResultList();
+				long currentMatches = 0;
+				long totalMatches = 0;
+				for (Object[] valuePair: resultList) {
+					if (valuePair[0] == BSMatch.STATUS.FINISHED) {
+						currentMatches += (Long) valuePair[1];
+					}
+					totalMatches += (Long) valuePair[1];
+				}
+				String percent = currentMatches*100/totalMatches + "%";
+				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new String[] {""+m.run_id, percent, winRecord}));
 			} else {
 				_log.warning("Match " + m + " on worker " + worker + " failed");
 			}
@@ -281,12 +287,31 @@ public class Master {
 	 * @param worker
 	 */
 	public synchronized void sendWorkerMatches(WorkerRepr worker) {
+		if (getCurrentRun() == null) {
+			return;
+		}
 		EntityManager em = HibernateUtil.getEntityManager();
 		List<BSMatch> queuedMatches = em.createQuery("from BSMatch match inner join fetch match.map inner join fetch match.run " +
 				"where match.status = ? and match.run.status = ?", BSMatch.class)
 		.setParameter(1, BSMatch.STATUS.QUEUED)
 		.setParameter(2, STATUS.RUNNING)
 		.getResultList();
+		String battlecodeServerHash;
+		String idataHash;
+		String buildHash;
+		String confHash;
+		try {
+			battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/lib/battlecode-server.jar"));
+			idataHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/idata"));
+			buildHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/build.xml"));
+			confHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/bc.conf"));
+		} catch (NoSuchAlgorithmException e) {
+			_log.log(Level.SEVERE, "Cannot find SHA1 algorithm!", e);
+			return;
+		} catch (IOException e) {
+			_log.log(Level.SEVERE, "Error hashing battlecode-server.jar or idata", e);
+			return;
+		}
 
 		for (BSMatch m: queuedMatches) {
 			if (!worker.isFree())
@@ -294,6 +319,8 @@ public class Master {
 			NetworkMatch nm = m.buildNetworkMatch();
 			nm.battlecodeServerHash = battlecodeServerHash;
 			nm.idataHash = idataHash;
+			nm.buildHash = buildHash;
+			nm.confHash = confHash;
 			_log.info("Sending match " + nm + " to worker " + worker);
 			wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
 			worker.runMatch(nm);
@@ -323,6 +350,8 @@ public class Master {
 				} while (worker.getRunningMatches().contains(nm));
 				nm.battlecodeServerHash = battlecodeServerHash;
 				nm.idataHash = idataHash;
+				nm.buildHash = buildHash;
+				nm.confHash = confHash;
 				_log.info("Sending redundant match " + nm + " to worker " + worker);
 				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
 				worker.runMatch(nm);
@@ -338,10 +367,14 @@ public class Master {
 		byte[] teamB = null;
 		byte[] battlecodeServer = null;
 		byte[] idata = null;
+		byte[] build = null;
+		byte[] bc_conf = null;
 		try {
 			if (needUpdate) {
 				battlecodeServer = Util.getFileData("./battlecode/lib/battlecode-server.jar");
 				idata = Util.getFileData("./battlecode/idata");
+				build = Util.getFileData("./battlecode/build.xml");
+				bc_conf = Util.getFileData("./battlecode/bc.conf");
 			}
 			if (needMap) {
 				map = Util.getFileData("./battlecode/maps/" + match.map.getMapName() + ".xml");
@@ -352,7 +385,7 @@ public class Master {
 			if (needTeamB) {
 				teamB = Util.getFileData("./battlecode/teams/" + match.team_b + ".jar");
 			}
-			dep = new Dependencies(battlecodeServer, idata, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
+			dep = new Dependencies(battlecodeServer, idata, build, bc_conf, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);
 			worker.runMatchWithDependencies(match, dep);
 		} catch (IOException e) {
@@ -452,6 +485,8 @@ public class Master {
 			}
 		});
 		ArrayList<BSMap> newMaps = new ArrayList<BSMap>();
+		if (mapFiles == null)
+			return;
 		for (File m: mapFiles) {
 			try {
 				newMaps.add(new BSMap(m));

@@ -28,6 +28,7 @@ import common.HibernateUtil;
 public class WebUtil {
 	public static final double WIN_THRESHOLD = 0.3;
 	public static final String COOKIE_NAME = "bs-tester";
+	public static final char[] BLACKLIST = {' ', '<', '>', '\'', '"', '`', '\t', '\n'};
 
 	/**
 	 * Write the HTML for the tabs at the top of the page
@@ -35,14 +36,16 @@ public class WebUtil {
 	 * @param out
 	 * @param current Name of the current tab (to be highlighted)
 	 */
-	public static void writeTabs(HttpServletResponse response, PrintWriter out, String current) {
+	public static void writeTabs(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String current) {
 		out.println("<script src='/js/jquery-1.7.1.min.js'></script>");
 		out.println("<script src='/js/jquery-ui-1.8.16.custom.min.js'></script>");
 		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");
 		out.println("<link rel='stylesheet' href='/css/jquery-ui.css' />");
 		// Header with tabs
 		out.println("<div id=\"tabs\" class='ui-tabs ui-widget ui-widget-content ui-corner-all' style='margin: 30px 0'>");
-		out.println("<a href='" + LogoutServlet.NAME + "' style='float:right; margin: 0 10px'>sign out</a>");
+		if (request.getSession().getAttribute("user") != null) {
+			out.println("<a href='" + LogoutServlet.NAME + "' style='float:right; margin: 0 10px'>sign out</a>");
+		}
 		out.println("<ul class='ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all'>");
 		writeTab(out, response, current, IndexServlet.NAME, "Home");
 		writeTab(out, response, current, ConnectionsServlet.NAME, "Connections");
@@ -252,7 +255,7 @@ public class WebUtil {
 			userId = new Long(Integer.parseInt(cookieVal.substring(0, cookieVal.indexOf("$"))));
 			token = cookieVal.substring(cookieVal.indexOf("$") + 1);
 		} catch (Exception e) {
-			Config.getConfig().getLogger().log(Level.WARNING, "Login cookie with bad format: " + cookieVal, e);
+			Config.getLogger().log(Level.WARNING, "Login cookie with bad format: " + cookieVal, e);
 		}
 		// Check cookie value
 		EntityManager em = HibernateUtil.getEntityManager();
@@ -266,6 +269,15 @@ public class WebUtil {
 		}
 			
 		return null;
+	}
+	
+	public static boolean containsBadChar(String string) {
+		for (char c: WebUtil.BLACKLIST) {
+			if (string.indexOf(c) != -1) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

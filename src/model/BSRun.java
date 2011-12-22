@@ -3,6 +3,7 @@ package model;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -27,6 +28,8 @@ public class BSRun {
 	private Date started;
 	private Date ended;
 	private List<BSMatch> matches;
+	private Long aWins;
+	private Long bWins;
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="run_id_gen")
@@ -63,6 +66,24 @@ public class BSRun {
 	@OneToMany(mappedBy="run", fetch=FetchType.LAZY, orphanRemoval=true)
 	public List<BSMatch> getMatches() {
 		return matches;
+	}
+
+	@Column(nullable=false)
+	public Long getaWins() {
+		return aWins;
+	}
+
+	@Column(nullable=false)
+	public Long getbWins() {
+		return bWins;
+	}
+
+	public void setaWins(Long aWins) {
+		this.aWins = aWins;
+	}
+
+	public void setbWins(Long bWins) {
+		this.bWins = bWins;
 	}
 
 	public void setTeamA(BSPlayer teamA) {

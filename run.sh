@@ -5,6 +5,7 @@ if [ ! -e bs-tester.jar ]; then
   exit 1
 fi
 
+chmod +x scripts/*
 
 START_EXIT_STATUS=121
 status=$START_EXIT_STATUS

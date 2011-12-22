@@ -27,7 +27,7 @@ public class AnalysisServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 		
-		WebUtil.writeTabs(response, out, toString());
+		WebUtil.writeTabs(request, response, out, toString());
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
 			out.println("Invalid id</body></html>");
@@ -36,7 +36,7 @@ public class AnalysisServlet extends HttpServlet {
 		long id = new Long(Integer.parseInt(strId));
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSMatch match = em.find(BSMatch.class, id);
-		out.println("<button id='back' style='margin:10px' name='" + match.getRun().getId() + "'>Back</button>");
+		out.println("<button id='back' style='margin-left:10px; margin-right:-70px; float:left' name='" + match.getRun().getId() + "'>Back</button>");
 		AnalysisContentServlet.printContent(request, response, match);
 	}
 	

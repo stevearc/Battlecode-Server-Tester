@@ -56,16 +56,14 @@
             <arg value="README"/>
             <arg value="COPYING"/>
             <arg value="run.sh"/>
-            <arg value="setup.sh"/>
             <arg value="scripts"/>
-            <arg value="etc"/>
             <arg value="lib"/>
-            <arg value="js"/>
-            <arg value="css"/>
-            <arg value="images"/>
+            <arg value="static"/>
             <arg value="${dist}"/>
         </exec>
 
+        <!-- While we need battlecode-server.jar to compile, we don't need to distribute it -->
+        <delete file="${dist}/lib/battlecode-server.jar"/>
         <delete file="bs-tester.tar"/>
         <delete file="bs-tester.tar.gz"/>
         <!-- We have to use exec because Ant tar doesn't preserve the file permissions :( -->

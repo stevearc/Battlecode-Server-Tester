@@ -15,8 +15,8 @@ import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
 import model.STATUS;
-import model.TEAM;
 
+import common.Config;
 import common.HibernateUtil;
 
 /**
@@ -30,6 +30,16 @@ public class IndexServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// Send them to the upload servlet if they haven't uploaded battlecode files yet
+		if (!Config.initializedBattlecode()) {
+			response.sendRedirect(UploadServlet.NAME);
+			return;
+		}
+		Config.getLogger().info(request.getRequestURI());
+		if (!request.getRequestURI().equals("/") && !request.getRequestURI().equals("/" + NAME)) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
@@ -39,7 +49,7 @@ public class IndexServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, toString());
+		WebUtil.writeTabs(request, response, out, toString());
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 		
 		EntityManager em = HibernateUtil.getEntityManager();
@@ -133,25 +143,10 @@ public class IndexServlet extends HttpServlet {
 				td = "<td>";
 			out.println("<tr>");
 			
-			// TODO: cache this data in BSRun
-			List<Object[]> wins = em.createQuery("select match.result.winner, count(*) from BSMatch match where match.run = ? and match.status = ? group by match.result.winner", Object[].class)
-			.setParameter(1, r)
-			.setParameter(2, BSMatch.STATUS.FINISHED)
-			.getResultList();
-			long aWins = 0;
-			long bWins = 0;
-			for (Object[] valuePair: wins) {
-				if (valuePair[0] == TEAM.A) {
-					aWins = (Long) valuePair[1];
-				} else if (valuePair[0] == TEAM.B) {
-					bWins = (Long) valuePair[1];
-				}
-			}
-			
 			out.println(td + r.getId() + "</td>" + 
 					td + r.getTeamA().getPlayerName() + "</td>" +
 					td + r.getTeamB().getPlayerName() + "</td>" +				
-					td + aWins + "/" + bWins + "</td>");
+					td + r.getaWins() + "/" + r.getbWins() + "</td>");
 			switch (r.getStatus()){
 			case QUEUED:
 				out.println("<td>" + r.getStatus() + "</td>");
@@ -159,7 +154,19 @@ public class IndexServlet extends HttpServlet {
 				out.println("<td><input type=\"button\" value=\"dequeue\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
 				break;
 			case RUNNING:
-				out.println(td + r.getStatus() + "</td>");
+				long currentMatches = 0;
+				long totalMatches = 0;
+				List<Object[]> resultList = em.createQuery("select match.status, count(*) from BSMatch match " +
+						"where match.run = ? group by match.status", Object[].class)
+				.setParameter(1, r)
+				.getResultList();
+				for (Object[] valuePair: resultList) {
+					if (valuePair[0] == BSMatch.STATUS.FINISHED) {
+						currentMatches += (Long) valuePair[1];
+					}
+					totalMatches += (Long) valuePair[1];
+				}
+				out.println(td + (currentMatches*100/totalMatches) + "%</td>");
 				out.println(td + "<a id=\"cntdwn\" name=" + r.calculateTimeTaken()/1000 + "></a></td>");
 				out.println("<td><input type=\"button\" value=\"cancel\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
 				break;
@@ -189,26 +196,6 @@ public class IndexServlet extends HttpServlet {
 		out.println("</table>");
 		out.println("</div>");
 		
-
-		List<Object[]> resultList = em.createQuery("select match.status, count(*) from BSMatch match where match.run.status = ? group by match.status", Object[].class)
-		.setParameter(1, STATUS.RUNNING)
-		.getResultList();
-		
-		long currentMatches = 0;
-		long totalMatches = 0;
-		for (Object[] valuePair: resultList) {
-			if (valuePair[0] == BSMatch.STATUS.FINISHED) {
-				currentMatches += (Long) valuePair[1];
-			}
-			totalMatches += (Long) valuePair[1];
-		}
-		
-		out.println("<script type=\"text/javascript\">");
-		out.println("var total_num_matches = " + totalMatches);
-		out.println("</script>");
-		out.println("<script type=\"text/javascript\">");
-		out.println("var current_num_matches = " + currentMatches);
-		out.println("</script>");
 		out.println("<script type=\"text/javascript\" src=\"js/countdown.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/async.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/index.js\"></script>");

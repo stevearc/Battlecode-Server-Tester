@@ -38,7 +38,8 @@ create two directories elsewhere (like /tmp) that contain a copy of the master a
 worker.  Then if I need to make changes in eclipse and test them, I run "ant build" to build the 
 bs-tester.jar file and copy it into the /tmp/server and /tmp/worker directories.  The same thing
 goes for the js, css, png and other static files.  If you simply copy them into the directory of
-an existing working directory, the new files should be served up automatically.
+an existing working directory, the new files should be served up automatically without restarting
+the server.
 
 ############
 ## Thanks ##
@@ -46,6 +47,7 @@ an existing working directory, the new files should be served up automatically.
 Thanks to the following projects for providing me with libraries and tools:
   * Jetty
   * Jakarta Commons
+  * Apache Commons
   * HSQLDB
   * Hibernate
   * JQuery

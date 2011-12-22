@@ -24,7 +24,10 @@ public class LoginFilter implements Filter {
 		HttpServletResponse hResponse = (HttpServletResponse) response;
 		if (!hRequest.getRequestURI().equals("/" + LoginServlet.NAME) && hRequest.getSession(true).getAttribute("user") == null) {
 	        hResponse.sendRedirect(LoginServlet.NAME); // Not logged in, redirect to login page.
-	    } else {
+	    } else if (hRequest.getRequestURI().equals("/")) {
+	    	hResponse.sendRedirect(IndexServlet.NAME);
+	    }
+		else {
 	        chain.doFilter(request, response); // Logged in, just continue request.
 	    }
 	}

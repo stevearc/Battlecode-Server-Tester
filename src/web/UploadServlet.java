@@ -1,8 +1,6 @@
 package web;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -17,7 +15,9 @@ import master.MasterMethodCaller;
 import model.BSPlayer;
 import model.STATUS;
 
+import common.Config;
 import common.HibernateUtil;
+import common.Util;
 
 
 /**
@@ -48,10 +48,15 @@ public class UploadServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(response, out, toString());
-		out.println("<div id='instructions' style='margin:10px; font-size:14px'>Compile your player using");
-		out.println("<div class='code'>ant jar -Dteam=teamXXX</div>");
-		out.println("where teamXXX is your team number.  Then upload it here.</div>");
+		WebUtil.writeTabs(request, response, out, toString());
+		if (!Config.initializedBattlecode()) {
+			highlight(response, "You must upload battlecode files, maps, and a player");
+		}
+		out.println("<div id='player-info-dialog' style='text-align:center'>Compile your player using" +
+		"<div class='code'>ant jar -Dteam=teamXXX</div>" + 
+		"where XXX is your team number.</div>");
+		out.println("<div id='map-info-dialog' style='text-align:center'>If one at a time is too slow, you can manually copy the " +
+				"maps into the battlecode/maps directory and they will be automatically detected</div>");
 
 		if (request.getParameter("submit-player") != null) {
 			File player = (File) request.getAttribute("player");
@@ -67,15 +72,7 @@ public class UploadServlet extends HttpServlet {
 			} else if (playerName.length() > 45) {
 				warn(response, "Player name is too long");
 			} else {
-				FileInputStream istream = new FileInputStream(player);
-				FileOutputStream ostream = new FileOutputStream("./battlecode/teams/" + playerName + ".jar");
-				byte[] buffer = new byte[1000];
-				int len = 0;
-				while ((len = istream.read(buffer)) != -1) {
-					ostream.write(buffer, 0, len);
-				}
-				istream.close();
-				ostream.close();
+				Util.writeFileData(player, "./battlecode/teams/" + playerName + ".jar");
 				BSPlayer bsPlayer = new BSPlayer();
 				bsPlayer.setPlayerName(playerName);
 				EntityManager em = HibernateUtil.getEntityManager();
@@ -98,14 +95,22 @@ public class UploadServlet extends HttpServlet {
 		} else if (request.getParameter("submit-update") != null) {
 			File idata = (File) request.getAttribute("idata");
 			File battlecode_server = (File) request.getAttribute("battlecode-server");
+			File build = (File) request.getAttribute("build");
+			File bc_conf = (File) request.getAttribute("bc.conf");
 			if (idata == null || !idata.exists() || idata.isDirectory()) {
-				// file doesn't exist
 				warn(response, "Please select a valid idata file");
-			} else if (battlecode_server == null || !battlecode_server.exists() || battlecode_server.isDirectory()) {
-				// file doesn't exist
+			} 
+			else if (battlecode_server == null || !battlecode_server.exists() || battlecode_server.isDirectory()) {
 				warn(response, "Please select a valid battlecode-server.jar file");
-			} else {
-				MasterMethodCaller.updateBattlecodeFiles(battlecode_server, idata);
+			} 
+			else if (build == null || !build.exists() || build.isDirectory()) {
+				warn(response, "Please select a valid build.xml file");
+			} 
+			else if (bc_conf == null || !bc_conf.exists() || bc_conf.isDirectory()) {
+				warn(response, "Please select a valid bc.conf file");
+			} 
+			else {
+				MasterMethodCaller.updateBattlecodeFiles(battlecode_server, idata, build, bc_conf);
 				EntityManager em = HibernateUtil.getEntityManager();
 				Long numRunning = em.createQuery("select count(*) from BSRun run where run.status = ?", Long.class)
 				.setParameter(1, STATUS.RUNNING)
@@ -117,48 +122,95 @@ public class UploadServlet extends HttpServlet {
 				}
 				em.close();
 			}
+		} else if (request.getParameter("submit-map") != null) {
+			File map = (File) request.getAttribute("map");
+			String mapName = request.getParameter("mapName").trim();
+			if (map == null || !map.exists() || map.isDirectory()) {
+				warn(response, "Please select a valid map file");
+			} else if (mapName == null || mapName.isEmpty() || mapName.contains("/") || mapName.contains(" ")) {
+				warn(response, "Please enter a valid name for your player"); 
+			} else {
+				if (mapName.toLowerCase().endsWith(".xml")) {
+					mapName = mapName.substring(0, mapName.length() - 4);
+				}
+				String mapPath = "./battlecode/maps/" + mapName + ".xml";
+				if (new File(mapPath).exists()) {
+					warn(response, "Map " + mapName + ".xml already exists!");
+				} else {
+					Util.writeFileData(map, mapPath);
+					highlight(response, "Successfully uploaded map: " + mapName + ".xml");
+					MasterMethodCaller.updateMaps();
+				}
+			}
 		}
 
 		// Form for uploading your player
-		out.println("<div style='margin:20px 10px 10px 10px; font-size:12px'>");
-		out.println("<form action=\"" + NAME + "\" method=\"post\" enctype=\"multipart/form-data\" style='float:left'>");
+		out.println("<div style='margin:20px 10px 10px 10px; font-size:12px; float:left'>");
+		out.println("<form action='" + NAME + "' method='post' enctype='multipart/form-data'>");
 		out.println("<table>");
-		out.println("<tr><th colspan='2'>Upload your player</th></tr>");
+		out.println("<tr><th colspan='2'>Upload your player<span id='player-info'></span></th></tr>");
 		out.println("<tr>" +
 				"<td style='text-align:right'>Player jar:</td>" +
-				"<td><input type=\"file\" name=\"player\"></td>" +
+				"<td><input type='file' name='player' /></td>" +
 				"</tr>");
 		out.println("<tr>" +
 				"<td style='text-align:right'>Player Name:</td>" +
-				"<td><input type=\"text\" name=\"player_name\" size=\"20\" /></td>" +
+				"<td><input type='text' name='player_name' size='20' /></td>" +
 				"</tr>");
 		out.println("<tr><td></td>" +
-				"<td><input type=\"submit\" name=\"submit-player\" value=\"Upload\"/></td>" +
+				"<td><input type='submit' name='submit-player' value='Upload'/></td>" +
+				"</tr>");
+		out.println("</table>");
+		out.println("</form>");
+		
+		// Form for uploading a map
+		out.println("<form action='" + NAME + "' method='post' enctype='multipart/form-data'>");
+		out.println("<table>");
+		out.println("<tr><th colspan='2'>Upload a map<span id='map-info'></span></th></tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>Map:</td>" +
+				"<td><input type='file' name='map' /></td>" +
+				"</tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>Map name:</td>" +
+				"<td><input type='text' name='mapName' size='20' /></td>" +
+				"</tr>");
+		out.println("<tr><td></td>" +
+				"<td><input type='submit' name='submit-map' value='Upload'/></td>" +
 				"</tr>");
 		out.println("</table>");
 		out.println("</form>");
 		out.println("</div>");
 		
 		// Form for uploading a new battlecode version
-		out.println("<div style='margin:0px 10px 10px 10px; font-size:12px; float:right;'>");
-		out.println("<form action=\"" + NAME + "\" method=\"post\" enctype=\"multipart/form-data\">");
+		out.println("<div style='margin:20px 10px 10px 10px; font-size:12px; float:right;'>");
+		out.println("<form action='" + NAME + "' method='post' enctype='multipart/form-data'>");
 		out.println("<table>");
-		out.println("<tr><th colspan='2'>Upload new battlecode files</th></tr>");
+		out.println("<tr><th colspan='2'>Upload battlecode files</th></tr>");
 		out.println("<tr>" +
 				"<td style='text-align:right'>battlecode-server.jar file:</td>" +
-				"<td><input type=\"file\" name=\"battlecode-server\"></td>" +
+				"<td><input type='file' name='battlecode-server'/></td>" +
 				"</tr>");
 		out.println("<tr>" +
 				"<td style='text-align:right'>idata file:</td>" +
-				"<td><input type=\"file\" name=\"idata\"></td>" +
+				"<td><input type='file' name='idata'/></td>" +
+				"</tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>build.xml file:</td>" +
+				"<td><input type='file' name='build'/></td>" +
+				"</tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>bc.conf file:</td>" +
+				"<td><input type='file' name='bc.conf'/></td>" +
 				"</tr>");
 		out.println("<tr><td></td>" +
-				"<td><input type=\"submit\" name=\"submit-update\" value=\"Upload\"/></td>" +
+				"<td><input type='submit' name='submit-update' value='Upload'/></td>" +
 				"</tr>");
 		out.println("</table>");
 		out.println("</form>");
 		out.println("</div>");
 
+		out.println("<script src='js/upload.js'></script>");
 		out.println("</body>" +
 		"</html>");
 	}

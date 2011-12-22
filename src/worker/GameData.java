@@ -90,9 +90,7 @@ public class GameData {
 			currentFluxReserve[i] = GameConstants.INITIAL_FLUX;
 		}
 
-		int rNum = 0;
 		for (RoundDelta round: rounds) {
-			rNum++;
 			Signal[] signals = round.getSignals();
 			for (int i = 0; i < teams.length; i++) {
 				currentFluxIncome[i] = 0.0;

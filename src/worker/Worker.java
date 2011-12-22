@@ -33,7 +33,6 @@ import common.Util;
  *
  */
 public class Worker implements Controller, Runnable {
-	private Config config;
 	private Logger _log;
 	private Network network;
 	private MatchRunner[] running;
@@ -41,9 +40,8 @@ public class Worker implements Controller, Runnable {
 	private SocketFactory sf;
 
 	public Worker() throws Exception{
-		config = Config.getConfig();
-		_log = config.getLogger();
-		running = new MatchRunner[config.cores];
+		_log = Config.getLogger();
+		running = new MatchRunner[Config.cores];
 
 		sf = SocketFactory.getDefault();
 	}
@@ -80,11 +78,11 @@ public class Worker implements Controller, Runnable {
 			try {
 				if (network == null || !network.isConnected()) {
 					try {
-						Socket socket = sf.createSocket(config.server, config.port);
+						Socket socket = sf.createSocket(Config.server, Config.dataPort);
 						network = new Network(this, socket);
 						new Thread(network).start();
 						_log.info("Connecting to master");
-						network.send(new Packet(PacketCmd.INIT, new Object[]{config.cores}));
+						network.send(new Packet(PacketCmd.INIT, new Object[]{Config.cores}));
 					} catch (UnknownHostException e) {
 					} catch (IOException e) {
 					}
@@ -102,6 +100,12 @@ public class Worker implements Controller, Runnable {
 				return false;
 			}
 			if (!nm.idataHash.equals(Util.convertToHex(Util.SHA1Checksum("./battlecode/idata")))) {
+				return false;
+			}
+			if (!nm.buildHash.equals(Util.convertToHex(Util.SHA1Checksum("./battlecode/build.xml")))) {
+				return false;
+			}
+			if (!nm.confHash.equals(Util.convertToHex(Util.SHA1Checksum("./battlecode/bc.conf")))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -164,7 +168,7 @@ public class Worker implements Controller, Runnable {
 			needTeamB = true;
 		}
 		if (!allClear) {
-			_log.info("Requesting " + (needUpdate ? "battlecode-server.jar & idata, " : "") + 
+			_log.info("Requesting " + (needUpdate ? "battlecode files, " : "") + 
 					(needMap ? "map: " + match.map + ", " : "") + 
 					(needTeamA ? "player: " + match.team_a + ", " : "") + 
 					(needTeamB ? "player: " + match.team_b : ""));
@@ -209,6 +213,12 @@ public class Worker implements Controller, Runnable {
 			if (dep.idata != null) {
 				writeDataToFile(dep.idata, "./battlecode/idata");
 			}
+			if (dep.build != null) {
+				writeDataToFile(dep.build, "./battlecode/build.xml");
+			}
+			if (dep.bc_conf != null) {
+				writeDataToFile(dep.bc_conf, "./battlecode/bc.conf");
+			}
 			if (dep.map != null) {
 				writeDataToFile(dep.map, "./battlecode/maps/" + dep.mapName + ".xml");
 			}
@@ -236,12 +246,12 @@ public class Worker implements Controller, Runnable {
 			try {
 				// Find a free core
 				int core;
-				for (core = 0; core < config.cores; core++) {
+				for (core = 0; core < Config.cores; core++) {
 					if (running[core] == null)
 						break;
 				}
 				// Could not find free core
-				if (core == config.cores)
+				if (core == Config.cores)
 					break;
 
 				NetworkMatch match = (NetworkMatch) p.get(0);
@@ -258,7 +268,7 @@ public class Worker implements Controller, Runnable {
 			break;
 		case STOP:
 			_log.info("Received stop command");
-			for (int i = 0; i < config.cores; i++) {
+			for (int i = 0; i < Config.cores; i++) {
 				if (running[i] != null) {
 					running[i].stop();
 					running[i] = null;
@@ -272,7 +282,7 @@ public class Worker implements Controller, Runnable {
 
 	@Override
 	public synchronized void onDisconnect() {
-		for (int i = 0; i < config.cores; i++) {
+		for (int i = 0; i < Config.cores; i++) {
 			if (running[i] != null) {
 				running[i].stop();
 				running[i] = null;

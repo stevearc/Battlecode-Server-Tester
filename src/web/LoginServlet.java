@@ -26,8 +26,6 @@ import common.Util;
 public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 4347939279807133754L;
 	public static final String NAME = "login.html";
-	private static final char[] BLACKLIST = {' ', '<', '>', '\'', '"', '`', '\t', '\n'};
-	
 	private void warn(PrintWriter out, String message) {
 		out.println("<span class='ui-state-error' style='padding:10px'>" + message + "</span>");
 	}
@@ -49,9 +47,9 @@ public class LoginServlet extends HttpServlet {
 		out.println("<title>Battlecode Tester</title>");
 		out.println("</head>");
 		out.println("<body>");	
-		
-		WebUtil.writeTabs(response, out, toString());
-		
+
+		WebUtil.writeTabs(request, response, out, toString());
+
 		out.println("<div class='center' style='width:400px'>");	
 		out.println("<form id='login' method='post' style='width:200px; margin: 10px auto'>" +
 				"<table>" +
@@ -85,19 +83,19 @@ public class LoginServlet extends HttpServlet {
 		} else if ("name_length".equals(error)) {
 			warn(out, "Username is too long");
 		} else if ("bad_char".equals(error)) {
-			String msg = "Username contains illegal characters (";
-			for (char c: BLACKLIST)
+			String msg = "Username or password contains illegal characters <br/>(";
+			for (char c: WebUtil.BLACKLIST)
 				msg += c;
 			msg += ")";
-			warn(out, msg);
+			out.println("<div class='ui-state-error' style='padding:10px'>" + msg + "</div>");
 		}
 
 		if ("success".equals(request.getAttribute("register"))) {
 			out.println("<span class='ui-state-highlight' style='padding:10px'>Registration successful!  Wait for admin to confirm your credentials</span>");
 		}
 		out.println("<script type='text/javascript'>\n" +
-				"document.getElementById('seed').value=Math.random();\n" +
-				"document.getElementById('username').focus();\n" +
+				"$('#seed').attr('value',Math.random());\n" +
+				"$('#username').focus();\n" +
 		"</script>");
 
 		out.println("</div>");	
@@ -119,63 +117,61 @@ public class LoginServlet extends HttpServlet {
 			doGet(request, response);
 			return;
 		}
-		for (char c: BLACKLIST) {
-			if (username.indexOf(c) != -1) {
-				request.setAttribute("error", "bad_char");
-				doGet(request, response);
-				return;
-			}
+		if (WebUtil.containsBadChar(username) || WebUtil.containsBadChar(password)) {
+			request.setAttribute("error", "bad_char");
+			doGet(request, response);
+			return;
 		}
 		if (password == null || "".equals(password.trim())) {
 			request.setAttribute("error", "no_password");
 			doGet(request, response);
 			return;
 		}
-			String seed = request.getParameter("seed");
-			seed += Util.SHA1(""+Math.random());
-			String salt = Util.SHA1(seed);
-			EntityManager em = HibernateUtil.getEntityManager();
-			if (request.getParameter("register") != null) {
-				String hashed_password = Util.SHA1(password + salt);
-				BSUser user = new BSUser();
-				user.setUsername(username);
-				user.setHashedPassword(hashed_password);
-				user.setSalt(salt);
-				user.setPrivs(BSUser.PRIVS.PENDING);
-				
-				em.getTransaction().begin();
-				try {
-					em.persist(user);
-					em.flush();
-				} catch (PersistenceException e) {
-					// Username already exists
-					request.setAttribute("error", "name_taken");
-				}
-				if (em.getTransaction().getRollbackOnly()) {
-					em.getTransaction().rollback();
-				} else {
-					em.getTransaction().commit();
-				}
-				em.close();
-				doGet(request, response);
-				return;
-			}
-			BSUser user = getMatchingUser(username, password);
-			if (user != null && request.getParameter("login") != null) {
-				user.setSession(salt);
-				em.getTransaction().begin();
-				em.merge(user);
+		String seed = request.getParameter("seed");
+		seed += Util.SHA1(""+Math.random());
+		String salt = Util.SHA1(seed);
+		EntityManager em = HibernateUtil.getEntityManager();
+		if (request.getParameter("register") != null) {
+			String hashed_password = Util.SHA1(password + salt);
+			BSUser user = new BSUser();
+			user.setUsername(username);
+			user.setHashedPassword(hashed_password);
+			user.setSalt(salt);
+			user.setPrivs(BSUser.PRIVS.PENDING);
+
+			em.getTransaction().begin();
+			try {
+				em.persist(user);
 				em.flush();
-				em.getTransaction().commit();
-				em.close();
-				// Cookie is encoded as [userid]$[session token]
-				Cookie c = new Cookie(WebUtil.COOKIE_NAME, user.getId() + "$" + salt);
-				response.addCookie(c);
-				response.setStatus(HttpServletResponse.SC_OK);
-				response.sendRedirect("/" + IndexServlet.NAME);
-				response.setContentType("text/html");
-				return;
+			} catch (PersistenceException e) {
+				// Username already exists
+				request.setAttribute("error", "name_taken");
 			}
+			if (em.getTransaction().getRollbackOnly()) {
+				em.getTransaction().rollback();
+			} else {
+				em.getTransaction().commit();
+			}
+			em.close();
+			doGet(request, response);
+			return;
+		}
+		BSUser user = getMatchingUser(username, password);
+		if (user != null && request.getParameter("login") != null) {
+			user.setSession(salt);
+			em.getTransaction().begin();
+			em.merge(user);
+			em.flush();
+			em.getTransaction().commit();
+			em.close();
+			// Cookie is encoded as [userid]$[session token]
+			Cookie c = new Cookie(WebUtil.COOKIE_NAME, user.getId() + "$" + salt);
+			response.addCookie(c);
+			response.setStatus(HttpServletResponse.SC_OK);
+			response.sendRedirect("/" + IndexServlet.NAME);
+			response.setContentType("text/html");
+			return;
+		}
 		em.close();
 		request.setAttribute("error", "bad_auth");
 		doGet(request, response);
@@ -183,7 +179,7 @@ public class LoginServlet extends HttpServlet {
 
 	private BSUser getMatchingUser(String username, String password) {
 		EntityManager em = HibernateUtil.getEntityManager();
-		
+
 		try {
 			BSUser user = (BSUser) em.createQuery("from BSUser user where user.username = ?")
 			.setParameter(1, username)
@@ -195,7 +191,7 @@ public class LoginServlet extends HttpServlet {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public String toString() {
 		return NAME;
