@@ -48,7 +48,7 @@ public class UploadServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, NAME);
+		WebUtil.writeTabs(request, response, NAME);
 		if (!Util.initializedBattlecode()) {
 			highlight(response, "You must upload battlecode files, maps, and a player");
 		}

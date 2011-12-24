@@ -10,6 +10,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import model.BSUser;
+
 public class LoginFilter implements Filter {
 
 	@Override
@@ -23,7 +25,13 @@ public class LoginFilter implements Filter {
 		HttpServletRequest hRequest = (HttpServletRequest) request;
 		HttpServletResponse hResponse = (HttpServletResponse) response;
 		if (!hRequest.getRequestURI().equals(LoginServlet.NAME) && hRequest.getSession(true).getAttribute("user") == null) {
-	        hResponse.sendRedirect(LoginServlet.NAME); // Not logged in, redirect to login page.
+			BSUser user = WebUtil.getUserFromCookie(hRequest, hResponse);
+			if (user == null) {
+		        hResponse.sendRedirect(LoginServlet.NAME); // Not logged in, redirect to login page.
+			} else {
+				hRequest.getSession(true).setAttribute("user", user);
+				chain.doFilter(request, response);
+			}
 	    } else if (hRequest.getRequestURI().equals("/")) {
 	    	hResponse.sendRedirect(IndexServlet.NAME);
 	    }

@@ -35,7 +35,7 @@ public class AdminServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, NAME);	
+		WebUtil.writeTabs(request, response, NAME);	
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		if (user == null || user.getPrivs() != BSUser.PRIVS.ADMIN) {

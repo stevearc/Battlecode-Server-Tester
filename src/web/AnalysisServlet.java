@@ -27,7 +27,7 @@ public class AnalysisServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 		
-		WebUtil.writeTabs(request, response, out, NAME);
+		WebUtil.writeTabs(request, response, NAME);
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
 			out.println("Invalid id</body></html>");

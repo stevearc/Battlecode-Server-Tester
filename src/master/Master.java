@@ -87,7 +87,7 @@ public class Master extends AbstractMaster {
 	 * @param mapNames
 	 */
 	@Override
-	protected synchronized void queueRun(Long teamAId, Long teamBId, List<Long> seeds, List<Long> mapIds) {
+	public synchronized void queueRun(Long teamAId, Long teamBId, List<Long> seeds, List<Long> mapIds) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun newRun = new BSRun();
 		BSPlayer teamA = em.find(BSPlayer.class, teamAId);
@@ -478,7 +478,7 @@ public class Master extends AbstractMaster {
 	 * Update the list of available maps
 	 */
 	@Override
-	protected synchronized void updateMaps() {
+	public synchronized void updateMaps() {
 		File file = new File("battlecode/maps");
 		if (new Date(file.lastModified()).equals(mapsLastModifiedDate))
 			return;

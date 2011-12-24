@@ -33,7 +33,7 @@ public class ConnectionsServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, NAME);
+		WebUtil.writeTabs(request, response, NAME);
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		out.println("<table id=\"conn_table\" class='datatable'>" +

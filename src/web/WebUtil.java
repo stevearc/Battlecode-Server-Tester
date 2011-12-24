@@ -36,8 +36,10 @@ public class WebUtil {
 	 * @param response 
 	 * @param out
 	 * @param current Name of the current tab (to be highlighted)
+	 * @throws IOException 
 	 */
-	public static void writeTabs(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String current) {
+	public static void writeTabs(HttpServletRequest request, HttpServletResponse response, String current) throws IOException {
+		PrintWriter out = response.getWriter();
 		out.println("<script src='/js/jquery-1.7.1.min.js'></script>");
 		out.println("<script src='/js/jquery-ui-1.8.16.custom.min.js'></script>");
 		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");

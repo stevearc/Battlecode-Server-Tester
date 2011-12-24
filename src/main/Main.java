@@ -15,7 +15,6 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.persistence.EntityManager;
 
-import master.AbstractMaster;
 import master.Master;
 import model.BSMatch;
 import model.BSPlayer;
@@ -23,6 +22,7 @@ import model.BSRun;
 import model.BSUser;
 import model.MatchResult;
 import model.STATUS;
+import model.TEAM;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -144,7 +144,7 @@ public class Main {
 				new Thread(new WebServer(httpPort)).start();
 				m.start();
 				if (cmd.hasOption('o')) {
-					createMockData();
+					createMockData(m);
 				}
 			} // Start the worker
 			else if (cmd.hasOption('w') || cmd.hasOption('m')){
@@ -195,12 +195,13 @@ public class Main {
 		}
 	}
 
-	private static void createMockData() throws IOException {
+	private static void createMockData(Master master) throws IOException {
 		_log.info("Populating database with mock data...");
 		EntityManager em = HibernateUtil.getEntityManager();
 		File checkFile = new File("./battlecode/teams/mock_player.jar");
+		long numPlayers = em.createQuery("select count(*) from BSPlayer", Long.class).getSingleResult();
 		BSPlayer bsPlayer;
-		if (!checkFile.exists()) {
+		if (numPlayers == 0) {
 			checkFile.createNewFile();
 			bsPlayer = new BSPlayer();
 			bsPlayer.setPlayerName("mock_player");
@@ -218,21 +219,11 @@ public class Main {
 		for (int i = 0; i < 10; i++) {
 			seeds.add(r.nextLong());
 		}
-		AbstractMaster.kickoffUpdateMaps();
+		master.updateMaps();
 		List<Long> mapIds = em.createQuery("select map.id from BSMap map", Long.class).getResultList();
 		for (int i = 0; i < 5; i++) {
-			AbstractMaster.kickoffQueueRun(bsPlayer.getId(), bsPlayer.getId(), seeds, mapIds);
+			master.queueRun(bsPlayer.getId(), bsPlayer.getId(), seeds, mapIds);
 		}
-
-		em.getTransaction().begin();
-		List<BSRun> runs = em.createQuery("from BSRun", BSRun.class).getResultList();
-		for (BSRun run: runs) {
-			run.setStatus(STATUS.COMPLETE);
-			run.setEnded(new Date(new Date().getTime() + 100000 + r.nextInt(100000000)));
-			em.merge(run);
-		}
-		em.flush();
-		em.getTransaction().commit();
 
 		List<BSMatch> matches = em.createQuery("from BSMatch", BSMatch.class).getResultList();
 		MatchResult mock;
@@ -252,6 +243,25 @@ public class Main {
 		em.getTransaction().begin();
 		em.flush();
 		em.getTransaction().commit();
+		
+		em.getTransaction().begin();
+		List<BSRun> runs = em.createQuery("from BSRun", BSRun.class).getResultList();
+		for (BSRun run: runs) {
+			run.setStatus(STATUS.COMPLETE);
+			run.setaWins(em.createQuery("select count(*) from BSMatch match where match.run = ? and match.result.winner = ?", Long.class)
+					.setParameter(1, run)
+					.setParameter(2, TEAM.A)
+					.getSingleResult());
+			run.setbWins(em.createQuery("select count(*) from BSMatch match where match.run = ? and match.result.winner = ?", Long.class)
+					.setParameter(1, run)
+					.setParameter(2, TEAM.B)
+					.getSingleResult());
+			run.setEnded(new Date(new Date().getTime() + 100000 + r.nextInt(100000000)));
+			em.merge(run);
+		}
+		em.flush();
+		em.getTransaction().commit();
+		
 		em.close();
 		_log.info("Finished creating mock data!");
 	}

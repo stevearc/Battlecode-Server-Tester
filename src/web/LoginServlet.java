@@ -35,7 +35,7 @@ public class LoginServlet extends HttpServlet {
 		BSUser user = WebUtil.getUserFromCookie(request, response);
 		if (user != null) {
 			request.getSession(true).setAttribute("user", user);
-			response.sendRedirect("/" + IndexServlet.NAME);
+			response.sendRedirect(IndexServlet.NAME);
 			return;
 		}
 		response.setContentType("text/html");
@@ -48,7 +48,7 @@ public class LoginServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");	
 
-		WebUtil.writeTabs(request, response, out, NAME);
+		WebUtil.writeTabs(request, response, NAME);
 
 		out.println("<div class='center' style='width:400px'>");	
 		out.println("<form id='login' method='post' style='width:200px; margin: 10px auto'>" +
@@ -168,7 +168,7 @@ public class LoginServlet extends HttpServlet {
 			Cookie c = new Cookie(WebUtil.COOKIE_NAME, user.getId() + "$" + salt);
 			response.addCookie(c);
 			response.setStatus(HttpServletResponse.SC_OK);
-			response.sendRedirect("/" + IndexServlet.NAME);
+			response.sendRedirect(IndexServlet.NAME);
 			response.setContentType("text/html");
 			return;
 		}
