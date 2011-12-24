@@ -25,7 +25,7 @@ import common.Util;
  */
 public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 4347939279807133754L;
-	public static final String NAME = "login.html";
+	public static final String NAME = "/login.html";
 	private void warn(PrintWriter out, String message) {
 		out.println("<span class='ui-state-error' style='padding:10px'>" + message + "</span>");
 	}
@@ -48,7 +48,7 @@ public class LoginServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");	
 
-		WebUtil.writeTabs(request, response, out, toString());
+		WebUtil.writeTabs(request, response, out, NAME);
 
 		out.println("<div class='center' style='width:400px'>");	
 		out.println("<form id='login' method='post' style='width:200px; margin: 10px auto'>" +
@@ -192,8 +192,4 @@ public class LoginServlet extends HttpServlet {
 		return null;
 	}
 
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

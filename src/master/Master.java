@@ -10,8 +10,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -25,7 +24,8 @@ import model.STATUS;
 import model.TEAM;
 import networking.Packet;
 
-import common.Config;
+import org.apache.log4j.Logger;
+
 import common.Dependencies;
 import common.HibernateUtil;
 import common.NetworkMatch;
@@ -37,8 +37,8 @@ import common.Util;
  * @author stevearc
  *
  */
-public class Master {
-	private Logger _log;
+public class Master extends AbstractMaster {
+	private static Logger _log = Logger.getLogger(Master.class);
 	private NetworkHandler handler;
 	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
 	private Date mapsLastModifiedDate;
@@ -48,9 +48,8 @@ public class Master {
 	private File pendingConfFile;
 	private boolean initialized;
 
-	public Master() throws Exception {
-		_log = Config.getLogger();
-		handler = new NetworkHandler();
+	public Master(int dataPort) throws Exception {
+		handler = new NetworkHandler(dataPort);
 	}
 
 	/**
@@ -65,7 +64,7 @@ public class Master {
 			@Override
 			public void run() {
 				while (true) {
-					updateMaps();
+					kickoffUpdateMaps();
 					try {
 						Thread.sleep(10000);
 					} catch (InterruptedException e) {
@@ -87,7 +86,8 @@ public class Master {
 	 * @param seeds
 	 * @param mapNames
 	 */
-	public synchronized void queueRun(Long teamAId, Long teamBId, List<Long> seeds, List<Long> mapIds) {
+	@Override
+	protected synchronized void queueRun(Long teamAId, Long teamBId, List<Long> seeds, List<Long> mapIds) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun newRun = new BSRun();
 		BSPlayer teamA = em.find(BSPlayer.class, teamAId);
@@ -121,7 +121,8 @@ public class Master {
 		_log.info("Queued new run: " + newRun);
 	}
 
-	public synchronized void updateBattlecodeFiles(File battlecode_server, File idata, File build, File bc_conf) {
+	@Override
+	protected synchronized void updateBattlecodeFiles(File battlecode_server, File idata, File build, File bc_conf) {
 		pendingBattlecodeServerFile = battlecode_server;
 		pendingIdataFile = idata;
 		pendingBuildFile = build;
@@ -145,7 +146,7 @@ public class Master {
 				pendingConfFile = null;
 			}
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Error updating battlecode version", e);
+			_log.error("Error updating battlecode version", e);
 		}
 	}
 
@@ -153,7 +154,8 @@ public class Master {
 	 * Delete run data
 	 * @param runId
 	 */
-	public synchronized void deleteRun(Long runId) {
+	@Override
+	protected synchronized void deleteRun(Long runId) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, runId);
 		// If it's running right now, just cancel it
@@ -187,7 +189,8 @@ public class Master {
 	 * Process a worker connecting
 	 * @param worker
 	 */
-	public synchronized void workerConnect(WorkerRepr worker) {
+	@Override
+	synchronized void workerConnect(WorkerRepr worker) {
 		_log.info("Worker connected: " + worker);
 		workers.add(worker);
 		WebSocketChannelManager.broadcastMsg("connections", "INSERT_TABLE_ROW", worker.toHTML());
@@ -197,7 +200,8 @@ public class Master {
 	 * Process a worker disconnecting
 	 * @param worker
 	 */
-	public synchronized void workerDisconnect(WorkerRepr worker) {
+	@Override
+	synchronized void workerDisconnect(WorkerRepr worker) {
 		_log.info("Worker disconnected: " + worker);
 		WebSocketChannelManager.broadcastMsg("connections", "DELETE_TABLE_ROW", worker.toHTML());
 		workers.remove(worker);
@@ -208,7 +212,8 @@ public class Master {
 	 * @param worker
 	 * @param p
 	 */
-	public synchronized void matchFinished(WorkerRepr worker, Packet p) {
+	@Override
+	protected synchronized void matchFinished(WorkerRepr worker, Packet p) {
 		NetworkMatch m = (NetworkMatch) p.get(0);
 		BSMatch.STATUS status = (BSMatch.STATUS) p.get(1);
 		MatchResult result = (MatchResult) p.get(2);
@@ -260,7 +265,7 @@ public class Master {
 				WebSocketChannelManager.broadcastMsg("index", "MATCH_FINISHED", m.run_id + "," + 
 						percent + "," + winRecord);
 			} else {
-				_log.warning("Match " + m + " on worker " + worker + " failed");
+				_log.warn("Match " + m + " on worker " + worker + " failed");
 			}
 
 			Long matchesLeft = em.createQuery("select count(*) from BSMatch match where match.run = ? and match.status != ?", Long.class)
@@ -272,11 +277,11 @@ public class Master {
 				stopCurrentRun(STATUS.COMPLETE);
 				startRun();
 			} else {
-				sendWorkerMatches(worker);
+				kickoffSendWorkerMatches(worker);
 			}
 			em.close();
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Error writing match file", e);
+			_log.error("Error writing match file", e);
 		}
 	}
 
@@ -284,7 +289,8 @@ public class Master {
 	 * Send matches to a worker until they are saturated
 	 * @param worker
 	 */
-	public synchronized void sendWorkerMatches(WorkerRepr worker) {
+	@Override
+	protected synchronized void sendWorkerMatches(WorkerRepr worker) {
 		if (getCurrentRun() == null) {
 			return;
 		}
@@ -304,10 +310,10 @@ public class Master {
 			buildHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/build.xml"));
 			confHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/bc.conf"));
 		} catch (NoSuchAlgorithmException e) {
-			_log.log(Level.SEVERE, "Cannot find SHA1 algorithm!", e);
+			_log.error("Cannot find SHA1 algorithm!", e);
 			return;
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Error hashing battlecode-server.jar or idata", e);
+			_log.error("Error hashing battlecode-server.jar or idata", e);
 			return;
 		}
 
@@ -358,7 +364,8 @@ public class Master {
 		em.close();
 	}
 
-	public synchronized void sendWorkerMatchDependencies(WorkerRepr worker, NetworkMatch match, boolean needUpdate, boolean needMap, boolean needTeamA, boolean needTeamB) {
+	@Override
+	protected synchronized void sendWorkerMatchDependencies(WorkerRepr worker, NetworkMatch match, boolean needUpdate, boolean needMap, boolean needTeamA, boolean needTeamB) {
 		Dependencies dep;
 		byte[] map = null;
 		byte[] teamA = null;
@@ -387,10 +394,10 @@ public class Master {
 			_log.info("Sending " + worker + " " + dep);
 			worker.runMatchWithDependencies(match, dep);
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Could not read data file", e);
+			_log.error("Could not read data file", e);
 			WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.toHTML() + "," + match.toMapString());
 			worker.stopAllMatches();
-			MasterMethodCaller.sendWorkerMatches(worker);
+			AbstractMaster.kickoffSendWorkerMatches(worker);
 		}
 	}
 
@@ -420,7 +427,7 @@ public class Master {
 			em.getTransaction().commit();
 			WebSocketChannelManager.broadcastMsg("index", "START_RUN", nextRun.getId() + "");
 			for (WorkerRepr c: workers) {
-				sendWorkerMatches(c);
+				kickoffSendWorkerMatches(c);
 			}
 		}
 		em.close();
@@ -470,7 +477,8 @@ public class Master {
 	/**
 	 * Update the list of available maps
 	 */
-	public synchronized void updateMaps() {
+	@Override
+	protected synchronized void updateMaps() {
 		File file = new File("battlecode/maps");
 		if (new Date(file.lastModified()).equals(mapsLastModifiedDate))
 			return;
@@ -488,7 +496,7 @@ public class Master {
 			try {
 				newMaps.add(new BSMap(m));
 			} catch (Exception e) {
-				_log.log(Level.WARNING, "Error parsing map", e);
+				_log.warn("Error parsing map", e);
 			}
 		}
 
@@ -511,7 +519,8 @@ public class Master {
 	 * 
 	 * @return Currently connected workers
 	 */
-	public HashSet<WorkerRepr> getConnections() {
+	@Override
+	protected Set<WorkerRepr> getConnections() {
 		return workers;
 	}
 

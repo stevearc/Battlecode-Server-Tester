@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.Cookie;
@@ -17,7 +16,8 @@ import model.BSRun;
 import model.BSUser;
 import model.TEAM;
 
-import common.Config;
+import org.apache.log4j.Logger;
+
 import common.HibernateUtil;
 
 /**
@@ -26,6 +26,7 @@ import common.HibernateUtil;
  *
  */
 public class WebUtil {
+	private static Logger _log = Logger.getLogger(WebUtil.class);
 	public static final double WIN_THRESHOLD = 0.3;
 	public static final String COOKIE_NAME = "bs-tester";
 	public static final char[] BLACKLIST = {' ', '<', '>', '\'', '"', '`', '\t', '\n'};
@@ -256,7 +257,7 @@ public class WebUtil {
 			userId = new Long(Integer.parseInt(cookieVal.substring(0, cookieVal.indexOf("$"))));
 			token = cookieVal.substring(cookieVal.indexOf("$") + 1);
 		} catch (Exception e) {
-			Config.getLogger().log(Level.WARNING, "Login cookie with bad format: " + cookieVal, e);
+			_log.warn("Login cookie with bad format: " + cookieVal, e);
 		}
 		// Check cookie value
 		EntityManager em = HibernateUtil.getEntityManager();

@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import master.MasterMethodCaller;
+import master.AbstractMaster;
 
 
 /**
@@ -18,7 +18,7 @@ import master.MasterMethodCaller;
  */
 public class DeleteServlet extends HttpServlet {
 	private static final long serialVersionUID = 4149519483270976451L;
-	public static final String NAME = "delete.html";
+	public static final String NAME = "/delete.html";
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
@@ -29,12 +29,8 @@ public class DeleteServlet extends HttpServlet {
 			out.println("Invalid id: " + strId);
 		}
 
-		MasterMethodCaller.deleteRun(new Long(Integer.parseInt(strId)));
+		AbstractMaster.kickoffDeleteRun(new Long(Integer.parseInt(strId)));
 		out.print("success");
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

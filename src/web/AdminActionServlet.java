@@ -21,7 +21,7 @@ import model.BSUser;
  */
 public class AdminActionServlet extends HttpServlet {
 	private static final long serialVersionUID = 46170148422590931L;
-	public static final String NAME = "admin_action";
+	public static final String NAME = "/admin_action";
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -98,8 +98,4 @@ public class AdminActionServlet extends HttpServlet {
 		return numAdmins.intValue();
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

@@ -16,8 +16,8 @@ import model.BSPlayer;
 import model.BSRun;
 import model.STATUS;
 
-import common.Config;
 import common.HibernateUtil;
+import common.Util;
 
 /**
  * Displays the list of all runs
@@ -26,16 +26,16 @@ import common.HibernateUtil;
  */
 public class IndexServlet extends HttpServlet {
 	private static final long serialVersionUID = -2587225634870177013L;
-	public static final String NAME = "index.html";
+	public static final String NAME = "/index.html";
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// Send them to the upload servlet if they haven't uploaded battlecode files yet
-		if (!Config.initializedBattlecode()) {
+		if (!Util.initializedBattlecode()) {
 			response.sendRedirect(UploadServlet.NAME);
 			return;
 		}
-		if (!request.getRequestURI().equals("/") && !request.getRequestURI().equals("/" + NAME)) {
+		if (!request.getRequestURI().equals("/") && !request.getRequestURI().equals(NAME)) {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
@@ -48,7 +48,7 @@ public class IndexServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, toString());
+		WebUtil.writeTabs(request, response, out, NAME);
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 		
 		EntityManager em = HibernateUtil.getEntityManager();
@@ -199,8 +199,4 @@ public class IndexServlet extends HttpServlet {
 		em.close();
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

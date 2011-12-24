@@ -16,7 +16,7 @@ import common.HibernateUtil;
 
 public class AnalysisContentServlet extends HttpServlet {
 	private static final long serialVersionUID = -3373145024382759806L;
-	public static final String NAME = "analysis_content.html";
+	public static final String NAME = "/analysis_content.html";
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
@@ -100,9 +100,4 @@ public class AnalysisContentServlet extends HttpServlet {
 				"</script>");
 	}
 	
-	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

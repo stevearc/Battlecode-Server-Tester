@@ -3,12 +3,10 @@ package master;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.net.ServerSocketFactory;
 
-import common.Config;
+import org.apache.log4j.Logger;
 
 /**
  * Listens on the chosen port for workers and spawns threads for new connections
@@ -16,8 +14,9 @@ import common.Config;
  *
  */
 public class NetworkHandler implements Runnable {
+	private static Logger _log = Logger.getLogger(NetworkHandler.class);
 	private ServerSocket serverSocket;
-	private Logger _log;
+	private int dataPort;
 	private ServerSocketFactory ssf;
 
 	/**
@@ -25,9 +24,8 @@ public class NetworkHandler implements Runnable {
 	 * @param server The server that controls this NetworkHandler
 	 * @param config The configuration parameters
 	 */
-	public NetworkHandler() throws Exception {
-		this._log = Config.getLogger();
-		
+	public NetworkHandler(int dataPort) throws Exception {
+		this.dataPort = dataPort;
 		ssf = ServerSocketFactory.getDefault();
 	}
 
@@ -37,9 +35,9 @@ public class NetworkHandler implements Runnable {
 	 */
 	public void run() {
 		try {
-			serverSocket = ssf.createServerSocket(Config.dataPort);
+			serverSocket = ssf.createServerSocket(dataPort);
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Could not listen on port: " + Config.dataPort, e);
+			_log.fatal("Could not listen on port: " + dataPort, e);
 			System.exit(1);
 		}
 		while (true) {
@@ -47,9 +45,9 @@ public class NetworkHandler implements Runnable {
 				Socket socket = serverSocket.accept();
 				WorkerRepr worker = new WorkerRepr(socket);
 				worker.start();
-				Config.getMaster().workerConnect(worker);
+				AbstractMaster.kickoffWorkerConnect(worker);
 			} catch (IOException e) {
-				_log.log(Level.WARNING, "Accept connection failed", e);
+				_log.warn("Accept connection failed", e);
 			}
 		}
 	}

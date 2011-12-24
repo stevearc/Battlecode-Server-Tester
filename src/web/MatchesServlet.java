@@ -26,7 +26,7 @@ import common.HibernateUtil;
  */
 public class MatchesServlet extends HttpServlet {
 	private static final long serialVersionUID = 3122992891626513814L;
-	public static final String NAME = "matches.html";
+	public static final String NAME = "/matches.html";
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
@@ -38,7 +38,7 @@ public class MatchesServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, toString());
+		WebUtil.writeTabs(request, response, out, NAME);
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		String strId = request.getParameter("id");
@@ -106,8 +106,4 @@ public class MatchesServlet extends HttpServlet {
 		return "<td onclick='rowClick(" + match.getId() + ")'>";
 	}
 
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

@@ -22,7 +22,7 @@ public class LoginFilter implements Filter {
 			FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest hRequest = (HttpServletRequest) request;
 		HttpServletResponse hResponse = (HttpServletResponse) response;
-		if (!hRequest.getRequestURI().equals("/" + LoginServlet.NAME) && hRequest.getSession(true).getAttribute("user") == null) {
+		if (!hRequest.getRequestURI().equals(LoginServlet.NAME) && hRequest.getSession(true).getAttribute("user") == null) {
 	        hResponse.sendRedirect(LoginServlet.NAME); // Not logged in, redirect to login page.
 	    } else if (hRequest.getRequestURI().equals("/")) {
 	    	hResponse.sendRedirect(IndexServlet.NAME);

@@ -15,6 +15,7 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.persistence.EntityManager;
 
+import master.AbstractMaster;
 import master.Master;
 import model.BSMatch;
 import model.BSPlayer;
@@ -31,6 +32,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Layout;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 
 import web.WebServer;
 import web.WebUtil;
@@ -49,6 +56,7 @@ import common.Util;
  */
 
 public class Main {
+	private static Logger _log = Logger.getLogger(Main.class);
 
 	public static void main(String[] args) {
 		Options options = new Options();
@@ -83,64 +91,102 @@ public class Main {
 			System.out.println("BSTester " + Config.VERSION);
 			return;
 		}
+		
+		// Configure logger
+		File logDir = new File("log");
+		if (!logDir.exists()) {
+			System.out.println("Creating log directory");
+			logDir.mkdirs();
+		}
+		FileAppender appender = new FileAppender();
+		if (cmd.hasOption('s')) {
+			appender.setFile("log/bs-server.log");
+		} else {
+			appender.setFile("log/bs-worker.log");
+		}
+		appender.setName("logFile");
+		Layout layout = new PatternLayout("%d{ISO8601} [%t] %-5p %c %x - %m%n");
+		appender.setLayout(layout);
+		appender.activateOptions();
+		Logger rootLogger = Logger.getRootLogger();
+		rootLogger.addAppender(appender);
+		rootLogger.addAppender(new ConsoleAppender(layout));
+		Logger.getLogger("org.hibernate").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
+		Logger.getLogger("org.eclipse.jetty").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
+		
 		try {
+			int dataPort = Config.DEFAULT_DATA_PORT;
 			if (cmd.hasOption('d')) {
-				Config.dataPort = Integer.parseInt(cmd.getOptionValue('d'));
-				if (Config.dataPort < 1 || Config.dataPort > 65535) {
-					System.err.println("Invalid port number!");
+				dataPort = Integer.parseInt(cmd.getOptionValue('d'));
+				if (dataPort < 1 || dataPort > 65535) {
+					_log.fatal("Invalid port number!");
 					System.exit(1);
 				}
 			}
+			createDirectoryStructure(cmd.hasOption('s'));
 
 			// -s means Start the server
 			if (cmd.hasOption('s')) {
+				_log.info("Starting server");
+				// If this is the first run, make sure the initial admin is in the DB
+				createWebAdmin();
 				createWorkerTarball();
-				Config.isServer = true;
+				int httpPort = Config.DEFAULT_HTTP_PORT;
 				if (cmd.hasOption('p')) {
-					Config.http_port = Integer.parseInt(cmd.getOptionValue('p'));
-					if (Config.http_port < 1 || Config.http_port > 65535) {
-						System.err.println("Invalid port number!");
+					httpPort = Integer.parseInt(cmd.getOptionValue('p'));
+					if (httpPort < 1 || httpPort > 65535) {
+						_log.fatal("Invalid port number!");
 						System.exit(1);
 					}
 				}
-				createDirectoryStructure();
-				// If this is the first run, make sure the initial admin is in the DB
-				createWebAdmin();
 
-				Master m = new Master();
-				Config.setMaster(m);
-				new Thread(new WebServer()).start();
+				Master m = new Master(dataPort);
+				new Thread(new WebServer(httpPort)).start();
 				m.start();
 				if (cmd.hasOption('o')) {
 					createMockData();
 				}
 			} // Start the worker
-			else if (cmd.hasOption('w')){
-				createDirectoryStructure();
-				Config.server = cmd.getOptionValue('w');
-				if (cmd.hasOption('c')) {
-					Config.cores = Integer.parseInt(cmd.getOptionValue('c'));
-					if (Config.cores < 1) {
-						System.err.println("Number of cores must be greater than 0!");
+			else if (cmd.hasOption('w') || cmd.hasOption('m')){
+				if (cmd.hasOption('w') && cmd.hasOption('m')) {
+					_log.fatal("Must specify either -w OR -m");
+					System.exit(1);
+				}
+				_log.info("Starting worker");
+				Config.MOCK_WORKER = cmd.hasOption('m');
+				if (cmd.hasOption('n')) {
+					Config.MOCK_WORKER_SLEEP = Integer.parseInt(cmd.getOptionValue('n'));
+					if (Config.MOCK_WORKER_SLEEP < 0) {
+						_log.fatal("Mock worker sleep time must be greater than 0");
 						System.exit(1);
 					}
 				}
-				new Thread(new Worker()).start();
+				String serverAddr = cmd.getOptionValue('w');
+				int cores = 1;
+				if (cmd.hasOption('c')) {
+					cores = Integer.parseInt(cmd.getOptionValue('c'));
+					if (cores < 1) {
+						_log.fatal("Number of cores must be greater than 0!");
+						System.exit(1);
+					}
+				}
+				new Thread(new Worker(serverAddr, dataPort, cores)).start();
 			} else if (cmd.hasOption('a')) {
 				GameData gameData = new GameData(cmd.getOptionValue('a'));
 				MatchResult result = gameData.analyzeMatch();
 				System.out.println(result);
 			} else if (cmd.hasOption('m')) {
-				createDirectoryStructure();
-				Config.server = cmd.getOptionValue('m');
-				Config.MOCK_WORKER = true;
-				if (cmd.hasOption('n')) {
-					Config.MOCK_WORKER_SLEEP = Integer.parseInt(cmd.getOptionValue('n'));
-				}
+				_log.info("Starting mock worker");
+				String serverAddr = cmd.getOptionValue('m');
+				int cores = 1;
 				if (cmd.hasOption('c')) {
-					Config.cores = Integer.parseInt(cmd.getOptionValue('c'));
+					cores = Integer.parseInt(cmd.getOptionValue('c'));
+					if (cores < 1) {
+						_log.fatal("Number of cores must be greater than 0!");
+						System.exit(1);
+					}
 				}
-				new Thread(new Worker()).start();
+				new Thread(new Worker(serverAddr, dataPort, cores)).start();
 			} else {
 				System.out.println("Must specify if running as server or worker.  Do ./run.sh -h for help.");
 			}
@@ -150,7 +196,7 @@ public class Main {
 	}
 
 	private static void createMockData() throws IOException {
-		Config.getLogger().info("Populating database with mock data...");
+		_log.info("Populating database with mock data...");
 		EntityManager em = HibernateUtil.getEntityManager();
 		File checkFile = new File("./battlecode/teams/mock_player.jar");
 		BSPlayer bsPlayer;
@@ -172,16 +218,10 @@ public class Main {
 		for (int i = 0; i < 10; i++) {
 			seeds.add(r.nextLong());
 		}
-		while (!Config.getMaster().isInitialized()) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-			}
-		}
-		Config.getMaster().updateMaps();
+		AbstractMaster.kickoffUpdateMaps();
 		List<Long> mapIds = em.createQuery("select map.id from BSMap map", Long.class).getResultList();
 		for (int i = 0; i < 5; i++) {
-			Config.getMaster().queueRun(bsPlayer.getId(), bsPlayer.getId(), seeds, mapIds);
+			AbstractMaster.kickoffQueueRun(bsPlayer.getId(), bsPlayer.getId(), seeds, mapIds);
 		}
 
 		em.getTransaction().begin();
@@ -213,7 +253,7 @@ public class Main {
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
-		Config.getLogger().info("Finished creating mock data!");
+		_log.info("Finished creating mock data!");
 	}
 
 	/**
@@ -264,12 +304,13 @@ public class Main {
 			em.merge(user);
 			em.flush();
 			em.getTransaction().commit();
+			_log.info("Admin created");
 		}
 		em.close();
 	}
 
-	private static void createDirectoryStructure() {
-		if (Config.isServer) {
+	private static void createDirectoryStructure(boolean isServer) {
+		if (isServer) {
 			new File("./static/matches").mkdir();
 		}
 		new File("./battlecode").mkdir();
@@ -300,11 +341,12 @@ public class Main {
 	}
 
 	private static void createWorkerTarball() {
-		String targetName = "bs-worker.tar.gz";
+		String targetName = "static/bs-worker.tar.gz";
 		String[] tarFiles = {"README", "COPYING", "run.sh", "scripts", "lib", "static", "bs-tester.jar"};
 		File tFile = new File(targetName);
-		if (tFile.exists())
+		if (tFile.exists()) {
 			return;
+		}
 		TarArchiveOutputStream out = null;
 		try {
 			out = new TarArchiveOutputStream(
@@ -315,7 +357,6 @@ public class Main {
 				archiveFile(out, "bs-worker/", fileName);
 			}
 			out.finish();
-			new File(targetName).renameTo(new File("static/" + targetName));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

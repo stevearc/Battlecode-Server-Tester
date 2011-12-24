@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import master.MasterMethodCaller;
+import master.AbstractMaster;
 
 
 /**
@@ -19,7 +19,7 @@ import master.MasterMethodCaller;
  */
 public class RunServlet extends HttpServlet {
 	private static final long serialVersionUID = -5024779464960322694L;
-	public static final String NAME = "run.html";
+	public static final String NAME = "/run.html";
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -59,15 +59,11 @@ public class RunServlet extends HttpServlet {
 			mapIds.add(new Long(Integer.parseInt(mapId)));
 		}
 		try {
-			MasterMethodCaller.queueRun(teamAIdLong, teamBIdLong, seedLongs, mapIds);
+			AbstractMaster.kickoffQueueRun(teamAIdLong, teamBIdLong, seedLongs, mapIds);
 			out.print("success");
 		} catch (Exception e) {
 			e.printStackTrace(out);
 		}
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

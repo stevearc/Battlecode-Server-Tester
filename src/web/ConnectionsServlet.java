@@ -8,9 +8,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import master.AbstractMaster;
 import master.WorkerRepr;
 
-import common.Config;
 import common.NetworkMatch;
 
 /**
@@ -20,7 +20,7 @@ import common.NetworkMatch;
  */
 public class ConnectionsServlet extends HttpServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
-	public static final String NAME = "connections.html";
+	public static final String NAME = "/connections.html";
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -33,7 +33,7 @@ public class ConnectionsServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, toString());
+		WebUtil.writeTabs(request, response, out, NAME);
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		out.println("<table id=\"conn_table\" class='datatable'>" +
@@ -44,7 +44,7 @@ public class ConnectionsServlet extends HttpServlet {
 		"</tr>");
 		out.println("</thead>");
 		out.println("<tbody>");
-		for (WorkerRepr c: Config.getMaster().getConnections()) {
+		for (WorkerRepr c: AbstractMaster.getConnectionsStatic()) {
 			out.println("<tr>");
 			out.println("<td>" + c.toHTML() + "</td>");
 			out.print("<td>");
@@ -67,8 +67,4 @@ public class ConnectionsServlet extends HttpServlet {
 		"</html>");
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

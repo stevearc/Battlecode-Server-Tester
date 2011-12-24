@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import networking.Controller;
 import networking.Network;
 import networking.Packet;
 import networking.PacketCmd;
 
-import common.Config;
+import org.apache.log4j.Logger;
+
 import common.Dependencies;
 import common.NetworkMatch;
 
@@ -21,13 +21,12 @@ import common.NetworkMatch;
  *
  */
 public class WorkerRepr implements Controller {
-	private Logger _log;
+	private static Logger _log = Logger.getLogger(WorkerRepr.class);
 	private Network net;
 	private HashSet<NetworkMatch> runningMatches;
 	private int numCores = 0;
 
 	public WorkerRepr(Socket s) throws IOException {
-		_log = Config.getLogger();
 		this.net = new Network(this, s);
 		runningMatches = new HashSet<NetworkMatch>();
 	}
@@ -93,11 +92,11 @@ public class WorkerRepr implements Controller {
 		switch (p.getCmd()) {
 		case RUN_REPLY:
 			runningMatches.remove((NetworkMatch) p.get(0));
-			MasterMethodCaller.matchFinished(this, p);
+			AbstractMaster.kickoffMatchFinished(this, p);
 			break;
 		case INIT:
 			numCores = (Integer) p.get(0);
-			MasterMethodCaller.sendWorkerMatches(this);
+			AbstractMaster.kickoffSendWorkerMatches(this);
 			break;
 		case REQUEST:
 			NetworkMatch match = (NetworkMatch) p.get(0);
@@ -105,10 +104,10 @@ public class WorkerRepr implements Controller {
 			boolean needMap = (Boolean) p.get(2);
 			boolean needTeamA = (Boolean) p.get(3);
 			boolean needTeamB = (Boolean) p.get(4);
-			MasterMethodCaller.sendWorkerMatchDependencies(this, match, needUpdate, needMap, needTeamA, needTeamB);
+			AbstractMaster.kickoffSendWorkerMatchDependencies(this, match, needUpdate, needMap, needTeamA, needTeamB);
 			break;
 		default:
-			_log.warning("Invalid packet command: " + p.getCmd());
+			_log.warn("Invalid packet command: " + p.getCmd());
 		}
 	}
 
@@ -128,7 +127,7 @@ public class WorkerRepr implements Controller {
 
 	@Override
 	public void onDisconnect() {
-		Config.getMaster().workerDisconnect(this);
+		AbstractMaster.kickoffWorkerDisconnect(this);
 	}
 
 }

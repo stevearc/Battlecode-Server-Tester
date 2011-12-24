@@ -21,7 +21,7 @@ import common.HibernateUtil;
  */
 public class AdminServlet extends HttpServlet {
 	private static final long serialVersionUID = 1272536670071318079L;
-	public static final String NAME = "admin.html";
+	public static final String NAME = "/admin.html";
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -35,7 +35,7 @@ public class AdminServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, toString());	
+		WebUtil.writeTabs(request, response, out, NAME);	
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		if (user == null || user.getPrivs() != BSUser.PRIVS.ADMIN) {
@@ -111,8 +111,4 @@ public class AdminServlet extends HttpServlet {
 		out.println("</body></html>");
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

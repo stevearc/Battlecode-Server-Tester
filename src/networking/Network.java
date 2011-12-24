@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import common.Config;
+import org.apache.log4j.Logger;
 
 /**
  * Sends and receives packets to and from one other Network at a remote location
@@ -15,13 +13,12 @@ import common.Config;
  *
  */
 public class Network implements Runnable{
-	protected Logger _log;
+	protected static Logger _log = Logger.getLogger(Network.class);
 	protected Socket socket;
 	protected boolean finish = false;
 	protected Controller controller;
 
 	public Network (Controller controller, Socket socket) throws IOException{
-		_log = Config.getLogger();
 		this.socket = socket;
 		this.controller = controller;
 	}
@@ -39,7 +36,7 @@ public class Network implements Runnable{
 			oos.writeObject(packet);
 			oos.flush();
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Error serializing packet:\n" + packet, e);
+			_log.error("Error serializing packet:\n" + packet, e);
 		}
 	}
 
@@ -53,7 +50,7 @@ public class Network implements Runnable{
 			try {
 				socket.close();
 			} catch (IOException e){
-				_log.warning("Cannot close socket");
+				_log.warn("Cannot close socket");
 			}
 		}
 	}
@@ -75,7 +72,7 @@ public class Network implements Runnable{
 				try {
 					packet = (Packet) ois.readObject();
 				} catch (ClassNotFoundException e) {
-					_log.log(Level.WARNING, "Could not find class during packet deserialization", e);
+					_log.warn("Could not find class during packet deserialization", e);
 					return;
 				}
 

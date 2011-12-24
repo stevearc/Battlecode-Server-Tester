@@ -135,4 +135,9 @@ public class Util {
 		istream.close();
 		ostream.close();
 	}
+
+	public static boolean initializedBattlecode() {
+		File bserver = new File("./battlecode/lib/battlecode-server.jar");
+		return bserver.exists();
+	}
 }

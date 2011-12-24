@@ -11,12 +11,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import master.MasterMethodCaller;
+import master.AbstractMaster;
 import master.WebSocketChannelManager;
 import model.BSPlayer;
 import model.STATUS;
 
-import common.Config;
 import common.HibernateUtil;
 import common.Util;
 
@@ -28,7 +27,7 @@ import common.Util;
  */
 public class UploadServlet extends HttpServlet {
 	private static final long serialVersionUID = 2147508188812654640L;
-	public static final String NAME = "upload.html";
+	public static final String NAME = "/upload.html";
 
 	private void warn(HttpServletResponse response, String warning) throws IOException {
 		response.getWriter().println("<p class='ui-state-error' style='padding:10px'>" + warning + "</p>");
@@ -49,8 +48,8 @@ public class UploadServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, toString());
-		if (!Config.initializedBattlecode()) {
+		WebUtil.writeTabs(request, response, out, NAME);
+		if (!Util.initializedBattlecode()) {
 			highlight(response, "You must upload battlecode files, maps, and a player");
 		}
 		out.println("<div id='player-info-dialog' style='text-align:center'>Compile your player using" +
@@ -112,7 +111,7 @@ public class UploadServlet extends HttpServlet {
 				warn(response, "Please select a valid bc.conf file");
 			} 
 			else {
-				MasterMethodCaller.updateBattlecodeFiles(battlecode_server, idata, build, bc_conf);
+				AbstractMaster.kickoffUpdateBattlecodeFiles(battlecode_server, idata, build, bc_conf);
 				EntityManager em = HibernateUtil.getEntityManager();
 				Long numRunning = em.createQuery("select count(*) from BSRun run where run.status = ?", Long.class)
 				.setParameter(1, STATUS.RUNNING)
@@ -141,7 +140,7 @@ public class UploadServlet extends HttpServlet {
 				} else {
 					Util.writeFileData(map, mapPath);
 					highlight(response, "Successfully uploaded map: " + mapName + ".xml");
-					MasterMethodCaller.updateMaps();
+					AbstractMaster.kickoffUpdateMaps();
 				}
 			}
 		}
@@ -222,8 +221,4 @@ public class UploadServlet extends HttpServlet {
 		doGet(request, response);
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

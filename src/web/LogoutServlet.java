@@ -20,7 +20,7 @@ import model.BSUser;
  */
 public class LogoutServlet extends HttpServlet {
 	private static final long serialVersionUID = 2965899260728547098L;
-	public static final String NAME = "logout.html";
+	public static final String NAME = "/logout.html";
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -43,8 +43,4 @@ public class LogoutServlet extends HttpServlet {
 		request.getSession().setAttribute("user", null);
 	}
 	
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

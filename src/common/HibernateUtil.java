@@ -36,7 +36,6 @@ public class HibernateUtil {
 	private static Configuration buildConfiguration() {
 		try {
 			Configuration cfg = new Configuration();
-			cfg.addPackage("src.model");
 			cfg.addAnnotatedClass(BSRun.class);
 			cfg.addAnnotatedClass(BSMap.class);
 			cfg.addAnnotatedClass(BSUser.class);
@@ -80,7 +79,6 @@ public class HibernateUtil {
 
 	private static EntityManagerFactory buildEntityManagerFactory() {
 		Ejb3Configuration cfg = new Ejb3Configuration();
-		cfg.addPackage("src.model");
 		cfg.addAnnotatedClass(BSRun.class);
 		cfg.addAnnotatedClass(BSMap.class);
 		cfg.addAnnotatedClass(BSUser.class);

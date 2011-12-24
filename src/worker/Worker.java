@@ -9,8 +9,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.net.SocketFactory;
 
@@ -21,6 +19,8 @@ import networking.Controller;
 import networking.Network;
 import networking.Packet;
 import networking.PacketCmd;
+
+import org.apache.log4j.Logger;
 
 import common.Config;
 import common.Dependencies;
@@ -33,16 +33,20 @@ import common.Util;
  *
  */
 public class Worker implements Controller, Runnable {
-	private Logger _log;
+	private Logger _log = Logger.getLogger(Worker.class);
+	private String serverAddr;
 	private Network network;
+	private int cores;
+	private int dataPort;
 	private MatchRunner[] running;
 	private boolean runWorker = true;
 	private SocketFactory sf;
 
-	public Worker() throws Exception{
-		_log = Config.getLogger();
-		running = new MatchRunner[Config.cores];
-
+	public Worker(String serverAddr, int dataPort, int cores) throws Exception{
+		this.serverAddr = serverAddr;
+		this.dataPort = dataPort;
+		this.cores = cores;
+		running = new MatchRunner[cores];
 		sf = SocketFactory.getDefault();
 	}
 	
@@ -78,18 +82,18 @@ public class Worker implements Controller, Runnable {
 			try {
 				if (network == null || !network.isConnected()) {
 					try {
-						Socket socket = sf.createSocket(Config.server, Config.dataPort);
+						Socket socket = sf.createSocket(serverAddr, dataPort);
 						network = new Network(this, socket);
 						new Thread(network).start();
 						_log.info("Connecting to master");
-						network.send(new Packet(PacketCmd.INIT, new Object[]{Config.cores}));
+						network.send(new Packet(PacketCmd.INIT, new Object[]{cores}));
 					} catch (UnknownHostException e) {
 					} catch (IOException e) {
 					}
 				}
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				_log.log(Level.WARNING, "Interrupt exception", e);
+				_log.warn("Interrupt exception", e);
 			}
 		}
 	}
@@ -109,13 +113,13 @@ public class Worker implements Controller, Runnable {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
-			_log.log(Level.SEVERE, "Could not find SHA1 algorithm", e);
+			_log.error("Could not find SHA1 algorithm", e);
 			return false;
 		} catch (FileNotFoundException e) {
 			// If the files don't exist, we obviously need to update them
 			return false;
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Error hashing battlecode install files", e);
+			_log.error("Error hashing battlecode install files", e);
 			return false;
 		}
 		return true;
@@ -127,9 +131,9 @@ public class Worker implements Controller, Runnable {
 			try {
 				return map.getHash().equals(Util.convertToHex(Util.SHA1Checksum(mapFile.getAbsolutePath())));
 			} catch (NoSuchAlgorithmException e) {
-				_log.log(Level.SEVERE, "Can't find SHA1 hash!", e);
+				_log.error("Can't find SHA1 hash!", e);
 			} catch (IOException e) {
-				_log.log(Level.SEVERE, "Can't read map file!", e);
+				_log.error("Can't read map file!", e);
 			}
 		}
 		return false;
@@ -235,7 +239,7 @@ public class Worker implements Controller, Runnable {
 				System.exit(Config.RESTART_STATUS);
 			}
 		} catch (IOException e) {
-			_log.log(Level.SEVERE, "Could not create player or map file", e);
+			_log.error("Could not create player or map file", e);
 		}
 	}
 
@@ -246,12 +250,12 @@ public class Worker implements Controller, Runnable {
 			try {
 				// Find a free core
 				int core;
-				for (core = 0; core < Config.cores; core++) {
+				for (core = 0; core < cores; core++) {
 					if (running[core] == null)
 						break;
 				}
 				// Could not find free core
-				if (core == Config.cores)
+				if (core == cores)
 					break;
 
 				NetworkMatch match = (NetworkMatch) p.get(0);
@@ -263,12 +267,12 @@ public class Worker implements Controller, Runnable {
 					running[core] = m;
 				}
 			} catch (Exception e) {
-				_log.warning("Error running match");
+				_log.warn("Error running match");
 			}
 			break;
 		case STOP:
 			_log.info("Received stop command");
-			for (int i = 0; i < Config.cores; i++) {
+			for (int i = 0; i < cores; i++) {
 				if (running[i] != null) {
 					running[i].stop();
 					running[i] = null;
@@ -276,13 +280,13 @@ public class Worker implements Controller, Runnable {
 			}
 			break;
 		default:
-			_log.warning("Unrecognized packet command: " + p.getCmd());
+			_log.warn("Unrecognized packet command: " + p.getCmd());
 		}
 	}
 
 	@Override
 	public synchronized void onDisconnect() {
-		for (int i = 0; i < Config.cores; i++) {
+		for (int i = 0; i < cores; i++) {
 			if (running[i] != null) {
 				running[i].stop();
 				running[i] = null;

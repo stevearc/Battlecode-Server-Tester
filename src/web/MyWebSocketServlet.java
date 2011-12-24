@@ -9,17 +9,12 @@ import org.eclipse.jetty.websocket.WebSocketServlet;
 
 public class MyWebSocketServlet extends WebSocketServlet {
 	private static final long serialVersionUID = -1083471361521456794L;
-	public static final String NAME = "socket";
+	public static final String NAME = "/socket";
 
 	@Override
 	public WebSocket doWebSocketConnect(HttpServletRequest request, String protocol) {
 		String channel = request.getParameter("channel");
 		return new ListenerWebSocket(channel);
-	}
-	
-	@Override
-	public String toString() {
-		return NAME;
 	}
 	
 	static class ListenerWebSocket implements WebSocket.OnTextMessage {

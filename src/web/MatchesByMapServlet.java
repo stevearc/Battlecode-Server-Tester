@@ -23,7 +23,7 @@ import model.BSRun;
  */
 public class MatchesByMapServlet extends HttpServlet {
 	private static final long serialVersionUID = 5352256649398067730L;
-	public static final String NAME = "matches_by_map.html";
+	public static final String NAME = "/matches_by_map.html";
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
@@ -35,7 +35,7 @@ public class MatchesByMapServlet extends HttpServlet {
 		out.println("</head>");
 		out.println("<body>");
 
-		WebUtil.writeTabs(request, response, out, toString());
+		WebUtil.writeTabs(request, response, out, NAME);
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 
 		String strId = request.getParameter("id");
@@ -99,8 +99,4 @@ public class MatchesByMapServlet extends HttpServlet {
 		out.println("</body></html>");
 	}
 
-	@Override
-	public String toString() {
-		return NAME;
-	}
 }

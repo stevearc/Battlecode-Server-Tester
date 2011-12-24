@@ -5,11 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import model.BSMatch;
 import model.MatchResult;
+
+import org.apache.log4j.Logger;
 
 import common.Config;
 import common.NetworkMatch;
@@ -22,7 +22,7 @@ import common.Util;
  */
 
 public class MatchRunner implements Runnable {
-	private Logger _log;
+	private Logger _log = Logger.getLogger(MatchRunner.class);
 	private Worker worker;
 	private NetworkMatch match;
 	private boolean stop = false;
@@ -33,7 +33,6 @@ public class MatchRunner implements Runnable {
 		this.match = match;
 		this.worker = worker;
 		this.core = core;
-		_log = Config.getLogger();
 	}
 
 	/**
@@ -54,7 +53,7 @@ public class MatchRunner implements Runnable {
 					System.out.println(line);
 				} while ((line = reader.readLine()) != null);
 			} catch (IOException e) {
-				_log.log(Level.WARNING, "Could not read script output", e);
+				_log.warn("Could not read script output", e);
 			}
 		}
 	}
@@ -134,14 +133,14 @@ public class MatchRunner implements Runnable {
 			if (stop)
 				return;
 			if (curProcess.exitValue() != 0) {
-				_log.severe("Error running match\n" + output);
+				_log.error("Error running match\n" + output);
 				worker.matchFailed(this, core, match);
 				return;
 			}
 
 		} catch (Exception e) {
 			if (!stop) {
-				_log.log(Level.SEVERE, "Failed to run match", e);
+				_log.error("Failed to run match", e);
 				worker.matchFailed(this, core, match);
 			}
 			return;
@@ -156,13 +155,13 @@ public class MatchRunner implements Runnable {
 			gameData = new GameData(matchFile);
 		} catch (IOException e) {
 			if (!stop) {
-				_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
+				_log.error("Failed to read " + matchFile, e);
 				worker.matchFailed(this, core, match);
 			}
 			return;
 		} catch (ClassNotFoundException e) {
 			if (!stop) {
-				_log.log(Level.SEVERE, "Failed to read " + matchFile, e);
+				_log.error("Failed to read " + matchFile, e);
 				worker.matchFailed(this, core, match);
 			}
 			return;
