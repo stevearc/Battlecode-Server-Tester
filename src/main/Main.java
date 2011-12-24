@@ -16,7 +16,6 @@ import java.util.zip.GZIPOutputStream;
 import javax.persistence.EntityManager;
 
 import master.Master;
-import master.WebPollHandler;
 import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
@@ -63,6 +62,7 @@ public class Main {
 			options.addOption("n", "mock-worker-sleep", true, "when running as mock-worker, time in seconds to take per match");
 		}
 		options.addOption("h", "help", false, "display help text");
+		options.addOption("v", "version", false, "display version number");
 		options.addOption("p", "http-port", true, "what port for the http server to listen on (default 80)");
 		options.addOption("d", "data-port", true, "what port for the master/worker to send data over (default 8888)");
 		options.addOption("c", "cores", true, "the number of cores on a worker (determines how many simultaneous matches to run)");
@@ -77,6 +77,10 @@ public class Main {
 		}
 		if (cmd.hasOption('h')) {
 			formatter.printHelp("run.sh", options);
+			return;
+		}
+		if (cmd.hasOption('v')) {
+			System.out.println("BSTester " + Config.VERSION);
 			return;
 		}
 		try {
@@ -102,7 +106,6 @@ public class Main {
 				createDirectoryStructure();
 				// If this is the first run, make sure the initial admin is in the DB
 				createWebAdmin();
-				Config.setWebPollHandler(new WebPollHandler());
 
 				Master m = new Master();
 				Config.setMaster(m);

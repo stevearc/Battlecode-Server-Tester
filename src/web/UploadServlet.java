@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import master.MasterMethodCaller;
+import master.WebSocketChannelManager;
 import model.BSPlayer;
 import model.STATUS;
 
@@ -77,6 +78,7 @@ public class UploadServlet extends HttpServlet {
 				bsPlayer.setPlayerName(playerName);
 				EntityManager em = HibernateUtil.getEntityManager();
 				em.persist(bsPlayer);
+				WebSocketChannelManager.broadcastMsg("index", "ADD_PLAYER", bsPlayer.getPlayerName());
 				em.getTransaction().begin();
 				try {
 					em.flush();

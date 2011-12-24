@@ -44,6 +44,7 @@ public class WebServer implements Runnable {
 			new UploadServlet(),
 			new AnalysisServlet(),
 			new AnalysisContentServlet(),
+			new MyWebSocketServlet(),
 			};
 
 	public void run() {
@@ -63,9 +64,6 @@ public class WebServer implements Runnable {
 				context.addServlet(new ServletHolder(s), "/" + s.toString());
 			}
 			context.addServlet(new ServletHolder(new IndexServlet()), "/");
-			// Add the cometd servlet
-			ServletHolder sh = new ServletHolder(new CometServlet());
-			context.addServlet(sh, "/comet/*");
 
 			EnumSet<DispatcherType> en = EnumSet.of(DispatcherType.REQUEST);
 			// Set up filters for login blocking and handling file uploads

@@ -23,8 +23,6 @@ import model.BSRun;
 import model.MatchResult;
 import model.STATUS;
 import model.TEAM;
-import networking.CometCmd;
-import networking.CometMessage;
 import networking.Packet;
 
 import common.Config;
@@ -44,7 +42,6 @@ public class Master {
 	private NetworkHandler handler;
 	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
 	private Date mapsLastModifiedDate;
-	private WebPollHandler wph;
 	private File pendingBattlecodeServerFile;
 	private File pendingIdataFile;
 	private File pendingBuildFile;
@@ -52,7 +49,6 @@ public class Master {
 	private boolean initialized;
 
 	public Master() throws Exception {
-		wph = Config.getWebPollHandler();
 		_log = Config.getLogger();
 		handler = new NetworkHandler();
 	}
@@ -77,6 +73,7 @@ public class Master {
 				}
 			}
 		}).start();
+		WebSocketChannelManager.startHeartbeatManager();
 		initialized = true;
 	}
 	
@@ -118,8 +115,8 @@ public class Master {
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
-		wph.broadcastMsg("matches", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {""+newRun.getId(), 
-				teamA.getPlayerName(), teamB.getPlayerName()}));
+		WebSocketChannelManager.broadcastMsg("index", "INSERT_TABLE_ROW", newRun.getId() + "," + 
+				teamA.getPlayerName() + "," +  teamB.getPlayerName());
 		startRun();
 		_log.info("Queued new run: " + newRun);
 	}
@@ -182,7 +179,7 @@ public class Master {
 			em.flush();
 			em.getTransaction().commit();
 			em.close();
-			wph.broadcastMsg("matches", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {""+runId}));
+			WebSocketChannelManager.broadcastMsg("index", "DELETE_TABLE_ROW", ""+runId);
 		}
 	}
 
@@ -193,7 +190,7 @@ public class Master {
 	public synchronized void workerConnect(WorkerRepr worker) {
 		_log.info("Worker connected: " + worker);
 		workers.add(worker);
-		wph.broadcastMsg("connections", new CometMessage(CometCmd.INSERT_TABLE_ROW, new String[] {worker.toHTML()}));
+		WebSocketChannelManager.broadcastMsg("connections", "INSERT_TABLE_ROW", worker.toHTML());
 	}
 
 	/**
@@ -202,7 +199,7 @@ public class Master {
 	 */
 	public synchronized void workerDisconnect(WorkerRepr worker) {
 		_log.info("Worker disconnected: " + worker);
-		wph.broadcastMsg("connections", new CometMessage(CometCmd.DELETE_TABLE_ROW, new String[] {worker.toHTML()}));
+		WebSocketChannelManager.broadcastMsg("connections", "DELETE_TABLE_ROW", worker.toHTML());
 		workers.remove(worker);
 	}
 
@@ -216,7 +213,7 @@ public class Master {
 		BSMatch.STATUS status = (BSMatch.STATUS) p.get(1);
 		MatchResult result = (MatchResult) p.get(2);
 		byte[] data = (byte[]) p.get(3);
-		wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {worker.toHTML(), m.toMapString()}));
+		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.toHTML() + "," + m.toMapString());
 		try {
 			EntityManager em = HibernateUtil.getEntityManager();
 			BSMatch match = em.find(BSMatch.class, m.id);
@@ -260,7 +257,8 @@ public class Master {
 					totalMatches += (Long) valuePair[1];
 				}
 				String percent = currentMatches*100/totalMatches + "%";
-				wph.broadcastMsg("matches", new CometMessage(CometCmd.MATCH_FINISHED, new String[] {""+m.run_id, percent, winRecord}));
+				WebSocketChannelManager.broadcastMsg("index", "MATCH_FINISHED", m.run_id + "," + 
+						percent + "," + winRecord);
 			} else {
 				_log.warning("Match " + m + " on worker " + worker + " failed");
 			}
@@ -322,7 +320,7 @@ public class Master {
 			nm.buildHash = buildHash;
 			nm.confHash = confHash;
 			_log.info("Sending match " + nm + " to worker " + worker);
-			wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
+			WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + nm.toMapString());
 			worker.runMatch(nm);
 			m.setStatus(BSMatch.STATUS.RUNNING);
 			em.merge(m);
@@ -353,7 +351,7 @@ public class Master {
 				nm.buildHash = buildHash;
 				nm.confHash = confHash;
 				_log.info("Sending redundant match " + nm + " to worker " + worker);
-				wph.broadcastMsg("connections", new CometMessage(CometCmd.ADD_MAP, new String[] {worker.toHTML(), nm.toMapString()}));
+				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + nm.toMapString());
 				worker.runMatch(nm);
 			}
 		}
@@ -390,7 +388,7 @@ public class Master {
 			worker.runMatchWithDependencies(match, dep);
 		} catch (IOException e) {
 			_log.log(Level.SEVERE, "Could not read data file", e);
-			wph.broadcastMsg("connections", new CometMessage(CometCmd.REMOVE_MAP, new String[] {worker.toHTML(), match.toMapString()}));
+			WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.toHTML() + "," + match.toMapString());
 			worker.stopAllMatches();
 			MasterMethodCaller.sendWorkerMatches(worker);
 		}
@@ -420,8 +418,7 @@ public class Master {
 			em.getTransaction().begin();
 			em.flush();
 			em.getTransaction().commit();
-			wph.broadcastMsg("matches", new CometMessage(CometCmd.START_RUN, 
-					new String[] {""+nextRun.getId(), ""+nextRun.getMatches().size()}));
+			WebSocketChannelManager.broadcastMsg("index", "START_RUN", nextRun.getId() + "");
 			for (WorkerRepr c: workers) {
 				sendWorkerMatches(c);
 			}
@@ -462,8 +459,8 @@ public class Master {
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
-		wph.broadcastMsg("matches", new CometMessage(CometCmd.FINISH_RUN, new String[] {""+currentRun.getId(), status.toString()}));
-		wph.broadcastMsg("connections", new CometMessage(CometCmd.FINISH_RUN, new String[] {}));
+		WebSocketChannelManager.broadcastMsg("index", "FINISH_RUN", currentRun.getId() + "," + status.toString());
+		WebSocketChannelManager.broadcastMsg("connections", "FINISH_RUN", currentRun.getId() + "");
 		for (WorkerRepr c: workers) {
 			c.stopAllMatches();
 		}
@@ -501,6 +498,7 @@ public class Master {
 		for (BSMap map: newMaps) {
 			if (!mapNames.contains(map.getMapName())) {
 				em.persist(map);
+				WebSocketChannelManager.broadcastMsg("index", "ADD_MAP", map.getMapName());
 			}
 		}
 		em.getTransaction().begin();

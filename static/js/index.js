@@ -1,6 +1,3 @@
-var column_map = {'ID' : 0, 'TEAM_A' : 1, 'TEAM_B' : 2, 'WINS' : 3, 'STATUS' : 4, 'TIME' : 5, 'CONTROL' : 6};
-var lastheard = -1;
-var lastheard_update = -1;
 $(function() {
     $("#seed_selector").prop("selectedIndex", 0);
     $("#maps_checkbox").attr("checked", false);
@@ -48,7 +45,39 @@ $(function() {
         }
     });
 
-    handleServerResponse("");
+    var socket;  
+    var host = "ws://" + document.location.hostname + ":" + 
+        document.location.port + "/socket?channel=index";
+    var socket = new WebSocket(host);  
+
+    socket.onmessage = function(message){  
+        if (message.data !== "") {
+            args = message.data.split(",");
+            cmd = args[0];
+            if (cmd == "DELETE_TABLE_ROW") {
+                deleteTableRow(args[1]);
+            } else if (cmd == "INSERT_TABLE_ROW") {
+                insertTableRow(args[1], args[2], args[3]);
+            } else if (cmd == "START_RUN") {
+                startRun(args[1]);
+            } else if (cmd == "FINISH_RUN") {
+                finishRun(args[1], args[2]);
+            } else if (cmd == "MATCH_FINISHED") {
+                matchFinished(args[1], args[2], args[3]);
+            } else if (cmd == "ADD_MAP") {
+                // TODO: add the new map
+            } else if (cmd == "ADD_PLAYER") {
+                // TODO: add the new player
+            } else {
+                console.log("Unknown command: " + cmd);
+            }
+        }
+    }
+    socket.onclose = function(){  
+        // TODO: auto-reconnect
+        $("<p class='ui-state-error' style='padding:10px'>Lost connection to server! Please refresh page.</p>")
+        .appendTo($("#alerts"));
+    }             
 });
 
 // Navigate to view all matches for a run
@@ -169,9 +198,7 @@ function deleteTableRow(rowid) {
 }
 
 // Change table to reflect that a new run is starting
-function startRun(rowid, num_matches) {
-    total_num_matches = num_matches;
-    current_num_matches = 0;
+function startRun(rowid) {
     var table = $("#run_table").dataTable();
     var rowIndex = indexFromRowid(rowid);
     table.fnUpdate("0%", rowIndex, 4);
@@ -237,44 +264,3 @@ function matchFinished(rowid, percent, wins) {
     table.fnUpdate(percent, rowIndex, 4);
     table.fnUpdate(wins, rowIndex, 3);
 }
-
-// Direct the server's Comet response appropriately
-function handleServerResponse(response) {
-  if (response != "") {
-    args = response.split(",");
-    cmd = args[0];
-    lastheard = args[1];
-    if (cmd == "DELETE_TABLE_ROW") {
-      deleteTableRow(args[2]);
-    } else if (cmd == "INSERT_TABLE_ROW") {
-      insertTableRow(args[2], args[3], args[4]);
-    } else if (cmd == "START_RUN") {
-      startRun(args[2], args[3]);
-    } else if (cmd == "FINISH_RUN") {
-      finishRun(args[2], args[3]);
-    } else if (cmd == "MATCH_FINISHED") {
-      matchFinished(args[2], args[3], args[4]);
-    } else {
-      console.log("Unknown command: " + response);
-    }
-  }
-
-  setTimeout("poll(handleServerResponse, 'matches', lastheard);",100);
-}
-
-// Poll the server for information
-function listenForTeamsUpdate(response) {
-  if (response != "") {
-    args = response.split(",");
-    cmd = args[0];
-    lastheard_update = args[1];
-    if (cmd == "RELOAD") {
-      document.location.reload(true);
-    } else {
-      //alert(response);
-    }
-  }
-
-  setTimeout("poll(listenForTeamsUpdate, \"teams_update\", lastheard_update);",100);
-}
-

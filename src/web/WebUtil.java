@@ -53,6 +53,7 @@ public class WebUtil {
 		writeTab(out, response, current, AdminServlet.NAME, "Admin");
 		out.println("</ul>");
 		out.println("</div>");
+		out.println("<div id='alerts' style='text-align: center; width:100%'></div>");
 	}
 
 	private static void writeTab(PrintWriter out, HttpServletResponse response, String current, String url, String title) {

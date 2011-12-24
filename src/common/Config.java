@@ -8,7 +8,6 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import master.Master;
-import master.WebPollHandler;
 
 /**
  * Stores configuration data in one convenient container
@@ -16,14 +15,14 @@ import master.WebPollHandler;
  *
  */
 public class Config {
+	public static final String VERSION = "0.1.0";
 	public static final int RESTART_STATUS = 121;
-	public static final boolean DEBUG = true;
-	public static final boolean SHOW_SQL = true;
+	public static final boolean DEBUG = false;
+	public static final boolean SHOW_SQL = false;
 	public static final boolean PRINT_WORKER_OUTPUT = true;
 	public static boolean MOCK_WORKER = false;
 	public static int MOCK_WORKER_SLEEP = 0;
 	private static Master rootMaster;
-	private static WebPollHandler webPollHandler;
 	private static final String log_dir = "./log";
 
 	public static boolean isServer;
@@ -57,14 +56,6 @@ public class Config {
 		rootMaster = s;
 	}
 
-	public static WebPollHandler getWebPollHandler() {
-		return webPollHandler;
-	}
-
-	public static void setWebPollHandler(WebPollHandler wph) {
-		webPollHandler = wph;
-	}
-	
 	public static boolean initializedBattlecode() {
 		File bserver = new File("./battlecode/lib/battlecode-server.jar");
 		return bserver.exists();

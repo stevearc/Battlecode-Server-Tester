@@ -62,7 +62,6 @@ public class ConnectionsServlet extends HttpServlet {
 		out.println("</tbody>");
 		out.println("</table>");
 
-		out.println("<script type=\"text/javascript\" src=\"js/async.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/connections.js\"></script>");
 		out.println("</body>" +
 		"</html>");

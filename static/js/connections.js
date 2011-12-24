@@ -1,6 +1,3 @@
-var row_map = {'CONN' : 0, 'MAPS' : 1};
-var lastheard = -1;
-
 $(function() {
     var connTable = $('#conn_table').dataTable({
         "bJQueryUI": true,
@@ -9,6 +6,36 @@ $(function() {
             { "bSortable": false, "aTargets": [ 1 ] }
         ],
     });
+
+    var socket;  
+    var host = "ws://" + document.location.hostname + ":" + 
+        document.location.port + "/socket?channel=connections";
+    var socket = new WebSocket(host);  
+
+    socket.onmessage = function(message){  
+        if (message.data !== "") {
+            args = message.data.split(",");
+            cmd = args[0];
+            if (cmd == "DELETE_TABLE_ROW") {
+                removeConn(args[1]);
+            } else if (cmd == "INSERT_TABLE_ROW") {
+                addConn(args[1]);
+            } else if (cmd == "ADD_MAP") {
+                addMap(args[1], args[2]);
+            } else if (cmd == "REMOVE_MAP") {
+                removeMap(args[1], args[2]);
+            } else if (cmd == "FINISH_RUN") {
+                clearMaps();
+            } else {
+                console.log("Unknown command: " + cmd);
+            }
+        }
+    }
+    socket.onclose = function(){  
+        // TODO: auto-reconnect
+        $("<p class='ui-state-error' style='padding:10px'>Lost connection to server! Please refresh page.</p>")
+        .appendTo($("#alerts"));
+    } 
 });
 
 // Find what row the connection is in
@@ -79,31 +106,3 @@ function clearMaps() {
         table.fnUpdate("", index, 1);
     }
 }
-
-// Direct the server's Comet response appropriately
-function handleServerResponse(response) {
-  if (response != "") {
-    args = response.split(",");
-    cmd = args[0];
-    lastheard = args[1];
-    if (cmd == "DELETE_TABLE_ROW") {
-      removeConn(args[2]);
-    } else if (cmd == "INSERT_TABLE_ROW") {
-      addConn(args[2]);
-    } else if (cmd == "ADD_MAP") {
-      addMap(args[2], args[3]);
-    } else if (cmd == "REMOVE_MAP") {
-      removeMap(args[2], args[3]);
-    } else if (cmd == "FINISH_RUN") {
-      clearMaps();
-    } else {
-      //alert(response);
-    }
-  }
-
-  // After handling, resume polling server
-  setTimeout("poll(handleServerResponse, \"connections\", lastheard);",100);
-}
-
-// Begin polling server for information
-handleServerResponse("");

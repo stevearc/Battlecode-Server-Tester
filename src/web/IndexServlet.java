@@ -35,7 +35,6 @@ public class IndexServlet extends HttpServlet {
 			response.sendRedirect(UploadServlet.NAME);
 			return;
 		}
-		Config.getLogger().info(request.getRequestURI());
 		if (!request.getRequestURI().equals("/") && !request.getRequestURI().equals("/" + NAME)) {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return;
@@ -197,7 +196,6 @@ public class IndexServlet extends HttpServlet {
 		out.println("</div>");
 		
 		out.println("<script type=\"text/javascript\" src=\"js/countdown.js\"></script>");
-		out.println("<script type=\"text/javascript\" src=\"js/async.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/index.js\"></script>");
 		out.println("</body></html>");
 		em.close();
