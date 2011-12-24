@@ -1,5 +1,6 @@
 $(function() {
     $("#seed_selector").prop("selectedIndex", 0);
+    numSeedsChange();
     $("#maps_checkbox").attr("checked", false);
     var runTable = $('#run_table').dataTable({
         "bJQueryUI": true,
@@ -101,7 +102,7 @@ function toggleAllMaps() {
 // When the number of seeds is changed, make the appropriate seed fields visible
 function numSeedsChange() {
     var num_seeds = parseInt($('#seed_selector').attr("value"));
-    for(var i = 1; i < 11; i++) {
+    for(var i = 1; i < 21; i++) {
         var seed = $('#seed' + i);
         if (i <= num_seeds) {
             seed.removeClass('ui-helper-hidden');
