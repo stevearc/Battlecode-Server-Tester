@@ -3,7 +3,9 @@ package web;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.EnumSet;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.http.HttpServlet;
 
 import org.eclipse.jetty.server.Handler;
@@ -65,9 +67,10 @@ public class WebServer implements Runnable {
 			ServletHolder sh = new ServletHolder(new CometServlet());
 			context.addServlet(sh, "/comet/*");
 
+			EnumSet<DispatcherType> en = EnumSet.of(DispatcherType.REQUEST);
 			// Set up filters for login blocking and handling file uploads
-			context.addFilter(new FilterHolder(new LoginFilter()), "/*", 1);
-			context.addFilter(new FilterHolder(new MultiPartFilter()), "/" + UploadServlet.NAME, 1);
+			context.addFilter(new FilterHolder(new LoginFilter()), "/*", en);
+			context.addFilter(new FilterHolder(new MultiPartFilter()), "/" + UploadServlet.NAME, en);
 			
 			ResourceHandler resourceHandler = new FileHandler();
 			resourceHandler.setAliases(true);
