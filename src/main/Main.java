@@ -217,7 +217,7 @@ public class Main {
 		List<Long> seeds = new ArrayList<Long>();
 		Random r = new Random();
 		for (int i = 0; i < 10; i++) {
-			seeds.add(r.nextLong());
+			seeds.add((long)r.nextInt(500));
 		}
 		master.updateMaps();
 		List<Long> mapIds = em.createQuery("select map.id from BSMap map", Long.class).getResultList();

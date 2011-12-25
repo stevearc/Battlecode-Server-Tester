@@ -15,6 +15,11 @@ import model.BSUser;
 
 import common.HibernateUtil;
 
+/**
+ * This is viewed in an iframe inside of the MatchesServlet
+ * @author stevearc
+ *
+ */
 public class AnalysisContentServlet extends HttpServlet {
 	private static final long serialVersionUID = -3373145024382759806L;
 	public static final String NAME = "/analysis_content.html";
@@ -31,7 +36,7 @@ public class AnalysisContentServlet extends HttpServlet {
 		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");
 		out.println("<link rel='stylesheet' href='/css/jquery-ui.css' />");
 		out.println("</head>");
-		out.println("<body>");
+		out.println("<body style='background:none'>");
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
 			out.println("Invalid id</body></html>");
@@ -51,9 +56,7 @@ public class AnalysisContentServlet extends HttpServlet {
 		out.println("<script src='js/jqplot.cursor.min.js'></script>");
 		out.println(user.getPrefs().toJavascript());
 
-		out.println("<h2 style='text-align:center'><font color='red'>" + match.getRun().getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
-				match.getRun().getTeamB().getPlayerName() + "</font></h2>");
-		out.println("<h2 style='text-align:center'>" + match.getMap().getMapName() + "</h2>");
+		out.println("<h2 style='text-align:center'>" + match.getMap().getMapName() + " (" + match.getSeed() + ")</h2>");
 		
 		out.println("<script type='text/javascript'>" +
 				"var dataMap = [];" +

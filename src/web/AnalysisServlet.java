@@ -37,7 +37,10 @@ public class AnalysisServlet extends HttpServlet {
 		long id = new Long(Integer.parseInt(strId));
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSMatch match = em.find(BSMatch.class, id);
-		out.println("<button id='back' style='margin-left:10px; margin-right:-70px; float:left' name='" + match.getRun().getId() + "'>Back</button>");
+		out.println("<button id='back' style='margin-left:10px; margin-right:-70px; float:left' name='" + 
+				match.getRun().getId() + "'>Back</button>");
+		out.println("<h2 style='text-align:center'><font color='red'>" + match.getRun().getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
+				match.getRun().getTeamB().getPlayerName() + "</font></h2>");
 		AnalysisContentServlet.printContent(request, response, match);
 	}
 	

@@ -41,6 +41,7 @@ public class WebServer implements Runnable {
 			context.addServlet(IndexServlet.class, IndexServlet.NAME);
 			context.addServlet(ConnectionsServlet.class, ConnectionsServlet.NAME);
 			context.addServlet(DeleteServlet.class, DeleteServlet.NAME);
+			context.addServlet(MatchWrapperServlet.class, MatchWrapperServlet.NAME);
 			context.addServlet(MatchesServlet.class, MatchesServlet.NAME);
 			context.addServlet(MatchesByMapServlet.class, MatchesByMapServlet.NAME);
 			context.addServlet(RunServlet.class, RunServlet.NAME);

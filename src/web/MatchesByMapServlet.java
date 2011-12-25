@@ -32,11 +32,10 @@ public class MatchesByMapServlet extends HttpServlet {
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
 		out.println("<link rel=\"stylesheet\" href=\"css/table.css\" />");
+		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");
+		out.println("<link rel='stylesheet' href='/css/jquery-ui.css' />");
 		out.println("</head>");
-		out.println("<body>");
-
-		WebUtil.writeTabs(request, response, NAME);
-		out.println("<script src='js/jquery.dataTables.min.js'></script>");
+		out.println("<body style='background:none'>");
 
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
@@ -47,22 +46,6 @@ public class MatchesByMapServlet extends HttpServlet {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
 
-		out.println("<h2 style='text-align:center'><font color='red'>" + run.getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
-				run.getTeamB().getPlayerName() + "</font></h2>");
-		out.println("<h3 style='text-align:center'>Wins by map: " + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
-		out.println("<br />");
-
-		out.println("<div id='viewStyle' style='margin-left:20px'>" +
-				"<input type='radio' id='byMatch' name='byMatch' /><label for='byMatch'>By Match</label>" +
-				"<input type='radio' id='byMap' name='byMap' checked='checked' /><label for='byMap'>By Map</label>" +
-		" </div>");
-		out.println("<script type='text/javascript'>" +
-				"$(function() {" +
-				"$('#byMatch').click(function() {" +
-				"document.location = '" + response.encodeURL(MatchesServlet.NAME) + "?id=" + id + "';" + 
-				"});" +
-				"});" + 
-		"</script>");
 		out.println("<table id=\"matches_table\" class='datatable'>" +
 				"<thead>" + 
 				"<tr>" +
@@ -95,8 +78,10 @@ public class MatchesByMapServlet extends HttpServlet {
 		out.println("</tbody>");
 		out.println("</table>");
 
-		out.println("<script type=\"text/javascript\" src=\"js/matches.js\"></script>");
+		out.println("<script src='/js/jquery-1.7.1.min.js'></script>");
+		out.println("<script src='/js/jquery-ui-1.8.16.custom.min.js'></script>");
+		out.println("<script src='js/jquery.dataTables.min.js'></script>");
+		out.println("<script type=\"text/javascript\" src=\"js/matches_by_map.js\"></script>");
 		out.println("</body></html>");
 	}
-
 }

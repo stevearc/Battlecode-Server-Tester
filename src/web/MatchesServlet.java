@@ -16,31 +16,24 @@ import model.TEAM;
 
 import common.HibernateUtil;
 
-
-
-
 /**
- * View all the matches from a single run
+ * View all the matches from a single run.  Should be viewed in an iframe
  * @author stevearc
  *
  */
 public class MatchesServlet extends HttpServlet {
 	private static final long serialVersionUID = 3122992891626513814L;
-	public static final String NAME = "/matches.html";
+	public static final String NAME = "/matches_individual.html";
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
-		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
 		out.println("<html><head>");
 		out.println("<title>Battlecode Tester</title>");
 		out.println("<link rel=\"stylesheet\" href=\"css/table.css\" />");
+		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");
+		out.println("<link rel='stylesheet' href='/css/jquery-ui.css' />");
 		out.println("</head>");
-		out.println("<body>");
-
-		WebUtil.writeTabs(request, response, NAME);
-		out.println("<script src='js/jquery.dataTables.min.js'></script>");
-
+		out.println("<body style='background:none'>");
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
 			out.println("Invalid id</body></html>");
@@ -49,23 +42,8 @@ public class MatchesServlet extends HttpServlet {
 		long id = new Long(Integer.parseInt(strId));
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
-		out.println("<h2 style='text-align:center'><font color='red'>" + run.getTeamA().getPlayerName() + 
-				"</font> vs. <font color='blue'>" + run.getTeamB().getPlayerName() + "</font></h2>");
-		out.println("<h3 style='text-align:center'>Wins by map: " + WebUtil.getFormattedMapResults(WebUtil.getMapResults(run, null, false)) + "</h3>");
-		out.println("<br />");
-		out.println("<div id='viewStyle' style='margin-left:20px'>" +
-				"<input type='radio' id='byMatch' name='byMatch' checked='checked' /><label for='byMatch'>By Match</label>" +
-				"<input type='radio' id='byMap' name='byMap' /><label for='byMap'>By Map</label>" +
-				" </div>");
-		out.println("<script type='text/javascript'>" +
-				"$(function() {" +
-				"$('#byMap').click(function() {" +
-				"document.location = '" + response.encodeURL(MatchesByMapServlet.NAME) + "?id=" + id + "';" + 
-				"});" +
-				"});" + 
-				"</script>");
 
-		out.println("<table id=\"matches_table\" class='datatable datatable-clickable'>" +
+		out.println("<table id='matches_table' class='datatable datatable-clickable'>" +
 				"<thead>" + 
 				"<tr>" +
 				"<th>Map</th>" +
@@ -98,7 +76,10 @@ public class MatchesServlet extends HttpServlet {
 		out.println("</tbody>");
 		out.println("</table>");
 
-		out.println("<script type=\"text/javascript\" src=\"js/matches.js\"></script>");
+		out.println("<script src='/js/jquery-1.7.1.min.js'></script>");
+		out.println("<script src='/js/jquery-ui-1.8.16.custom.min.js'></script>");
+		out.println("<script src='js/jquery.dataTables.min.js'></script>");
+		out.println("<script type=\"text/javascript\" src=\"js/matches_individual.js\"></script>");
 		out.println("</body></html>");
 	}
 	
