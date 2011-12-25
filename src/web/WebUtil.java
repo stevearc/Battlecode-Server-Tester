@@ -14,6 +14,7 @@ import model.BSMap;
 import model.BSMatch;
 import model.BSRun;
 import model.BSUser;
+import model.BSUserPrefs;
 import model.TEAM;
 
 import org.apache.log4j.Logger;
@@ -269,6 +270,7 @@ public class WebUtil {
 		}
 		if (token.equals(user.getSession())) {
 			request.getSession(true).setAttribute("user", user);
+			user.setPrefs(new BSUserPrefs());
 			return user;
 		}
 			

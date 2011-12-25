@@ -140,8 +140,8 @@ public class Main {
 					}
 				}
 
-				Master m = new Master(dataPort);
 				new Thread(new WebServer(httpPort)).start();
+				Master m = new Master(dataPort);
 				m.start();
 				if (cmd.hasOption('o')) {
 					createMockData(m);

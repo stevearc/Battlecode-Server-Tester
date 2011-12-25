@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSMatch;
+import model.BSUser;
 
 import common.HibernateUtil;
 
@@ -18,6 +19,7 @@ public class AnalysisContentServlet extends HttpServlet {
 	private static final long serialVersionUID = -3373145024382759806L;
 	public static final String NAME = "/analysis_content.html";
 	
+	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
 		response.setStatus(HttpServletResponse.SC_OK);
@@ -42,10 +44,12 @@ public class AnalysisContentServlet extends HttpServlet {
 	}
 
 	public static void printContent(HttpServletRequest request, HttpServletResponse response, BSMatch match) throws ServletException, IOException {
+		BSUser user = (BSUser) request.getSession().getAttribute("user");
 		PrintWriter out = response.getWriter();
 		out.println("<link rel=\"stylesheet\" href=\"css/jquery.jqplot.min.css\" />");
 		out.println("<script src='js/jquery.jqplot.min.js'></script>");
 		out.println("<script src='js/jqplot.cursor.min.js'></script>");
+		out.println(user.getPrefs().toJavascript());
 
 		out.println("<h2 style='text-align:center'><font color='red'>" + match.getRun().getTeamA().getPlayerName() + "</font> vs. <font color='blue'>" + 
 				match.getRun().getTeamB().getPlayerName() + "</font></h2>");
@@ -69,13 +73,13 @@ public class AnalysisContentServlet extends HttpServlet {
 		
 		out.println("<div id='buttonWrapper' style='height:70px; text-align:center'>");
 		out.println("<div id='aViewButtons' style='margin-left:15px; float:left'>" +
-				"<input type='radio' id='aFluxIncome' name='aFluxIncome' checked='checked' /><label for='aFluxIncome'>Flux Income</label>" +
+				"<input type='radio' id='aFluxIncome' name='aFluxIncome' /><label for='aFluxIncome'>Flux Income</label>" +
 				"<input type='radio' id='aFluxDrain' name='aFluxDrain' /><label for='aFluxDrain'>Flux Drain</label>" +
 				"<input type='radio' id='aFluxReserve' name='aFluxReserve' /><label for='aFluxReserve'>Flux Reserve</label>" +
 				"<input type='radio' id='aActiveRobots' name='aActiveRobots' /><label for='aActiveRobots'>Active Robots</label>" +
 				" </div>");
 		out.println("<div id='bViewButtons' style='margin-left:20px; float:right'>" +
-				"<input type='radio' id='bFluxIncome' name='bFluxIncome' checked='checked' /><label for='bFluxIncome'>Flux Income</label>" +
+				"<input type='radio' id='bFluxIncome' name='bFluxIncome' /><label for='bFluxIncome'>Flux Income</label>" +
 				"<input type='radio' id='bFluxDrain' name='bFluxDrain' /><label for='bFluxDrain'>Flux Drain</label>" +
 				"<input type='radio' id='bFluxReserve' name='bFluxReserve' /><label for='bFluxReserve'>Flux Reserve</label>" +
 				"<input type='radio' id='bActiveRobots' name='bActiveRobots' /><label for='bActiveRobots'>Active Robots</label>" +

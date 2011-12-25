@@ -7,6 +7,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Transient;
 
 @Entity
 public class BSUser {
@@ -17,6 +18,7 @@ public class BSUser {
 	private String salt;
 	private String session;
 	private PRIVS privs;
+	private BSUserPrefs prefs;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE)
@@ -42,6 +44,13 @@ public class BSUser {
 	@Enumerated(EnumType.STRING)
 	public PRIVS getPrivs() {
 		return privs;
+	}
+	@Transient
+	public BSUserPrefs getPrefs() {
+		return prefs;
+	}
+	public void setPrefs(BSUserPrefs prefs) {
+		this.prefs = prefs;
 	}
 	public void setId(Long id) {
 		this.id = id;

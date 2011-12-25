@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSMatch;
+import model.BSUser;
 
 import common.HibernateUtil;
 
@@ -40,4 +41,16 @@ public class AnalysisServlet extends HttpServlet {
 		AnalysisContentServlet.printContent(request, response, match);
 	}
 	
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		BSUser user = (BSUser) request.getSession().getAttribute("user");
+		int[][] viewLines = user.getPrefs().getAnalysisViewLines();
+		String[] segmentedViewLines = request.getParameter("viewLines").split(",");
+		int index = 0;
+		for (int i = 0; i < viewLines.length; i++) {
+			for (int j = 0; j < viewLines[i].length; j++) {
+				viewLines[i][j] = Integer.parseInt(segmentedViewLines[index++]);
+			}
+		}
+	}
 }

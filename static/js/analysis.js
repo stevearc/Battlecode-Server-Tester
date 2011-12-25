@@ -1,4 +1,18 @@
 $(function() {
+    var index;
+    var aButtons = $("#aViewButtons").children("input");
+    for (index = 0; index < aButtons.length; index++) {
+        if (viewLines[0][index]) {
+            $(aButtons[index]).attr('checked', 'checked');
+        }
+    }
+    var bButtons = $("#bViewButtons").children("input");
+    for (index = 0; index < bButtons.length; index++) {
+        if (viewLines[1][index]) {
+            $(bButtons[index]).attr('checked', 'checked');
+        }
+    }
+
     $("#aViewButtons").buttonset();
     $("#bViewButtons").buttonset();
     $("#buttonWrapper input").each(function() {
@@ -21,6 +35,8 @@ $(function() {
     $("#back").button().click(function() {
         document.location="matches.html?id=" + $(this).attr("name");
     });
+
+
 });
 
 var chart;
@@ -82,13 +98,35 @@ function updateChart() {
     });
     options['seriesColors'] = seriesColors;
 
+    // Update the session preferences
+    var aButtons = $("#aViewButtons").children("input");
+    for (index = 0; index < aButtons.length; index++) {
+        if ($(aButtons[index]).attr('checked') === 'checked') {
+            viewLines[0][index] = 1;
+        } else {
+            viewLines[0][index] = 0;
+        }
+    }
+    var bButtons = $("#bViewButtons").children("input");
+    for (index = 0; index < bButtons.length; index++) {
+        if ($(bButtons[index]).attr('checked') === 'checked') {
+            viewLines[1][index] = 1;
+        } else {
+            viewLines[1][index] = 0;
+        }
+    }
+    $.ajax({
+        url: "analysis.html",
+        type: "POST",
+        data: "viewLines=" + viewLines,
+    });
+
     if (array.length == 0) {
         chart = $.jqplot('chart', [[[0,0]]], options);
     } else {
         chart = $.jqplot('chart', array, options);
         for (index in chartedKeys) {
             chart.series[index].label = nameMap[chartedKeys[index]];
-            //chart.series[index].color = colorMap[chartedKeys[index]];
         }
     }
     chart.replot();
