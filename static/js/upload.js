@@ -10,4 +10,9 @@ $(function() {
         width:310,
     });
     $('#map-info-dialog').dialog({autoOpen:false});
+
+    $("#mapForm").submit(function() {
+        $("#mapName").val($("#mapFile").val().split("\\").pop());
+    });
 });
+

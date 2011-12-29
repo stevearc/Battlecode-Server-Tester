@@ -165,21 +165,18 @@ public class UploadServlet extends HttpServlet {
 		out.println("</form>");
 		
 		// Form for uploading a map
-		out.println("<form action='" + NAME + "' method='post' enctype='multipart/form-data'>");
+		out.println("<form id='mapForm' action='" + NAME + "' method='post' enctype='multipart/form-data'>");
 		out.println("<table>");
 		out.println("<tr><th colspan='2'>Upload a map<span id='map-info'></span></th></tr>");
 		out.println("<tr>" +
 				"<td style='text-align:right'>Map:</td>" +
-				"<td><input type='file' name='map' /></td>" +
-				"</tr>");
-		out.println("<tr>" +
-				"<td style='text-align:right'>Map name:</td>" +
-				"<td><input type='text' name='mapName' size='20' /></td>" +
+				"<td><input type='file' name='map' id='mapFile' /></td>" +
 				"</tr>");
 		out.println("<tr><td></td>" +
 				"<td><input type='submit' name='submit-map' value='Upload'/></td>" +
 				"</tr>");
 		out.println("</table>");
+		out.println("<input id='mapName' type='hidden' name='mapName' />");
 		out.println("</form>");
 		out.println("</div>");
 		
