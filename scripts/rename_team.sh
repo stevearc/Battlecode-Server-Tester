@@ -8,7 +8,7 @@ rm -rf tmp
 mkdir tmp
 pushd tmp > /dev/null
 
-jar -x -f $START/$JARFILE
+jar xf $START/$JARFILE
 find team* -name '*.java' | xargs sed -i -e 's/package team[0-9]\{3\}/package '$TARGET_TEAM'/g' -e 's/import team[0-9]\{3\}/import '$TARGET_TEAM'/g'
 mv team* $TARGET_TEAM
 
