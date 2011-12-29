@@ -351,10 +351,11 @@ public class Main {
 	}
 
 	private static void createWorkerTarball() {
-		String targetName = "static/bs-worker.tar.gz";
+		String targetName = "bs-worker.tar.gz";
+		String finalTargetName = "static/" + targetName;
 		String[] tarFiles = {"README", "COPYING", "run.sh", "scripts", "lib", "static", "bs-tester.jar"};
-		File tFile = new File(targetName);
-		if (tFile.exists()) {
+		File finalFile = new File(finalTargetName);
+		if (finalFile.exists()) {
 			return;
 		}
 		TarArchiveOutputStream out = null;
@@ -367,6 +368,9 @@ public class Main {
 				archiveFile(out, "bs-worker/", fileName);
 			}
 			out.finish();
+			// Move the tarball into static so we can serve it from the web interface
+			File tFile = new File(targetName);
+			tFile.renameTo(finalFile);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
