@@ -1,12 +1,9 @@
 package worker;
 
-import java.io.EOFException;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.zip.GZIPInputStream;
 
 import model.MatchResult;
 import model.TEAM;
@@ -14,17 +11,15 @@ import model.TeamMatchResult;
 import model.MatchResult.WIN_CONDITION;
 import battlecode.common.Chassis;
 import battlecode.common.GameConstants;
-import battlecode.common.MapLocation;
 import battlecode.common.Team;
 import battlecode.engine.signal.Signal;
+import battlecode.serial.GameStats;
 import battlecode.serial.MatchFooter;
+import battlecode.serial.MatchHeader;
 import battlecode.serial.RoundDelta;
-import battlecode.server.proxy.XStreamProxy;
-import battlecode.world.signal.BroadcastSignal;
+import battlecode.serial.RoundStats;
+import battlecode.server.proxy.Proxy;
 import battlecode.world.signal.DeathSignal;
-import battlecode.world.signal.EquipSignal;
-import battlecode.world.signal.MineBirthSignal;
-import battlecode.world.signal.MineDepletionSignal;
 import battlecode.world.signal.SpawnSignal;
 import battlecode.world.signal.TurnOffSignal;
 import battlecode.world.signal.TurnOnSignal;
@@ -34,33 +29,52 @@ import battlecode.world.signal.TurnOnSignal;
  * @author stevearc
  *
  */
-public class GameData {
+public class GameData extends Proxy {
 	// Maps robotID to info
 	private HashMap<Integer, RobotStat> robots = new HashMap<Integer, RobotStat>();
-	// Maps mineID to info
-	private HashMap<Integer, MapLocation> minesToLocs = new HashMap<Integer, MapLocation>();
-	// Maps MapLocation to mine info
-	private HashMap<MapLocation, Team> lastSpawn = new HashMap<MapLocation, Team>();
 	
-	private ArrayList<RoundDelta> rounds = new ArrayList<RoundDelta>();
 	private MatchFooter footer;
-	
-	public GameData(String filename) throws IOException, ClassNotFoundException {
-		ObjectInputStream input = null;
-		input = XStreamProxy.getXStream().createObjectInputStream(new GZIPInputStream(new FileInputStream(filename)));
+	private ArrayList<RoundDelta> rounds = new ArrayList<RoundDelta>();
+	private ArrayList<RoundStats> stats = new ArrayList<RoundStats>();
+	private GameStats gameStats;
 
-		Object o;
-		try {
-			while ((o = input.readObject()) != null) {
-				if (o instanceof RoundDelta) {
-					rounds.add((RoundDelta)o);
-				} else if (o instanceof MatchFooter) {
-					footer = (MatchFooter)o;
-				}
-			}
-		} catch (EOFException e) {
-			// Aaaaaand we're done
+	@Override
+	public void open() throws IOException {
+	}
+	
+	@Override
+	public void close() throws IOException {
+	}
+	
+	@Override
+	protected OutputStream getOutputStream() throws IOException {
+		return null;
+	}
+	
+	@Override
+	public void writeObject(Object o) {
+		if (o instanceof GameStats) {
+			gameStats = (GameStats) o;
 		}
+	}
+
+	@Override
+	public void writeHeader(MatchHeader header) throws IOException {
+	}
+
+	@Override
+	public void writeRound(RoundDelta round) throws IOException {
+		this.rounds.add(round);
+	}
+	
+	@Override
+	public void writeFooter(MatchFooter footer) throws IOException {
+		this.footer = footer;
+	}
+
+	@Override
+	public void writeStats(RoundStats stats) throws IOException {
+		this.stats.add(stats);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -90,12 +104,17 @@ public class GameData {
 			currentFluxReserve[i] = GameConstants.INITIAL_FLUX;
 		}
 
-		for (RoundDelta round: rounds) {
-			Signal[] signals = round.getSignals();
-			for (int i = 0; i < teams.length; i++) {
-				currentFluxIncome[i] = 0.0;
+		RoundDelta round;
+		RoundStats stat;
+		for (int l = 0; l < rounds.size(); l++) {
+			round = rounds.get(l);
+			stat = stats.get(l);
+			for (int i = 0; i < 2; i++) {
+				currentFluxIncome[i] = stat.getGatheredPoints(teams[i])/100.;
+				currentFluxReserve[i] = stat.getPoints(teams[i])/100.;
 			}
 			
+			Signal[] signals = round.getSignals();
 			for (int i = 0; i < signals.length; i++) {
 				Signal signal = signals[i];
 				if (signal instanceof SpawnSignal) {
@@ -105,21 +124,7 @@ public class GameData {
 					
 					r = new RobotStat(s.getTeam(), s.getType());
 					robots.put(s.getRobotID(), r);
-					lastSpawn.put(s.getLoc(), s.getTeam());
-					currentFluxReserve[s.getTeam().ordinal()] -= s.getType().cost;
 				} 
-				else if(signal instanceof EquipSignal) {
-					EquipSignal s = (EquipSignal) signal;
-					r = robots.get(s.builderID);
-					if (r == null)
-						r = robots.get(s.robotID);
-					currentFluxReserve[r.team.ordinal()] += s.component.cost;
-				}
-				else if (signal instanceof BroadcastSignal) {
-					BroadcastSignal s = (BroadcastSignal) signal;
-					int team = robots.get(s.robotID).team.ordinal();
-					currentFluxReserve[team] -= GameConstants.BROADCAST_FIXED_COST;
-				}
 				else if(signal instanceof DeathSignal) {
 					DeathSignal s = (DeathSignal)signal;
 					r = robots.remove(s.getObjectID());
@@ -146,15 +151,6 @@ public class GameData {
 						}
 					}
 				}
-				else if (signal instanceof MineDepletionSignal) {
-					MineDepletionSignal s = (MineDepletionSignal) signal;
-					Team t = lastSpawn.get(minesToLocs.get(s.id));
-					currentFluxIncome[t.ordinal()] += getMineAmount(s.roundsAvaliable);
-				}
-				else if (signal instanceof MineBirthSignal) {
-					MineBirthSignal s = (MineBirthSignal) signal;
-					minesToLocs.put(s.id, s.location);
-				}
 			}
 
 			for (int i = 0; i < teams.length; i++) {
@@ -173,10 +169,13 @@ public class GameData {
 
 		matchResult.setRounds(new Long(rounds.size()));
 		matchResult.setWinner(convertTeam(footer.getWinner()));
-		if (currentActiveRobots[Team.A.ordinal()] == 0 || currentActiveRobots[Team.B.ordinal()] == 0) {
+		switch (gameStats.getDominationFactor()) {
+		case DESTROYED:
 			matchResult.setWinCondition(WIN_CONDITION.DESTROY);
-		} else {
+			break;
+		default:
 			matchResult.setWinCondition(WIN_CONDITION.POINTS);
+			break;
 		}
 		matchResult.setaResult(teamResults[Team.A.ordinal()]);
 		matchResult.setbResult(teamResults[Team.B.ordinal()]);
@@ -192,13 +191,6 @@ public class GameData {
 		default:
 			return null;
 		}
-	}
-	
-	private double getMineAmount(int roundsLeft) {
-		if (roundsLeft > 0)
-            return GameConstants.MINE_RESOURCES;
-        else
-            return Math.max(GameConstants.MINE_DEPLETED_RESOURCES, GameConstants.MINE_RESOURCES + roundsLeft / GameConstants.MINE_DEPLETION_RATE * 0.01);
 	}
 	
 	private class RobotStat {

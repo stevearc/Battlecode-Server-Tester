@@ -41,7 +41,6 @@ import org.apache.log4j.PatternLayout;
 
 import web.WebServer;
 import web.WebUtil;
-import worker.GameData;
 import worker.Worker;
 
 import common.Config;
@@ -64,7 +63,6 @@ public class Main {
 		options.addOption("s", "server", false, "run as server");
 		options.addOption("w", "worker", true, "run as worker; specify the hostname or ip-address of the master");
 		if (Config.DEBUG) {
-			options.addOption("a", "analyze", true, "analyze a match file");
 			options.addOption("o", "populate", false, "populate the server DB with mock data");
 			options.addOption("m", "mock-worker", true, "run as a mock-worker; specify the hostname or ip-address of the master");
 			options.addOption("n", "mock-worker-sleep", true, "when running as mock-worker, time in seconds to take per match");
@@ -171,10 +169,6 @@ public class Main {
 					}
 				}
 				new Thread(new Worker(serverAddr, dataPort, cores)).start();
-			} else if (cmd.hasOption('a')) {
-				GameData gameData = new GameData(cmd.getOptionValue('a'));
-				MatchResult result = gameData.analyzeMatch();
-				System.out.println(result);
 			} else if (cmd.hasOption('m')) {
 				_log.info("Starting mock worker");
 				String serverAddr = cmd.getOptionValue('m');

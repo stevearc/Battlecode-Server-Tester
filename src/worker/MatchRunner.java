@@ -15,7 +15,10 @@ import model.MatchResult;
 import org.apache.log4j.Logger;
 
 import battlecode.server.Server;
-import battlecode.server.ServerFactory;
+import battlecode.server.controller.Controller;
+import battlecode.server.controller.ControllerFactory;
+import battlecode.server.proxy.Proxy;
+import battlecode.server.proxy.ProxyFactory;
 
 import common.Config;
 import common.NetworkMatch;
@@ -63,7 +66,7 @@ public class MatchRunner implements Runnable {
 			}
 		}
 	}
-	
+
 	/**
 	 * Runs the battlecode match
 	 */
@@ -77,7 +80,7 @@ public class MatchRunner implements Runnable {
 			worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, MatchResult.constructMockMatchResult(), new byte[0]);
 			return;
 		}
-		
+
 		String team_a = match.team_a.replaceAll("\\W", "_");
 		String team_b = match.team_b.replaceAll("\\W", "_");
 		try {
@@ -89,7 +92,7 @@ public class MatchRunner implements Runnable {
 			if (!coreWorkspace.exists()) {
 				coreWorkspace.mkdir();
 			}
-			
+
 			// Rename team A in the source
 			curProcess = run.exec(new String[] {Config.cmd_rename_team, 
 					"./core" + core, 
@@ -99,7 +102,7 @@ public class MatchRunner implements Runnable {
 			printOutput();
 			if (stop)
 				return;
-			
+
 			// Rename team B in the source
 			curProcess = run.exec(new String[] {Config.cmd_rename_team, 
 					"./core" + core, 
@@ -109,7 +112,7 @@ public class MatchRunner implements Runnable {
 			printOutput();
 			if (stop)
 				return;
-			
+
 			// Construct the map file with the appropriate seeeeeed
 			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File("maps/" + match.map.getMapName() + ".xml"))));
 			BufferedWriter fos = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("maps/" + match.seed + match.map.getMapName() + ".xml"))));
@@ -120,20 +123,46 @@ public class MatchRunner implements Runnable {
 			}
 			br.close();
 			fos.close();
-			
+
 			battlecode.server.Config bcConfig = battlecode.server.Config.getGlobalConfig();
 			bcConfig.set("bc.engine.debug-methods", "false");
 			bcConfig.set("bc.game.maps", match.seed + match.map.getMapName());
 			bcConfig.set("bc.game.team-a", "A" + match.team_a);
 			bcConfig.set("bc.game.team-b", "B" + match.team_b);
 			bcConfig.set("bc.server.save-file", match.map + ".rms");
-            bcConfig.set("bc.server.mode", "headless");
-            bcConfig.set("bc.server.debug", "true");
-            Server bcServer = ServerFactory.createHeadlessServer(bcConfig, "core" + core + "/" + match.map + ".rms");
-            bcServer.run();
-            
-            new File("maps/" + match.seed + match.map.getMapName() + ".xml").delete();
-            
+			bcConfig.set("bc.server.mode", "headless");
+			Controller controller = ControllerFactory
+			.createHeadlessController(bcConfig);
+			GameData gameData = new GameData();
+			Proxy[] proxies = new Proxy[] { 
+					ProxyFactory.createProxyFromFile("core" + core + "/" + match.map + ".rms"),
+					gameData,
+					};
+			Server bcServer = new Server(bcConfig, Server.Mode.HEADLESS, controller, proxies);
+			controller.addObserver(bcServer);
+			bcServer.run();
+
+			new File("maps/" + match.seed + match.map.getMapName() + ".xml").delete();
+
+		
+
+			// Read in the replay file
+			String matchFile = "./core" + core + "/" + match.map + ".rms";
+			byte[] data;
+			try {
+				data = Util.getFileData(matchFile);
+			} catch (IOException e) {
+				if (!stop) {
+					_log.error("Failed to read " + matchFile, e);
+					worker.matchFailed(this, core, match);
+				}
+				return;
+			}
+	
+			if (!stop) {
+				_log.info("Finished: " + match);
+				worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
+			}
 		} catch (Exception e) {
 			if (!stop) {
 				_log.error("Failed to run match", e);
@@ -141,34 +170,8 @@ public class MatchRunner implements Runnable {
 			}
 			return;
 		}
-
-		// Read in the replay file
-		String matchFile = "./core" + core + "/" + match.map + ".rms";
-		byte[] data;
-		GameData gameData;
-		try {
-			data = Util.getFileData(matchFile);
-			gameData = new GameData(matchFile);
-		} catch (IOException e) {
-			if (!stop) {
-				_log.error("Failed to read " + matchFile, e);
-				worker.matchFailed(this, core, match);
-			}
-			return;
-		} catch (ClassNotFoundException e) {
-			if (!stop) {
-				_log.error("Failed to read " + matchFile, e);
-				worker.matchFailed(this, core, match);
-			}
-			return;
-		}
-
-		if (!stop) {
-			_log.info("Finished: " + match);
-			worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
-		}
 	}
-	
+
 	@Override
 	public String toString() {
 		return match.toString();
