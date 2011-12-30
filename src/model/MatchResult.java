@@ -18,7 +18,7 @@ import javax.persistence.SequenceGenerator;
 @Entity
 public class MatchResult implements Serializable {
 	private static final long serialVersionUID = 8212825736833239951L;
-	public static enum WIN_CONDITION {DESTROY, POINTS}
+	public static enum WIN_CONDITION {DESTROY, POINTS, ENERGON}
 	private Long id;
 	private TEAM winner;
 	private WIN_CONDITION winCondition;

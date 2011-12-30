@@ -173,8 +173,11 @@ public class GameData extends Proxy {
 		case DESTROYED:
 			matchResult.setWinCondition(WIN_CONDITION.DESTROY);
 			break;
-		default:
+		case OWNED:
 			matchResult.setWinCondition(WIN_CONDITION.POINTS);
+			break;
+		default:
+			matchResult.setWinCondition(WIN_CONDITION.ENERGON);
 			break;
 		}
 		matchResult.setaResult(teamResults[Team.A.ordinal()]);

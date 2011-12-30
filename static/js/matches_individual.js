@@ -3,7 +3,7 @@ $(function() {
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "aoColumnDefs": [ 
-            { "bSortable": false, "aTargets": [ 5 ] }
+            { "bSortable": false, "aTargets": [ 6 ] }
         ],
         "aLengthMenu": [10, 25, 50],
     });

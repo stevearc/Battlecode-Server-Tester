@@ -50,6 +50,7 @@ public class MatchesServlet extends HttpServlet {
 				"<th>Map seed</th>" +
 				"<th>Winner</th>" +
 				"<th>Size</th>" +
+				"<th>Rounds</th>" +
 				"<th>Win condition</th>" +
 				"<th>&nbsp;</th>" +
 				"</tr>" +
@@ -67,6 +68,7 @@ public class MatchesServlet extends HttpServlet {
 			out.println(td(match) + "<font color='" + (match.getResult().getWinner() == TEAM.A ? "red'>" + 
 					run.getTeamA().getPlayerName() : "blue'>" + run.getTeamB().getPlayerName()) + "</font></td>");
 			out.println(td(match) + match.getMap().getSize() + "</td>");
+			out.println(td(match) + match.getResult().getRounds() + "</td>");
 			out.println(td(match) + match.getResult().getWinCondition() + "</td>");
 			out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
 					match.toMatchFileName() + "'\"></td>");
