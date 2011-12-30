@@ -136,10 +136,10 @@ public class Master extends AbstractMaster {
 		try {
 			if (pendingBattlecodeServerFile != null && pendingIdataFile != null) {
 				_log.info("Writing updated battlecode files");
-				Util.writeFileData(pendingBattlecodeServerFile, "./battlecode/lib/battlecode-server.jar");
-				Util.writeFileData(pendingIdataFile, "./battlecode/idata");
-				Util.writeFileData(pendingBuildFile, "./battlecode/build.xml");
-				Util.writeFileData(pendingConfFile, "./battlecode/bc.conf");
+				Util.writeFileData(pendingBattlecodeServerFile, "./lib/battlecode-server.jar");
+				Util.writeFileData(pendingIdataFile, "./idata");
+				Util.writeFileData(pendingBuildFile, "./build.xml");
+				Util.writeFileData(pendingConfFile, "./bc.conf");
 				pendingBattlecodeServerFile = null;
 				pendingIdataFile = null;
 				pendingBuildFile = null;
@@ -305,10 +305,10 @@ public class Master extends AbstractMaster {
 		String buildHash;
 		String confHash;
 		try {
-			battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/lib/battlecode-server.jar"));
-			idataHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/idata"));
-			buildHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/build.xml"));
-			confHash = Util.convertToHex(Util.SHA1Checksum("./battlecode/bc.conf"));
+			battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./lib/battlecode-server.jar"));
+			idataHash = Util.convertToHex(Util.SHA1Checksum("./idata"));
+			buildHash = Util.convertToHex(Util.SHA1Checksum("./build.xml"));
+			confHash = Util.convertToHex(Util.SHA1Checksum("./bc.conf"));
 		} catch (NoSuchAlgorithmException e) {
 			_log.error("Cannot find SHA1 algorithm!", e);
 			return;
@@ -376,19 +376,19 @@ public class Master extends AbstractMaster {
 		byte[] bc_conf = null;
 		try {
 			if (needUpdate) {
-				battlecodeServer = Util.getFileData("./battlecode/lib/battlecode-server.jar");
-				idata = Util.getFileData("./battlecode/idata");
-				build = Util.getFileData("./battlecode/build.xml");
-				bc_conf = Util.getFileData("./battlecode/bc.conf");
+				battlecodeServer = Util.getFileData("./lib/battlecode-server.jar");
+				idata = Util.getFileData("./idata");
+				build = Util.getFileData("./build.xml");
+				bc_conf = Util.getFileData("./bc.conf");
 			}
 			if (needMap) {
-				map = Util.getFileData("./battlecode/maps/" + match.map.getMapName() + ".xml");
+				map = Util.getFileData("./maps/" + match.map.getMapName() + ".xml");
 			}
 			if (needTeamA) {
-				teamA = Util.getFileData("./battlecode/teams/" + match.team_a + ".jar");
+				teamA = Util.getFileData("./teams/" + match.team_a + ".jar");
 			}
 			if (needTeamB) {
-				teamB = Util.getFileData("./battlecode/teams/" + match.team_b + ".jar");
+				teamB = Util.getFileData("./teams/" + match.team_b + ".jar");
 			}
 			dep = new Dependencies(battlecodeServer, idata, build, bc_conf, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);
@@ -479,7 +479,7 @@ public class Master extends AbstractMaster {
 	 */
 	@Override
 	public synchronized void updateMaps() {
-		File file = new File("battlecode/maps");
+		File file = new File("maps");
 		if (new Date(file.lastModified()).equals(mapsLastModifiedDate))
 			return;
 		mapsLastModifiedDate = new Date(file.lastModified());

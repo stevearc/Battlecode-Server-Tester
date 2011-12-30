@@ -198,7 +198,7 @@ public class Main {
 	private static void createMockData(Master master) throws IOException {
 		_log.info("Populating database with mock data...");
 		EntityManager em = HibernateUtil.getEntityManager();
-		File checkFile = new File("./battlecode/teams/mock_player.jar");
+		File checkFile = new File("./teams/mock_player.jar");
 		long numPlayers = em.createQuery("select count(*) from BSPlayer", Long.class).getSingleResult();
 		BSPlayer bsPlayer;
 		if (numPlayers == 0) {
@@ -323,10 +323,8 @@ public class Main {
 		if (isServer) {
 			new File("./static/matches").mkdir();
 		}
-		new File("./battlecode").mkdir();
-		new File("./battlecode/lib").mkdir();
-		new File("./battlecode/teams").mkdir();
-		new File("./battlecode/maps").mkdir();
+		new File("./teams").mkdir();
+		new File("./maps").mkdir();
 	}
 	
 	private static void archiveFile(TarArchiveOutputStream out, String prefix, String fileName) throws IOException {

@@ -42,7 +42,7 @@
         <jar jarfile="${jarfile}" basedir="${build}">
             <manifest>
                 <attribute name="Main-Class" value="main.Main" />
-                <attribute name="Class-Path" value="${string.classpath}"/>
+                <attribute name="Class-Path" value="${string.classpath} teams/"/>
             </manifest>
         </jar>
     </target>

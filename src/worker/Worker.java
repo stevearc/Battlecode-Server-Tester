@@ -100,16 +100,16 @@ public class Worker implements Controller, Runnable {
 
 	private boolean battlecodeUpToDate(NetworkMatch nm) {
 		try {
-			if (!nm.battlecodeServerHash.equals(Util.convertToHex(Util.SHA1Checksum("./battlecode/lib/battlecode-server.jar")))) {
+			if (!nm.battlecodeServerHash.equals(Util.convertToHex(Util.SHA1Checksum("./lib/battlecode-server.jar")))) {
 				return false;
 			}
-			if (!nm.idataHash.equals(Util.convertToHex(Util.SHA1Checksum("./battlecode/idata")))) {
+			if (!nm.idataHash.equals(Util.convertToHex(Util.SHA1Checksum("./idata")))) {
 				return false;
 			}
-			if (!nm.buildHash.equals(Util.convertToHex(Util.SHA1Checksum("./battlecode/build.xml")))) {
+			if (!nm.buildHash.equals(Util.convertToHex(Util.SHA1Checksum("./build.xml")))) {
 				return false;
 			}
-			if (!nm.confHash.equals(Util.convertToHex(Util.SHA1Checksum("./battlecode/bc.conf")))) {
+			if (!nm.confHash.equals(Util.convertToHex(Util.SHA1Checksum("./bc.conf")))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -126,7 +126,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean haveMap(BSMap map) {
-		File mapFile = new File("./battlecode/maps/" + map.getMapName() + ".xml");
+		File mapFile = new File("./maps/" + map.getMapName() + ".xml");
 		if (mapFile.exists()) {
 			try {
 				return map.getHash().equals(Util.convertToHex(Util.SHA1Checksum(mapFile.getAbsolutePath())));
@@ -140,7 +140,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean havePlayer(String player) {
-		File playerFile = new File("./battlecode/teams/" + player + ".jar");
+		File playerFile = new File("./teams/" + player + ".jar");
 		return playerFile.exists();
 	}
 
@@ -211,26 +211,25 @@ public class Worker implements Controller, Runnable {
 		}
 		try {
 			if (dep.battlecodeServer != null) {
-				writeDataToFile(dep.battlecodeServer, "./battlecode/lib/battlecode-server.jar");
 				writeDataToFile(dep.battlecodeServer, "./lib/battlecode-server.jar");
 			}
 			if (dep.idata != null) {
-				writeDataToFile(dep.idata, "./battlecode/idata");
+				writeDataToFile(dep.idata, "./idata");
 			}
 			if (dep.build != null) {
-				writeDataToFile(dep.build, "./battlecode/build.xml");
+				writeDataToFile(dep.build, "./build.xml");
 			}
 			if (dep.bc_conf != null) {
-				writeDataToFile(dep.bc_conf, "./battlecode/bc.conf");
+				writeDataToFile(dep.bc_conf, "./bc.conf");
 			}
 			if (dep.map != null) {
-				writeDataToFile(dep.map, "./battlecode/maps/" + dep.mapName + ".xml");
+				writeDataToFile(dep.map, "./maps/" + dep.mapName + ".xml");
 			}
 			if (dep.teamA != null) {
-				writeDataToFile(dep.teamA, "./battlecode/teams/" + dep.teamAName + ".jar");
+				writeDataToFile(dep.teamA, "./teams/" + dep.teamAName + ".jar");
 			}
 			if (dep.teamB != null) {
-				writeDataToFile(dep.teamB, "./battlecode/teams/" + dep.teamBName + ".jar");
+				writeDataToFile(dep.teamB, "./teams/" + dep.teamBName + ".jar");
 			}
 			
 			// If we wrote the battlecode-server.jar file, we need to restart

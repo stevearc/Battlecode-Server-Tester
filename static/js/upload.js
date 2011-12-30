@@ -7,7 +7,7 @@ $(function() {
     });
     $('#player-info-dialog').dialog({
         autoOpen:false,
-        width:310,
+        width:330,
     });
     $('#map-info-dialog').dialog({autoOpen:false});
 

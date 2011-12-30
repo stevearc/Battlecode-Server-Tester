@@ -56,7 +56,7 @@ public class UploadServlet extends HttpServlet {
 		"<div class='code'>ant jar -Dteam=teamXXX</div>" + 
 		"where XXX is your team number.</div>");
 		out.println("<div id='map-info-dialog' style='text-align:center'>If one at a time is too slow, you can manually copy the " +
-				"maps into the battlecode/maps directory and they will be automatically detected</div>");
+				"maps into the \"maps\" directory and they will be automatically detected</div>");
 
 		if (request.getParameter("submit-player") != null) {
 			File player = (File) request.getAttribute("player");
@@ -72,7 +72,7 @@ public class UploadServlet extends HttpServlet {
 			} else if (playerName.length() > 45) {
 				warn(response, "Player name is too long");
 			} else {
-				Util.writeFileData(player, "./battlecode/teams/" + playerName + ".jar");
+				Util.writeFileData(player, "./teams/" + playerName + ".jar");
 				BSPlayer bsPlayer = new BSPlayer();
 				bsPlayer.setPlayerName(playerName);
 				EntityManager em = HibernateUtil.getEntityManager();
@@ -134,7 +134,7 @@ public class UploadServlet extends HttpServlet {
 				if (mapName.toLowerCase().endsWith(".xml")) {
 					mapName = mapName.substring(0, mapName.length() - 4);
 				}
-				String mapPath = "./battlecode/maps/" + mapName + ".xml";
+				String mapPath = "./maps/" + mapName + ".xml";
 				if (new File(mapPath).exists()) {
 					warn(response, "Map " + mapName + ".xml already exists!");
 				} else {
