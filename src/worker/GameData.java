@@ -1,9 +1,13 @@
 package worker;
 
+import java.io.EOFException;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.zip.GZIPInputStream;
 
 import model.MatchResult;
 import model.TEAM;
@@ -19,6 +23,7 @@ import battlecode.serial.MatchHeader;
 import battlecode.serial.RoundDelta;
 import battlecode.serial.RoundStats;
 import battlecode.server.proxy.Proxy;
+import battlecode.server.proxy.XStreamProxy;
 import battlecode.world.signal.DeathSignal;
 import battlecode.world.signal.SpawnSignal;
 import battlecode.world.signal.TurnOffSignal;
@@ -32,25 +37,51 @@ import battlecode.world.signal.TurnOnSignal;
 public class GameData extends Proxy {
 	// Maps robotID to info
 	private HashMap<Integer, RobotStat> robots = new HashMap<Integer, RobotStat>();
-	
+
 	private MatchFooter footer;
 	private ArrayList<RoundDelta> rounds = new ArrayList<RoundDelta>();
 	private ArrayList<RoundStats> stats = new ArrayList<RoundStats>();
 	private GameStats gameStats;
+	
+	public GameData(){
+		
+	}
+
+	public GameData(String filename) throws IOException, ClassNotFoundException {
+		ObjectInputStream input = null;
+		input = XStreamProxy.getXStream().createObjectInputStream(new GZIPInputStream(new FileInputStream(filename)));
+
+		Object o;
+		try {
+			while ((o = input.readObject()) != null) {
+				if (o instanceof RoundDelta) {
+					rounds.add((RoundDelta) o);
+				} else if (o instanceof RoundStats) {
+					stats.add((RoundStats) o);
+				} else if (o instanceof MatchFooter) {
+					footer = (MatchFooter) o;
+				} else if (o instanceof GameStats) {
+					gameStats = (GameStats) o;
+				}
+			}
+		} catch (EOFException e) {
+			// Aaaaaand we're done
+		}
+	}
 
 	@Override
 	public void open() throws IOException {
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 	}
-	
+
 	@Override
 	protected OutputStream getOutputStream() throws IOException {
 		return null;
 	}
-	
+
 	@Override
 	public void writeObject(Object o) {
 		if (o instanceof GameStats) {
@@ -66,7 +97,7 @@ public class GameData extends Proxy {
 	public void writeRound(RoundDelta round) throws IOException {
 		this.rounds.add(round);
 	}
-	
+
 	@Override
 	public void writeFooter(MatchFooter footer) throws IOException {
 		this.footer = footer;
@@ -113,7 +144,7 @@ public class GameData extends Proxy {
 				currentFluxIncome[i] = stat.getGatheredPoints(teams[i])/100.;
 				currentFluxReserve[i] = stat.getPoints(teams[i])/100.;
 			}
-			
+
 			Signal[] signals = round.getSignals();
 			for (int i = 0; i < signals.length; i++) {
 				Signal signal = signals[i];
@@ -121,7 +152,7 @@ public class GameData extends Proxy {
 					SpawnSignal s = (SpawnSignal)signal;
 					currentActiveRobots[s.getTeam().ordinal()]++;
 					currentFluxDrain[s.getTeam().ordinal()] += s.getType().upkeep;
-					
+
 					r = new RobotStat(s.getTeam(), s.getType());
 					robots.put(s.getRobotID(), r);
 				} 
@@ -195,7 +226,7 @@ public class GameData extends Proxy {
 			return null;
 		}
 	}
-	
+
 	private class RobotStat {
 		public final Chassis type;
 		public final Team team;
@@ -207,5 +238,5 @@ public class GameData extends Proxy {
 			on = true;
 		}
 	}
-	
+
 }
