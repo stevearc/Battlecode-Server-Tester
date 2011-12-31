@@ -13,15 +13,11 @@ public class Dependencies implements Serializable {
 	public final String teamBName;
 	public final byte[] battlecodeServer;
 	public final byte[] idata;
-	public final byte[] build;
-	public final byte[] bc_conf;
 	
-	public Dependencies(byte[] battlecodeServer, byte[] idata, byte[] build, byte[] bc_conf, String mapName, 
+	public Dependencies(byte[] battlecodeServer, byte[] idata, String mapName, 
 			byte[] map, String teamAName, byte[] teamA, String teamBName, byte[] teamB) {
 		this.battlecodeServer = battlecodeServer;
 		this.idata = idata;
-		this.build = build;
-		this.bc_conf = bc_conf;
 		this.mapName = mapName;
 		this.map = map;
 		this.teamAName = teamAName;
@@ -34,8 +30,6 @@ public class Dependencies implements Serializable {
 	public String toString() {
 		return "Dependency: " + (battlecodeServer == null ? "" : "battlecode-server.jar ") + 
 		(idata == null ? "" : "idata ") + 
-		(build == null ? "" : "build.xml ") + 
-		(bc_conf == null ? "" : "bc.conf ") + 
 		(map == null ? "" : mapName + ".xml ") + 
 		(teamA == null ? "" : teamAName + ".jar ") + 
 		(teamB == null ? "" : teamBName + ".jar ");

@@ -8,10 +8,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
+import main.Main;
 import model.BSMatch;
 import model.MatchResult;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import battlecode.server.Server;
@@ -31,12 +37,12 @@ import common.Util;
  */
 
 public class MatchRunner implements Runnable {
-	private Logger _log = Logger.getLogger(MatchRunner.class);
+	private static Logger _log = Logger.getLogger(MatchRunner.class);
 	private Worker worker;
+	private boolean running = true;
 	private NetworkMatch match;
-	private boolean stop = false;
-	private Process curProcess;
 	private int core;
+	private Process currentProcess;
 
 	public MatchRunner(Worker worker, NetworkMatch match, int core) {
 		this.match = match;
@@ -48,25 +54,59 @@ public class MatchRunner implements Runnable {
 	 * Safely halts the execution of the MatchRunner
 	 */
 	public void stop() {
-		stop = true;
-		if (curProcess != null)
-			curProcess.destroy();
-	}
-
-	private void printOutput() {
-		if (Config.PRINT_WORKER_OUTPUT && !stop && curProcess != null) {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(curProcess.getInputStream()));
-			try {
-				String line = reader.readLine();
-				do {
-					System.out.println(line);
-				} while ((line = reader.readLine()) != null);
-			} catch (IOException e) {
-				_log.warn("Could not read script output", e);
-			}
+		running = false;
+		if (currentProcess != null) {
+			currentProcess.destroy();
 		}
 	}
 
+	private static void extractAndRenameTeam(String jarfile, String team) throws IOException {
+		JarFile jar = new JarFile(jarfile);
+		Enumeration<JarEntry> entries = jar.entries();
+		while (entries.hasMoreElements()) {
+			JarEntry file = entries.nextElement();
+			File f = new File("teams/tmp/" + file.getName());
+			if (file.isDirectory()) {
+				f.mkdir();
+				continue;
+			}
+			BufferedReader br = new BufferedReader(new InputStreamReader(jar.getInputStream(file)));
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)));
+			String line;
+			while ((line = br.readLine()) != null) {
+				bw.write(line.replaceAll("package team[0-9]{3}", "package " + team).replaceAll("import team[0-9]{3}", "import " + team));
+				bw.newLine();
+			}
+			br.close();
+			bw.close();
+		}
+	}
+
+	public static void compilePlayer(String teamName, String jarFile) throws IOException {
+		File aPlayer = new File("teams/" + teamName);
+		if (!aPlayer.exists()) {
+			_log.info("Compiling player " + teamName);
+			aPlayer.mkdir();
+			File workingDir = new File("teams/tmp");
+			workingDir.mkdir();
+			extractAndRenameTeam(jarFile, teamName);
+			Collection<File> srcFiles = FileUtils.listFiles(workingDir, new String[] {"java"}, true);
+			String[] srcFileNames = new String[srcFiles.size()];
+			int index = 0;
+			for (File f: srcFiles) {
+				srcFileNames[index++] = f.getAbsolutePath();
+			}
+			String[] javacArgs = new String[4 + srcFiles.size()];
+			javacArgs[0] = "-classpath";
+			javacArgs[1] = "lib/battlecode-server.jar";
+			javacArgs[2] = "-d";
+			javacArgs[3] = "teams/";
+			System.arraycopy(srcFileNames, 0, javacArgs, 4, srcFiles.size());
+			com.sun.tools.javac.Main.compile(javacArgs);
+			FileUtils.deleteDirectory(workingDir);
+		}
+	}
+	
 	/**
 	 * Runs the battlecode match
 	 */
@@ -77,124 +117,105 @@ public class MatchRunner implements Runnable {
 				Thread.sleep(1000 * Config.MOCK_WORKER_SLEEP);
 			} catch (InterruptedException e) {
 			}
-			worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, MatchResult.constructMockMatchResult(), new byte[0]);
+			if (running) {
+				worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, MatchResult.constructMockMatchResult(), new byte[0]);
+			}
 			return;
 		}
 
-		String team_a = match.team_a.replaceAll("\\W", "_");
-		String team_b = match.team_b.replaceAll("\\W", "_");
+
 		try {
-			Runtime run = Runtime.getRuntime();
-
-			if (stop)
-				return;
-			File coreWorkspace = new File("core" + core);
-			if (!coreWorkspace.exists()) {
-				coreWorkspace.mkdir();
+			// Run the match inside this JVM if we're the first core.  Otherwise we need to start a new process
+			if (core == 0) {
+				runMatch(match.seed, match.map.getMapName(), match.team_a, match.team_b);
+			} else {
+				_log.debug("Forking process");
+				Runtime run = Runtime.getRuntime();
+				Process p = run.exec(new String[] {"/bin/bash", "run.sh", "-" + Main.runMatchArg, match.seed + "", match.map.getMapName(), match.team_a, match.team_b});
+				p.waitFor();
 			}
-
-			// Rename team A in the source
-			curProcess = run.exec(new String[] {Config.cmd_rename_team, 
-					"./core" + core, 
-					"A" + team_a, 
-					"./teams/" + match.team_a + ".jar"});
-			curProcess.waitFor();
-			printOutput();
-			if (stop)
+			
+			String matchFile = match.seed + match.map.getMapName() + ".rms";
+			
+			if (!running) {
+				new File(matchFile).delete();
 				return;
-
-			// Rename team B in the source
-			curProcess = run.exec(new String[] {Config.cmd_rename_team, 
-					"./core" + core, 
-					"B" + team_b, 
-					"./teams/" + match.team_b + ".jar"});
-			curProcess.waitFor();
-			printOutput();
-			if (stop)
-				return;
-
-			// Construct the map file with the appropriate seeeeeed
-			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File("maps/" + match.map.getMapName() + ".xml"))));
-			BufferedWriter fos = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("maps/" + match.seed + match.map.getMapName() + ".xml"))));
-			String line;
-			while ((line = br.readLine()) != null) {
-				fos.write(line.replaceAll("seed=[^ ]*", "seed=\"" + match.seed + "\""));
-				fos.newLine();
 			}
-			br.close();
-			fos.close();
-
-			battlecode.server.Config bcConfig = battlecode.server.Config.getGlobalConfig();
-			bcConfig.set("bc.engine.debug-methods", "false");
-			bcConfig.set("bc.game.maps", match.seed + match.map.getMapName());
-			bcConfig.set("bc.game.team-a", "A" + match.team_a);
-			bcConfig.set("bc.game.team-b", "B" + match.team_b);
-			bcConfig.set("bc.server.save-file", match.map + ".rms");
-			bcConfig.set("bc.server.mode", "headless");
-			Controller controller = ControllerFactory
-			.createHeadlessController(bcConfig);
-			GameData gameData = new GameData();
-			Proxy[] proxies = new Proxy[] { 
-					ProxyFactory.createProxyFromFile("core" + core + "/" + match.map + ".rms"),
-					gameData,
-					};
-			Server bcServer = new Server(bcConfig, Server.Mode.HEADLESS, controller, proxies);
-			controller.addObserver(bcServer);
-			bcServer.run();
-
-			new File("maps/" + match.seed + match.map.getMapName() + ".xml").delete();
-
-		
 
 			// Read in the replay file
-			String matchFile = "./core" + core + "/" + match.map + ".rms";
+			GameData gameData = new GameData(matchFile);
 			byte[] data;
 			try {
 				data = Util.getFileData(matchFile);
 			} catch (IOException e) {
-				if (!stop) {
+				if (running) {
 					_log.error("Failed to read " + matchFile, e);
 					worker.matchFailed(this, core, match);
 				}
 				return;
 			}
-	
-			if (!stop) {
+			
+			new File(matchFile).delete();
+
+			if (running) {
 				_log.info("Finished: " + match);
 				worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
 			}
-		} catch (Exception e) {
-			if (!stop) {
+		} catch (IOException e) {
+			if (running) {
 				_log.error("Failed to run match", e);
 				worker.matchFailed(this, core, match);
 			}
 			return;
+		} catch (ClassNotFoundException e) {
+			if (running) {
+				_log.error("Failed to read match file", e);
+				worker.matchFailed(this, core, match);
+			}
+		} catch (InterruptedException e) {
+			if (running) {
+				_log.error("Interrupted while running match", e);
+				worker.matchFailed(this, core, match);
+			}
 		}
+	}
+	
+	public static void runMatch(long seed, String mapName, String team_a, String team_b) throws IOException {
+		// Construct the map file with the appropriate seeeeeed
+		File seededMap = new File("maps/" + seed + mapName + ".xml");
+		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File("maps/" + mapName + ".xml"))));
+		BufferedWriter fos = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(seededMap)));
+		String line;
+		while ((line = br.readLine()) != null) {
+			fos.write(line.replaceAll("seed=[^ ]*", "seed=\"" + seed + "\""));
+			fos.newLine();
+		}
+		br.close();
+		fos.close();
+		
+		battlecode.server.Config bcConfig = battlecode.server.Config.getGlobalConfig();
+		bcConfig.set("bc.engine.debug-methods", "false");
+		bcConfig.set("bc.game.maps", seed + mapName);
+		bcConfig.set("bc.game.team-a", "A" + team_a);
+		bcConfig.set("bc.game.team-b", "B" + team_b);
+		bcConfig.set("bc.server.mode", "headless");
+        bcConfig.set("bc.engine.silence-a", "true");
+        bcConfig.set("bc.engine.silence-b", "true");
+		Controller controller = ControllerFactory
+				.createHeadlessController(bcConfig);
+		Proxy[] proxies = new Proxy[] { 
+				ProxyFactory.createProxyFromFile(seed + mapName + ".rms"),
+		};
+		Server bcServer = new Server(bcConfig, Server.Mode.HEADLESS, controller, proxies);
+		controller.addObserver(bcServer);
+		bcServer.run();
+		
+		seededMap.delete();
 	}
 
 	@Override
 	public String toString() {
 		return match.toString();
-	}
-
-}
-
-class Callback implements Runnable {
-	private Thread parent;
-	private Process proc;
-
-	public Callback (Thread parent, Process proc) {
-		this.parent = parent;
-		this.proc = proc;
-	}
-
-	@Override
-	public void run() {
-		try {
-			proc.waitFor();
-			parent.interrupt();
-		} catch (InterruptedException e) {
-		}
 	}
 
 }

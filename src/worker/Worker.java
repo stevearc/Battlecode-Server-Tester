@@ -1,6 +1,7 @@
 package worker;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -20,6 +21,7 @@ import networking.Network;
 import networking.Packet;
 import networking.PacketCmd;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import common.Config;
@@ -49,7 +51,7 @@ public class Worker implements Controller, Runnable {
 		running = new MatchRunner[cores];
 		sf = SocketFactory.getDefault();
 	}
-	
+
 	public synchronized void matchFailed(MatchRunner runner, int core, NetworkMatch match) {
 		matchFinish(runner, core, match, null, null, null);
 	}
@@ -104,12 +106,6 @@ public class Worker implements Controller, Runnable {
 				return false;
 			}
 			if (!nm.idataHash.equals(Util.convertToHex(Util.SHA1Checksum("./idata")))) {
-				return false;
-			}
-			if (!nm.buildHash.equals(Util.convertToHex(Util.SHA1Checksum("./build.xml")))) {
-				return false;
-			}
-			if (!nm.confHash.equals(Util.convertToHex(Util.SHA1Checksum("./bc.conf")))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -191,7 +187,7 @@ public class Worker implements Controller, Runnable {
 		fis.read(fileData);
 		return Arrays.equals(fileData, data);
 	}
-	
+
 	private void writeDataToFile(byte[] data, String fileName) throws IOException {
 		_log.info("Writing file: " + fileName);
 		File outputFile = new File(fileName);
@@ -216,12 +212,6 @@ public class Worker implements Controller, Runnable {
 			if (dep.idata != null) {
 				writeDataToFile(dep.idata, "./idata");
 			}
-			if (dep.build != null) {
-				writeDataToFile(dep.build, "./build.xml");
-			}
-			if (dep.bc_conf != null) {
-				writeDataToFile(dep.bc_conf, "./bc.conf");
-			}
 			if (dep.map != null) {
 				writeDataToFile(dep.map, "./maps/" + dep.mapName + ".xml");
 			}
@@ -231,7 +221,7 @@ public class Worker implements Controller, Runnable {
 			if (dep.teamB != null) {
 				writeDataToFile(dep.teamB, "./teams/" + dep.teamBName + ".jar");
 			}
-			
+
 			// If we wrote the battlecode-server.jar file, we need to restart
 			if (dep.battlecodeServer != null) {
 				_log.info("battlecode-server.jar updated, restarting worker");
@@ -261,6 +251,12 @@ public class Worker implements Controller, Runnable {
 				Dependencies dep = (Dependencies) p.get(1);
 				writeDependencies(dep);
 				if (resolveDependencies(match)) {
+
+					String team_a = match.team_a.replaceAll("\\W", "_");
+					String team_b = match.team_b.replaceAll("\\W", "_");
+					MatchRunner.compilePlayer("A" + team_a, "teams/" + match.team_a + ".jar");
+					MatchRunner.compilePlayer("B" + team_b, "teams/" + match.team_b + ".jar");
+
 					MatchRunner m = new MatchRunner(this, (NetworkMatch) p.get(0), core);
 					new Thread(m).start();
 					running[core] = m;
@@ -275,6 +271,19 @@ public class Worker implements Controller, Runnable {
 				if (running[i] != null) {
 					running[i].stop();
 					running[i] = null;
+				}
+			}
+			File[] garbageDirs = new File("teams").listFiles(new FileFilter() {
+				@Override
+				public boolean accept(File pathname) {
+					return !pathname.getAbsolutePath().endsWith(".jar");
+				}
+			});
+			for (File f: garbageDirs) {
+				try {
+					FileUtils.deleteDirectory(f);
+				} catch (IOException e) {
+					_log.warn("Error cleaning up compiled player dir: " + f.getAbsolutePath(), e);
 				}
 			}
 			break;

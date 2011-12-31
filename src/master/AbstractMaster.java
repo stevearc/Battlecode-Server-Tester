@@ -25,18 +25,17 @@ public abstract class AbstractMaster {
 	 * @param battlecode_server
 	 * @param idata
 	 */
-	public static void kickoffUpdateBattlecodeFiles(final File battlecode_server, final File idata, final File build, final File bc_conf) {
+	public static void kickoffUpdateBattlecodeFiles(final File battlecode_server, final File idata) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				singleton.updateBattlecodeFiles(battlecode_server, idata, build, bc_conf);
+				singleton.updateBattlecodeFiles(battlecode_server, idata);
 			}
 
 		}).start();
 	}
-	protected abstract void updateBattlecodeFiles(final File battlecode_server, final File idata, 
-			final File build, final File bc_conf);
+	protected abstract void updateBattlecodeFiles(final File battlecode_server, final File idata);
 		
 	/**
 	 * Queues a run

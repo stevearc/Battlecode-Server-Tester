@@ -41,6 +41,7 @@ import org.apache.log4j.PatternLayout;
 
 import web.WebServer;
 import web.WebUtil;
+import worker.MatchRunner;
 import worker.Worker;
 
 import common.Config;
@@ -56,6 +57,7 @@ import common.Util;
 
 public class Main {
 	private static Logger _log = Logger.getLogger(Main.class);
+	public static final String runMatchArg = "runmatch";
 
 	public static void main(String[] args) {
 		Options options = new Options();
@@ -72,6 +74,7 @@ public class Main {
 		options.addOption("p", "http-port", true, "what port for the http server to listen on (default 80)");
 		options.addOption("d", "data-port", true, "what port for the master/worker to send data over (default 8888)");
 		options.addOption("c", "cores", true, "the number of cores on a worker (determines how many simultaneous matches to run)");
+		options.addOption(runMatchArg, false, "debug method for running a match.  Don't use this unless you know what you're doing.");
 
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
@@ -111,6 +114,21 @@ public class Main {
 		rootLogger.addAppender(new ConsoleAppender(layout));
 		Logger.getLogger("org.hibernate").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
 		Logger.getLogger("org.eclipse.jetty").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
+		
+		if (cmd.hasOption(runMatchArg)) {
+			// This should only be run programmatically from MatchRunner
+			// Thus, we should know exactly what the remaining arguments are
+			long seed = Long.parseLong(args[1]);
+			String mapName = args[2];
+			String team_a = args[3];
+			String team_b = args[4];
+			try {
+				MatchRunner.runMatch(seed, mapName, team_a, team_b);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			System.exit(0);
+		}
 		
 		try {
 			int dataPort = Config.DEFAULT_DATA_PORT;
@@ -345,7 +363,7 @@ public class Main {
 	private static void createWorkerTarball() {
 		String targetName = "bs-worker.tar.gz";
 		String finalTargetName = "static/" + targetName;
-		String[] tarFiles = {"README", "COPYING", "run.sh", "scripts", "lib", "static", "bs-tester.jar"};
+		String[] tarFiles = {"README", "COPYING", "run.sh", "lib", "static", "bs-tester.jar"};
 		File finalFile = new File(finalTargetName);
 		if (finalFile.exists()) {
 			return;

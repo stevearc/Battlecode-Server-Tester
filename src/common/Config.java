@@ -25,12 +25,4 @@ public class Config {
 	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
 	public static int map_cutoff_medium = 2400;
 
-	/* These options are generated from the above options */
-	/** The path to the script that will generate the proper bc.conf file */
-	public static final String cmd_gen_conf = "./scripts/gen_conf.sh";
-	/** The path to the script that will rename the team in the source */
-	public static final String cmd_rename_team = "./scripts/rename_team.sh";
-	/** The path to the script that runs the battlecode match */
-	public static final String cmd_run_match = "./scripts/run_match.sh";
-
 }

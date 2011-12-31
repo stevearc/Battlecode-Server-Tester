@@ -56,7 +56,6 @@
             <arg value="README"/>
             <arg value="COPYING"/>
             <arg value="run.sh"/>
-            <arg value="scripts"/>
             <arg value="lib"/>
             <arg value="static"/>
             <arg value="${dist}"/>

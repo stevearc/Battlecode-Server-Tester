@@ -96,22 +96,14 @@ public class UploadServlet extends HttpServlet {
 		} else if (request.getParameter("submit-update") != null) {
 			File idata = (File) request.getAttribute("idata");
 			File battlecode_server = (File) request.getAttribute("battlecode-server");
-			File build = (File) request.getAttribute("build");
-			File bc_conf = (File) request.getAttribute("bc.conf");
 			if (idata == null || !idata.exists() || idata.isDirectory()) {
 				warn(response, "Please select a valid idata file");
 			} 
 			else if (battlecode_server == null || !battlecode_server.exists() || battlecode_server.isDirectory()) {
 				warn(response, "Please select a valid battlecode-server.jar file");
 			} 
-			else if (build == null || !build.exists() || build.isDirectory()) {
-				warn(response, "Please select a valid build.xml file");
-			} 
-			else if (bc_conf == null || !bc_conf.exists() || bc_conf.isDirectory()) {
-				warn(response, "Please select a valid bc.conf file");
-			} 
 			else {
-				AbstractMaster.kickoffUpdateBattlecodeFiles(battlecode_server, idata, build, bc_conf);
+				AbstractMaster.kickoffUpdateBattlecodeFiles(battlecode_server, idata);
 				EntityManager em = HibernateUtil.getEntityManager();
 				Long numRunning = em.createQuery("select count(*) from BSRun run where run.status = ?", Long.class)
 				.setParameter(1, STATUS.RUNNING)
@@ -192,14 +184,6 @@ public class UploadServlet extends HttpServlet {
 		out.println("<tr>" +
 				"<td style='text-align:right'>idata file:</td>" +
 				"<td><input type='file' name='idata'/></td>" +
-				"</tr>");
-		out.println("<tr>" +
-				"<td style='text-align:right'>build.xml file:</td>" +
-				"<td><input type='file' name='build'/></td>" +
-				"</tr>");
-		out.println("<tr>" +
-				"<td style='text-align:right'>bc.conf file:</td>" +
-				"<td><input type='file' name='bc.conf'/></td>" +
 				"</tr>");
 		out.println("<tr><td></td>" +
 				"<td><input type='submit' name='submit-update' value='Upload'/></td>" +

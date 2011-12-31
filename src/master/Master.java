@@ -44,8 +44,6 @@ public class Master extends AbstractMaster {
 	private Date mapsLastModifiedDate;
 	private File pendingBattlecodeServerFile;
 	private File pendingIdataFile;
-	private File pendingBuildFile;
-	private File pendingConfFile;
 	private boolean initialized;
 
 	public Master(int dataPort) throws Exception {
@@ -122,11 +120,9 @@ public class Master extends AbstractMaster {
 	}
 
 	@Override
-	protected synchronized void updateBattlecodeFiles(File battlecode_server, File idata, File build, File bc_conf) {
+	protected synchronized void updateBattlecodeFiles(File battlecode_server, File idata) {
 		pendingBattlecodeServerFile = battlecode_server;
 		pendingIdataFile = idata;
-		pendingBuildFile = build;
-		pendingConfFile = bc_conf;
 		if (getCurrentRun() == null) {
 			writeBattlecodeFiles();
 		}
@@ -138,12 +134,8 @@ public class Master extends AbstractMaster {
 				_log.info("Writing updated battlecode files");
 				Util.writeFileData(pendingBattlecodeServerFile, "./lib/battlecode-server.jar");
 				Util.writeFileData(pendingIdataFile, "./idata");
-				Util.writeFileData(pendingBuildFile, "./build.xml");
-				Util.writeFileData(pendingConfFile, "./bc.conf");
 				pendingBattlecodeServerFile = null;
 				pendingIdataFile = null;
-				pendingBuildFile = null;
-				pendingConfFile = null;
 			}
 		} catch (IOException e) {
 			_log.error("Error updating battlecode version", e);
@@ -302,13 +294,9 @@ public class Master extends AbstractMaster {
 		.getResultList();
 		String battlecodeServerHash;
 		String idataHash;
-		String buildHash;
-		String confHash;
 		try {
 			battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./lib/battlecode-server.jar"));
 			idataHash = Util.convertToHex(Util.SHA1Checksum("./idata"));
-			buildHash = Util.convertToHex(Util.SHA1Checksum("./build.xml"));
-			confHash = Util.convertToHex(Util.SHA1Checksum("./bc.conf"));
 		} catch (NoSuchAlgorithmException e) {
 			_log.error("Cannot find SHA1 algorithm!", e);
 			return;
@@ -323,8 +311,6 @@ public class Master extends AbstractMaster {
 			NetworkMatch nm = m.buildNetworkMatch();
 			nm.battlecodeServerHash = battlecodeServerHash;
 			nm.idataHash = idataHash;
-			nm.buildHash = buildHash;
-			nm.confHash = confHash;
 			_log.info("Sending match " + nm + " to worker " + worker);
 			WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + nm.toMapString());
 			worker.runMatch(nm);
@@ -354,8 +340,6 @@ public class Master extends AbstractMaster {
 				} while (worker.getRunningMatches().contains(nm));
 				nm.battlecodeServerHash = battlecodeServerHash;
 				nm.idataHash = idataHash;
-				nm.buildHash = buildHash;
-				nm.confHash = confHash;
 				_log.info("Sending redundant match " + nm + " to worker " + worker);
 				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + nm.toMapString());
 				worker.runMatch(nm);
@@ -372,14 +356,10 @@ public class Master extends AbstractMaster {
 		byte[] teamB = null;
 		byte[] battlecodeServer = null;
 		byte[] idata = null;
-		byte[] build = null;
-		byte[] bc_conf = null;
 		try {
 			if (needUpdate) {
 				battlecodeServer = Util.getFileData("./lib/battlecode-server.jar");
 				idata = Util.getFileData("./idata");
-				build = Util.getFileData("./build.xml");
-				bc_conf = Util.getFileData("./bc.conf");
 			}
 			if (needMap) {
 				map = Util.getFileData("./maps/" + match.map.getMapName() + ".xml");
@@ -390,7 +370,7 @@ public class Master extends AbstractMaster {
 			if (needTeamB) {
 				teamB = Util.getFileData("./teams/" + match.team_b + ".jar");
 			}
-			dep = new Dependencies(battlecodeServer, idata, build, bc_conf, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
+			dep = new Dependencies(battlecodeServer, idata, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);
 			worker.runMatchWithDependencies(match, dep);
 		} catch (IOException e) {
