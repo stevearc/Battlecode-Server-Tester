@@ -192,10 +192,10 @@ public class GameData extends Proxy {
 			}
 		}
 		for (int i = 0; i < teams.length; i++) {
-			teamResults[i].setActiveRobots(activeRobots[i]);
-			teamResults[i].setFluxDrain(fluxDrain[i]);
-			teamResults[i].setFluxIncome(fluxIncome[i]);
-			teamResults[i].setFluxReserve(fluxReserve[i]);
+			teamResults[i].setActiveRobots(activeRobots[i].toArray(new Integer[activeRobots[i].size()]));
+			teamResults[i].setFluxDrain(fluxDrain[i].toArray(new Double[fluxDrain[i].size()]));
+			teamResults[i].setFluxIncome(fluxIncome[i].toArray(new Double[fluxIncome[i].size()]));
+			teamResults[i].setFluxReserve(fluxReserve[i].toArray(new Double[fluxReserve[i].size()]));
 		}
 
 		matchResult.setRounds(new Long(rounds.size()));

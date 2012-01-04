@@ -5,7 +5,7 @@
 ## REQUIREMENTS ##
 ##################
     * Linux (mayyyyy also work on Mac.  I haven't tested because I don't own one)
-    * Java and Ant (to run the battlecode client)
+    * Java
 
 ##################
 ## ARCHITECTURE ##

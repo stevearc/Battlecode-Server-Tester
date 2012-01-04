@@ -5,14 +5,15 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import javax.persistence.Embeddable;
+import javax.persistence.Lob;
 
 @Embeddable
 public class TeamMatchResult implements Serializable {
 	private static final long serialVersionUID = 5493198563817908787L;
-	private ArrayList<Integer> activeRobots;
-	private ArrayList<Double> fluxDrain;
-	private ArrayList<Double> fluxIncome;
-	private ArrayList<Double> fluxReserve;
+	private Integer[] activeRobots;
+	private Double[] fluxDrain;
+	private Double[] fluxIncome;
+	private Double[] fluxReserve;
 	/*
 	private ArrayList<Integer> firepower;
 	*/
@@ -38,43 +39,47 @@ public class TeamMatchResult implements Serializable {
 			fluxDrain.add(drain);
 			fluxReserve.add(reserve);
 		}
-		tmr.setActiveRobots(activeRobots);
-		tmr.setFluxIncome(fluxIncome);
-		tmr.setFluxDrain(fluxDrain);
-		tmr.setFluxReserve(fluxReserve);
+		tmr.setActiveRobots(activeRobots.toArray(new Integer[activeRobots.size()]));
+		tmr.setFluxIncome(fluxIncome.toArray(new Double[fluxIncome.size()]));
+		tmr.setFluxDrain(fluxDrain.toArray(new Double[fluxDrain.size()]));
+		tmr.setFluxReserve(fluxReserve.toArray(new Double[fluxReserve.size()]));
 		return tmr;
-	}	
-	
-	public ArrayList<Integer> getActiveRobots() {
+	}
+
+	@Lob
+	public Integer[] getActiveRobots() {
 		return activeRobots;
 	}
-	
-	public ArrayList<Double> getFluxDrain() {
+
+	@Lob
+	public Double[] getFluxDrain() {
 		return fluxDrain;
 	}
 
-	public ArrayList<Double> getFluxIncome() {
+	@Lob
+	public Double[] getFluxIncome() {
 		return fluxIncome;
 	}
 
-	public ArrayList<Double> getFluxReserve() {
+	@Lob
+	public Double[] getFluxReserve() {
 		return fluxReserve;
 	}
 
-	public void setFluxIncome(ArrayList<Double> fluxIncome) {
-		this.fluxIncome = fluxIncome;
+	public void setActiveRobots(Integer[] activeRobots) {
+		this.activeRobots = activeRobots;
 	}
 
-	public void setFluxReserve(ArrayList<Double> fluxReserve) {
-		this.fluxReserve = fluxReserve;
-	}
-
-	public void setFluxDrain(ArrayList<Double> fluxDrain) {
+	public void setFluxDrain(Double[] fluxDrain) {
 		this.fluxDrain = fluxDrain;
 	}
 
-	public void setActiveRobots(ArrayList<Integer> activeRobots) {
-		this.activeRobots = activeRobots;
+	public void setFluxIncome(Double[] fluxIncome) {
+		this.fluxIncome = fluxIncome;
+	}
+
+	public void setFluxReserve(Double[] fluxReserve) {
+		this.fluxReserve = fluxReserve;
 	}
 
 }

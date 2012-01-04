@@ -9,6 +9,7 @@ This is a document to aid developers in understanding and adding to the code bas
 ###########
   * Java
   * Ant
+  * Ivy
 
 ##################
 ## Architecture ##
@@ -29,6 +30,9 @@ The Web Server - is an embedded server courtesy of Jetty that provides a web int
 You should be able to compile the project by simply running the command "ant".  This will build
 bs-tester.tar.gz which contains everything necessary for installation.
 
+If you are developing in an IDE, running "ant resolve-source" will download the source and javadocs
+of the dependency libraries.
+
 #############
 ## Testing ##
 #############
@@ -46,7 +50,8 @@ the server.
 ############
 Thanks to the following projects for providing me with libraries and tools:
   * Jetty
-  * Jakarta Commons
+  * Apache Ant
+  * Apache Ivy
   * Apache Commons
   * HSQLDB
   * Hibernate

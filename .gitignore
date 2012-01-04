@@ -3,8 +3,10 @@
 .settings
 bin
 doc
+bs-tester
 bs-tester.jar
 bs-tester.tar.gz
 todo.txt
 *.swp
 build
+lib/*.jar

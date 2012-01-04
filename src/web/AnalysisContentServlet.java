@@ -2,7 +2,6 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
@@ -96,12 +95,11 @@ public class AnalysisContentServlet extends HttpServlet {
 		out.println("</body></html>");
 	}
 	
-	@SuppressWarnings("unchecked")
-	private static void printArray(PrintWriter out, String name, List list) {
+	private static void printArray(PrintWriter out, String name, Object[] array) {
 		out.print("<script type='text/javascript'>" +
 				"dataMap['" + name + "'] = [");
-		for (int i = 0; i < list.size(); i++) {
-			out.print("[" + i + "," + list.get(i) + "],");
+		for (int i = 0; i < array.length; i++) {
+			out.print("[" + i + "," + array[i] + "],");
 		}
 		out.println("];" +
 				"</script>");

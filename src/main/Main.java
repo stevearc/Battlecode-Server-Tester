@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,6 +29,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -61,6 +63,7 @@ public class Main {
 
 	public static void main(String[] args) {
 		Options options = new Options();
+		Options allOptions = new Options();
 		HelpFormatter formatter = new HelpFormatter();
 		options.addOption("s", "server", false, "run as server");
 		options.addOption("w", "worker", true, "run as worker; specify the hostname or ip-address of the master");
@@ -74,12 +77,17 @@ public class Main {
 		options.addOption("p", "http-port", true, "what port for the http server to listen on (default 80)");
 		options.addOption("d", "data-port", true, "what port for the master/worker to send data over (default 8888)");
 		options.addOption("c", "cores", true, "the number of cores on a worker (determines how many simultaneous matches to run)");
-		options.addOption(runMatchArg, false, "debug method for running a match.  Don't use this unless you know what you're doing.");
+		
+		for (Object o: options.getOptions()) {
+			allOptions.addOption((Option) o);
+		}
+		// This option should not be made visible to the user
+		allOptions.addOption(runMatchArg, false, "debug method for running a match.  Don't use this unless you know what you're doing.");
 
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
 		try {
-			cmd = parser.parse(options, args);
+			cmd = parser.parse(allOptions, args);
 		} catch (ParseException e1) {
 			formatter.printHelp("run.sh", options);
 			return;
@@ -339,11 +347,15 @@ public class Main {
 		new File("./maps").mkdir();
 	}
 	
-	private static void archiveFile(TarArchiveOutputStream out, String prefix, String fileName) throws IOException {
+	private static void archiveFile(TarArchiveOutputStream out, String prefix, String fileName, FilenameFilter filter) throws IOException {
+		if (filter != null && !filter.accept(new File(prefix), fileName)) {
+			_log.debug("unacceptable: " + fileName);
+			return;
+		}
 		File file = new File(fileName);
 		if (file.isDirectory()) {
 			for (String subFile: file.list()) {
-				archiveFile(out, prefix, fileName + "/" + subFile);
+				archiveFile(out, prefix, fileName + "/" + subFile, filter);
 			}
 		}
 		else {
@@ -375,7 +387,18 @@ public class Main {
 							new BufferedOutputStream(
 									new FileOutputStream(targetName))));
 			for (String fileName: tarFiles) {
-				archiveFile(out, "bs-worker/", fileName);
+				archiveFile(out, "bs-worker/", fileName, new FilenameFilter() {
+					String[] prefixes = {"lib/jetty", "lib/hibernate", "lib/servlet-api", "lib/antlr"};
+					@Override
+					public boolean accept(File dir, String name) {
+						for (String p: prefixes) {
+							if (name.startsWith(p)) {
+								return false;
+							}
+						}
+						return true;
+					}
+				});
 			}
 			out.finish();
 			// Move the tarball into static so we can serve it from the web interface

@@ -1,11 +1,11 @@
-<project name="BSTester" default="dist" basedir=".">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="BSTester" default="dist" basedir=".">
     <description>
         Builds the distribution for the BSTester
     </description>
-    <property name="build" location="build"/>
-    <property name="dist" location="bs-tester"/>
-    <property name="src" location="src"/>
-    <property name="lib" location="lib"/>
+    <property name="build" location="build/"/>
+    <property name="dist" location="bs-tester/"/>
+    <property name="src" location="src/"/>
+    <property name="lib" location="lib/"/>
     <property name="jarfile" location="bs-tester.jar"/>
     <path id="lib">
         <fileset dir="lib">
@@ -20,7 +20,15 @@
         <mkdir dir="${build}"/>
     </target>
 
-    <target name="compile" depends="init"
+    <target name="resolve-source" description="retrieve dependencies with source and javadocs using ivy">
+        <ivy:retrieve file="ivy-source.xml"/>
+    </target>
+
+    <target name="resolve" depends="init" description="retrieve dependencies using ivy">
+        <ivy:retrieve />
+    </target>
+
+    <target name="compile" depends="resolve"
         description="compile the source " >
         <javac srcdir="${src}" destdir="${build}" debug="true">
             <classpath>
@@ -50,31 +58,24 @@
     <target name="dist" depends="build" description="generate the distribution" >
         <mkdir dir="${dist}"/>
         <move todir="${dist}" file="${jarfile}"/>
-        <!-- We have to use exec because Ant copy doesn't preserve the file permissions :( -->
-        <exec executable="cp" os="Linux">
-            <arg value="-pr"/>
-            <arg value="README"/>
-            <arg value="COPYING"/>
-            <arg value="run.sh"/>
-            <arg value="lib"/>
-            <arg value="static"/>
-            <arg value="${dist}"/>
-        </exec>
+        <copy todir="${dist}">
+            <fileset dir=".">
+                <include name="README"/>
+                <include name="COPYING"/>
+                <include name="run.sh"/>
+                <include name="lib/"/>
+                <include name="static/"/>
+            </fileset>
+        </copy>
 
         <!-- While we need battlecode-server.jar to compile, we don't need to distribute it -->
         <delete file="${dist}/lib/battlecode-server.jar"/>
-        <delete file="bs-tester.tar"/>
-        <delete file="bs-tester.tar.gz"/>
-        <!-- We have to use exec because Ant tar doesn't preserve the file permissions :( -->
-        <exec executable="tar" os="Linux">
-            <arg value="-cf"/>
-            <arg value="bs-tester.tar"/>
-            <arg value="bs-tester"/>
-        </exec>
-        <exec executable="gzip" os="Linux">
-            <arg value="bs-tester.tar"/>
-        </exec>
 
+        <tar destfile="bs-tester.tar.gz" compression="gzip">
+            <tarfileset dir=".">
+                <include name="bs-tester/"/>
+            </tarfileset>
+        </tar>
     </target>
 
     <target name="clean" description="clean up" >
@@ -82,5 +83,14 @@
         <delete dir="${dist}"/>
         <delete file="bs-tester.tar.gz"/>
         <delete file="bs-tester.jar"/>
+    </target>
+
+    <target name="purge" depends="clean" description="clean up and remove downloaded dependencies">
+        <delete>
+            <fileset dir="lib">
+                <exclude name="battlecode-server.jar"/>
+                <exclude name="tools.jar"/>
+            </fileset>
+        </delete>
     </target>
 </project>

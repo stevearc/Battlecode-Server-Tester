@@ -1,5 +1,6 @@
 package web;
 
+import java.io.File;
 import java.util.EnumSet;
 
 import javax.servlet.DispatcherType;
@@ -58,6 +59,7 @@ public class WebServer implements Runnable {
 			// Set up filters for login blocking and handling file uploads
 			context.addFilter(new FilterHolder(new LoginFilter()), "/*", en);
 			context.addFilter(new FilterHolder(new MultiPartFilter()), UploadServlet.NAME, en);
+			context.setAttribute("javax.servlet.context.tempdir", new File("/tmp"));
 			
 			ResourceHandler resourceHandler = new FileHandler();
 			resourceHandler.setAliases(true);
