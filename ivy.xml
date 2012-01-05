@@ -13,14 +13,6 @@
         <dependency org="org.eclipse.jetty" name="jetty-webapp" rev="8.1.0.RC2" conf="*->*,!sources,!javadoc"/>
         <dependency org="org.eclipse.jetty" name="jetty-websocket" rev="8.1.0.RC2" conf="*->*,!sources,!javadoc"/>
         <dependency org="org.eclipse.jetty" name="jetty-servlets" rev="8.1.0.RC2" conf="*->*,!sources,!javadoc"/>
-        <!-- TODO: remove these?
-        <dependency org="javax.transaction" name="jta" rev="1.1" conf="*->*,!sources,!javadoc"/>
-        <dependency org="javassist" name="javassist" rev="3.12.0.GA" conf="*->*,!sources,!javadoc"/>
-        <dependency org="org.hibernate.javax.persistence" name="hibernate-jpa-2.0-api" rev="1.0.1.Final" conf="*->*,!sources,!javadoc"/>
-        <dependency org="org.hibernate" name="hibernate-validator" rev="4.2.0.Final" conf="*->*,!sources,!javadoc"/>
-        <dependency org="org.hibernate" name="hibernate-entitymanager" rev="3.6.8.Final" conf="*->*,!sources,!javadoc"/>
-        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.8.Final" conf="*->*,!sources,!javadoc"/>
-        -->
         <dependency org="org.hibernate" name="hibernate-core" rev="4.0.0.Final" conf="*->*,!sources,!javadoc"/>
         <dependency org="org.hibernate" name="hibernate-entitymanager" rev="4.0.0.Final" conf="*->*,!sources,!javadoc"/>
             

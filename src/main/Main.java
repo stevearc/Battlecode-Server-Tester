@@ -349,7 +349,6 @@ public class Main {
 	
 	private static void archiveFile(TarArchiveOutputStream out, String prefix, String fileName, FilenameFilter filter) throws IOException {
 		if (filter != null && !filter.accept(new File(prefix), fileName)) {
-			_log.debug("unacceptable: " + fileName);
 			return;
 		}
 		File file = new File(fileName);
