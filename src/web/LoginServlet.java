@@ -14,8 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
 
+import common.BSUtil;
 import common.HibernateUtil;
-import common.Util;
 
 
 /**
@@ -128,11 +128,11 @@ public class LoginServlet extends HttpServlet {
 			return;
 		}
 		String seed = request.getParameter("seed");
-		seed += Util.SHA1(""+Math.random());
-		String salt = Util.SHA1(seed);
+		seed += BSUtil.SHA1(""+Math.random());
+		String salt = BSUtil.SHA1(seed);
 		EntityManager em = HibernateUtil.getEntityManager();
 		if (request.getParameter("register") != null) {
-			String hashed_password = Util.SHA1(password + salt);
+			String hashed_password = BSUtil.SHA1(password + salt);
 			BSUser user = new BSUser();
 			user.setUsername(username);
 			user.setHashedPassword(hashed_password);
@@ -184,7 +184,7 @@ public class LoginServlet extends HttpServlet {
 			BSUser user = (BSUser) em.createQuery("from BSUser user where user.username = ?")
 			.setParameter(1, username)
 			.getSingleResult();
-			if (Util.SHA1(password + user.getSalt()).equals(user.getHashedPassword())) {
+			if (BSUtil.SHA1(password + user.getSalt()).equals(user.getHashedPassword())) {
 				return user;
 			}
 		} catch (NoResultException e) {

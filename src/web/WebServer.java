@@ -5,6 +5,7 @@ import java.util.EnumSet;
 
 import javax.servlet.DispatcherType;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -59,7 +60,12 @@ public class WebServer implements Runnable {
 			// Set up filters for login blocking and handling file uploads
 			context.addFilter(new FilterHolder(new LoginFilter()), "/*", en);
 			context.addFilter(new FilterHolder(new MultiPartFilter()), UploadServlet.NAME, en);
-			context.setAttribute("javax.servlet.context.tempdir", new File("/tmp"));
+			File tmpDir = new File("tmp");
+			if (tmpDir.exists()) {
+				FileUtils.deleteDirectory(tmpDir);
+			}
+			tmpDir.mkdir();
+			context.setAttribute("javax.servlet.context.tempdir", tmpDir);
 			
 			ResourceHandler resourceHandler = new FileHandler();
 			resourceHandler.setAliases(true);

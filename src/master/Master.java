@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 import common.Dependencies;
 import common.HibernateUtil;
 import common.NetworkMatch;
-import common.Util;
+import common.BSUtil;
 
 
 /**
@@ -132,8 +132,8 @@ public class Master extends AbstractMaster {
 		try {
 			if (pendingBattlecodeServerFile != null && pendingIdataFile != null) {
 				_log.info("Writing updated battlecode files");
-				Util.writeFileData(pendingBattlecodeServerFile, "./lib/battlecode-server.jar");
-				Util.writeFileData(pendingIdataFile, "./idata");
+				BSUtil.writeFileData(pendingBattlecodeServerFile, "lib" + File.separator + "battlecode-server.jar");
+				BSUtil.writeFileData(pendingIdataFile, "idata");
 				pendingBattlecodeServerFile = null;
 				pendingIdataFile = null;
 			}
@@ -160,7 +160,7 @@ public class Master extends AbstractMaster {
 			// first delete rms files
 			for (BSMatch match: run.getMatches()) {
 				if (match.getStatus() == BSMatch.STATUS.FINISHED) {
-					File matchFile = new File("./matches/" + match.toMatchFileName());
+					File matchFile = new File("matches" + File.separator + match.toMatchFileName());
 					if (matchFile.exists()) {
 						matchFile.delete();
 					}
@@ -230,7 +230,7 @@ public class Master extends AbstractMaster {
 					run.setbWins(run.getbWins() + 1);
 				}
 				_log.info("Match finished: " + m + " winner: " + result.getWinner());
-				File outFile = new File("./static/matches/" + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
+				File outFile = new File("static" + File.separator + "matches" + File.separator + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
 				outFile.createNewFile();
 				FileOutputStream fos = new FileOutputStream(outFile);
 				fos.write(data);
@@ -295,8 +295,8 @@ public class Master extends AbstractMaster {
 		String battlecodeServerHash;
 		String idataHash;
 		try {
-			battlecodeServerHash = Util.convertToHex(Util.SHA1Checksum("./lib/battlecode-server.jar"));
-			idataHash = Util.convertToHex(Util.SHA1Checksum("./idata"));
+			battlecodeServerHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar"));
+			idataHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("idata"));
 		} catch (NoSuchAlgorithmException e) {
 			_log.error("Cannot find SHA1 algorithm!", e);
 			return;
@@ -358,17 +358,17 @@ public class Master extends AbstractMaster {
 		byte[] idata = null;
 		try {
 			if (needUpdate) {
-				battlecodeServer = Util.getFileData("./lib/battlecode-server.jar");
-				idata = Util.getFileData("./idata");
+				battlecodeServer = BSUtil.getFileData("lib" + File.separator + "battlecode-server.jar");
+				idata = BSUtil.getFileData("idata");
 			}
 			if (needMap) {
-				map = Util.getFileData("./maps/" + match.map.getMapName() + ".xml");
+				map = BSUtil.getFileData("maps" + File.separator + match.map.getMapName() + ".xml");
 			}
 			if (needTeamA) {
-				teamA = Util.getFileData("./teams/" + match.team_a + ".jar");
+				teamA = BSUtil.getFileData("teams" + File.separator + match.team_a + ".jar");
 			}
 			if (needTeamB) {
-				teamB = Util.getFileData("./teams/" + match.team_b + ".jar");
+				teamB = BSUtil.getFileData("teams" + File.separator + match.team_b + ".jar");
 			}
 			dep = new Dependencies(battlecodeServer, idata, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			_log.info("Sending " + worker + " " + dep);

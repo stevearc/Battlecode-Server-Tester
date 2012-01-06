@@ -63,6 +63,7 @@
                 <include name="README"/>
                 <include name="COPYING"/>
                 <include name="run.sh"/>
+                <include name="run.bat"/>
                 <include name="lib/"/>
                 <include name="static/"/>
             </fileset>

@@ -17,7 +17,7 @@ import model.BSRun;
 import model.STATUS;
 
 import common.HibernateUtil;
-import common.Util;
+import common.BSUtil;
 
 /**
  * Displays the list of all runs
@@ -31,7 +31,7 @@ public class IndexServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// Send them to the upload servlet if they haven't uploaded battlecode files yet
-		if (!Util.initializedBattlecode()) {
+		if (!BSUtil.initializedBattlecode()) {
 			response.sendRedirect(UploadServlet.NAME);
 			return;
 		}

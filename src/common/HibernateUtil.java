@@ -25,7 +25,7 @@ public class HibernateUtil {
 		{"hibernate.connection.driver_class", "org.hsqldb.jdbcDriver"},
 		{"hibernate.connection.username", "sa"},
 		{"hibernate.connection.password", ""},
-		{"hibernate.connection.url", "jdbc:hsqldb:file:./BSTesterDB"},
+		{"hibernate.connection.url", "jdbc:hsqldb:file:BSTesterDB"},
 		{"hibernate.hbm2ddl.auto", "validate"},
 		{"hibernate.search.autoregister_listeners", "false"},
 	};

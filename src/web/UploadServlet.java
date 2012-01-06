@@ -17,7 +17,7 @@ import model.BSPlayer;
 import model.STATUS;
 
 import common.HibernateUtil;
-import common.Util;
+import common.BSUtil;
 
 
 /**
@@ -49,7 +49,7 @@ public class UploadServlet extends HttpServlet {
 		out.println("<body>");
 
 		WebUtil.writeTabs(request, response, NAME);
-		if (!Util.initializedBattlecode()) {
+		if (!BSUtil.initializedBattlecode()) {
 			highlight(response, "You must upload battlecode files, maps, and a player");
 		}
 		out.println("<div id='player-info-dialog' style='text-align:center'>Compile your player using" +
@@ -72,7 +72,7 @@ public class UploadServlet extends HttpServlet {
 			} else if (playerName.length() > 45) {
 				warn(response, "Player name is too long");
 			} else {
-				Util.writeFileData(player, "./teams/" + playerName + ".jar");
+				BSUtil.writeFileData(player, "./teams/" + playerName + ".jar");
 				BSPlayer bsPlayer = new BSPlayer();
 				bsPlayer.setPlayerName(playerName);
 				EntityManager em = HibernateUtil.getEntityManager();
@@ -130,7 +130,7 @@ public class UploadServlet extends HttpServlet {
 				if (new File(mapPath).exists()) {
 					warn(response, "Map " + mapName + ".xml already exists!");
 				} else {
-					Util.writeFileData(map, mapPath);
+					BSUtil.writeFileData(map, mapPath);
 					highlight(response, "Successfully uploaded map: " + mapName + ".xml");
 					AbstractMaster.kickoffUpdateMaps();
 				}

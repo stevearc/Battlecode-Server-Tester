@@ -24,10 +24,10 @@ import networking.PacketCmd;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+import common.BSUtil;
 import common.Config;
 import common.Dependencies;
 import common.NetworkMatch;
-import common.Util;
 
 /**
  * Connects to master and runs matches
@@ -102,10 +102,10 @@ public class Worker implements Controller, Runnable {
 
 	private boolean battlecodeUpToDate(NetworkMatch nm) {
 		try {
-			if (!nm.battlecodeServerHash.equals(Util.convertToHex(Util.SHA1Checksum("./lib/battlecode-server.jar")))) {
+			if (!nm.battlecodeServerHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar")))) {
 				return false;
 			}
-			if (!nm.idataHash.equals(Util.convertToHex(Util.SHA1Checksum("./idata")))) {
+			if (!nm.idataHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("idata")))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -122,10 +122,10 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean haveMap(BSMap map) {
-		File mapFile = new File("./maps/" + map.getMapName() + ".xml");
+		File mapFile = new File("maps" + File.separator + map.getMapName() + ".xml");
 		if (mapFile.exists()) {
 			try {
-				return map.getHash().equals(Util.convertToHex(Util.SHA1Checksum(mapFile.getAbsolutePath())));
+				return map.getHash().equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(mapFile.getAbsolutePath())));
 			} catch (NoSuchAlgorithmException e) {
 				_log.error("Can't find SHA1 hash!", e);
 			} catch (IOException e) {
@@ -136,7 +136,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean havePlayer(String player) {
-		File playerFile = new File("./teams/" + player + ".jar");
+		File playerFile = new File("teams" + File.separator + player + ".jar");
 		return playerFile.exists();
 	}
 
@@ -207,19 +207,19 @@ public class Worker implements Controller, Runnable {
 		}
 		try {
 			if (dep.battlecodeServer != null) {
-				writeDataToFile(dep.battlecodeServer, "./lib/battlecode-server.jar");
+				writeDataToFile(dep.battlecodeServer, "lib/battlecode-server.jar");
 			}
 			if (dep.idata != null) {
-				writeDataToFile(dep.idata, "./idata");
+				writeDataToFile(dep.idata, "idata");
 			}
 			if (dep.map != null) {
-				writeDataToFile(dep.map, "./maps/" + dep.mapName + ".xml");
+				writeDataToFile(dep.map, "maps" + File.separator + dep.mapName + ".xml");
 			}
 			if (dep.teamA != null) {
-				writeDataToFile(dep.teamA, "./teams/" + dep.teamAName + ".jar");
+				writeDataToFile(dep.teamA, "teams" + File.separator + dep.teamAName + ".jar");
 			}
 			if (dep.teamB != null) {
-				writeDataToFile(dep.teamB, "./teams/" + dep.teamBName + ".jar");
+				writeDataToFile(dep.teamB, "teams" + File.separator + dep.teamBName + ".jar");
 			}
 
 			// If we wrote the battlecode-server.jar file, we need to restart
@@ -254,8 +254,8 @@ public class Worker implements Controller, Runnable {
 
 					String team_a = match.team_a.replaceAll("\\W", "_");
 					String team_b = match.team_b.replaceAll("\\W", "_");
-					MatchRunner.compilePlayer("A" + team_a, "teams/" + match.team_a + ".jar");
-					MatchRunner.compilePlayer("B" + team_b, "teams/" + match.team_b + ".jar");
+					MatchRunner.compilePlayer("A" + team_a, "teams" + File.separator + match.team_a + ".jar");
+					MatchRunner.compilePlayer("B" + team_b, "teams" + File.separator + match.team_b + ".jar");
 
 					MatchRunner m = new MatchRunner(this, (NetworkMatch) p.get(0), core);
 					new Thread(m).start();

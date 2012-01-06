@@ -14,7 +14,7 @@ import java.security.NoSuchAlgorithmException;
  * @author stevearc
  *
  */
-public class Util {
+public class BSUtil {
 	private static final String HEXES = "0123456789ABCDEF";
 
 	public static String convertToHex(byte[] raw) {
@@ -137,7 +137,16 @@ public class Util {
 	}
 
 	public static boolean initializedBattlecode() {
-		File bserver = new File("./lib/battlecode-server.jar");
+		File bserver = new File("lib" + File.separator + "battlecode-server.jar");
 		return bserver.exists();
+	}
+	
+	public static boolean isWindows() {
+		return System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
+	}
+	
+	public static boolean isUnix() {
+		String os = System.getProperty("os.name").toLowerCase();
+		return os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0;
 	}
 }

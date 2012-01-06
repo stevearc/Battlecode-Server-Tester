@@ -17,7 +17,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import common.Util;
+import common.BSUtil;
 
 @Entity
 public class BSRun {
@@ -115,7 +115,7 @@ public class BSRun {
 	}
 	
 	public String printTimeTaken() {
-		return Util.formatTime(calculateTimeTaken());
+		return BSUtil.formatTime(calculateTimeTaken());
 	}
 	
 	public long calculateTimeTaken() {

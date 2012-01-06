@@ -66,6 +66,8 @@ public class GameData extends Proxy {
 			}
 		} catch (EOFException e) {
 			// Aaaaaand we're done
+		} finally {
+			input.close();
 		}
 	}
 

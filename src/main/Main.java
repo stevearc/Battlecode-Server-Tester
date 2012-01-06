@@ -34,6 +34,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Layout;
@@ -48,7 +49,7 @@ import worker.Worker;
 
 import common.Config;
 import common.HibernateUtil;
-import common.Util;
+import common.BSUtil;
 
 
 /**
@@ -109,9 +110,9 @@ public class Main {
 		}
 		FileAppender appender = new FileAppender();
 		if (cmd.hasOption('s')) {
-			appender.setFile("log/bs-server.log");
+			appender.setFile(logDir.getName() + File.separator + "bs-server.log");
 		} else {
-			appender.setFile("log/bs-worker.log");
+			appender.setFile(logDir.getName() + File.separator + "bs-worker.log");
 		}
 		appender.setName("logFile");
 		Layout layout = new PatternLayout("%d{ISO8601} [%t] %-5p %c %x - %m%n");
@@ -133,7 +134,7 @@ public class Main {
 			try {
 				MatchRunner.runMatch(seed, mapName, team_a, team_b);
 			} catch (IOException e) {
-				e.printStackTrace();
+				_log.error("Error running a forked match " + seed + mapName, e);
 			}
 			System.exit(0);
 		}
@@ -192,6 +193,9 @@ public class Main {
 					if (cores < 1) {
 						_log.fatal("Number of cores must be greater than 0!");
 						System.exit(1);
+					} else if (cores > 1 && BSUtil.isWindows()) {
+						_log.fatal("Windows doesn't support running on more than one core.  Try using a big-boy operating system.");
+						System.exit(1);
 					}
 				}
 				new Thread(new Worker(serverAddr, dataPort, cores)).start();
@@ -218,7 +222,7 @@ public class Main {
 	private static void createMockData(Master master) throws IOException {
 		_log.info("Populating database with mock data...");
 		EntityManager em = HibernateUtil.getEntityManager();
-		File checkFile = new File("./teams/mock_player.jar");
+		File checkFile = new File("teams" + File.separator + "mock_player.jar");
 		long numPlayers = em.createQuery("select count(*) from BSPlayer", Long.class).getSingleResult();
 		BSPlayer bsPlayer;
 		if (numPlayers == 0) {
@@ -323,8 +327,8 @@ public class Main {
 				}
 			}
 
-			String salt = Util.SHA1(""+Math.random());
-			String hashed_password = Util.SHA1(passwd + salt);
+			String salt = BSUtil.SHA1(""+Math.random());
+			String hashed_password = BSUtil.SHA1(passwd + salt);
 			BSUser user = new BSUser();
 			user.setUsername(username);
 			user.setHashedPassword(hashed_password);
@@ -341,10 +345,10 @@ public class Main {
 
 	private static void createDirectoryStructure(boolean isServer) {
 		if (isServer) {
-			new File("./static/matches").mkdir();
+			new File("static" + File.separator + "matches").mkdir();
 		}
-		new File("./teams").mkdir();
-		new File("./maps").mkdir();
+		new File("teams").mkdir();
+		new File("maps").mkdir();
 	}
 	
 	private static void archiveFile(TarArchiveOutputStream out, String prefix, String fileName, FilenameFilter filter) throws IOException {
@@ -354,12 +358,17 @@ public class Main {
 		File file = new File(fileName);
 		if (file.isDirectory()) {
 			for (String subFile: file.list()) {
-				archiveFile(out, prefix, fileName + "/" + subFile, filter);
+				archiveFile(out, prefix, fileName + File.separator + subFile, filter);
 			}
 		}
 		else {
 			byte[] buffer = new byte[1024];
-			ArchiveEntry entry = out.createArchiveEntry(file, prefix + fileName);
+			ArchiveEntry entry = null;
+			if (BSUtil.isWindows()) {
+				entry = out.createArchiveEntry(file, (prefix + fileName).replaceAll("\\\\", "/"));
+			} else {
+				entry = out.createArchiveEntry(file, prefix + fileName);
+			}
 			out.putArchiveEntry(entry);
 			FileInputStream istream = new FileInputStream(fileName);
 			int len = 0;
@@ -373,8 +382,8 @@ public class Main {
 
 	private static void createWorkerTarball() {
 		String targetName = "bs-worker.tar.gz";
-		String finalTargetName = "static/" + targetName;
-		String[] tarFiles = {"README", "COPYING", "run.sh", "lib", "static", "bs-tester.jar"};
+		String finalTargetName = "static" + File.separator + targetName;
+		String[] tarFiles = {"README", "COPYING", "run.sh", "run.bat", "lib", "static", "bs-tester.jar"};
 		File finalFile = new File(finalTargetName);
 		if (finalFile.exists()) {
 			return;
@@ -386,8 +395,9 @@ public class Main {
 							new BufferedOutputStream(
 									new FileOutputStream(targetName))));
 			for (String fileName: tarFiles) {
-				archiveFile(out, "bs-worker/", fileName, new FilenameFilter() {
-					String[] prefixes = {"lib/jetty", "lib/hibernate", "lib/servlet-api", "lib/antlr"};
+				archiveFile(out, "bs-worker" + File.separator, fileName, new FilenameFilter() {
+					String[] prefixes = {"lib" + File.separator + "jetty", "lib" + File.separator + "hibernate", 
+							"lib" + File.separator + "servlet-api", "lib" + File.separator + "antlr"};
 					@Override
 					public boolean accept(File dir, String name) {
 						for (String p: prefixes) {
@@ -400,9 +410,6 @@ public class Main {
 				});
 			}
 			out.finish();
-			// Move the tarball into static so we can serve it from the web interface
-			File tFile = new File(targetName);
-			tFile.renameTo(finalFile);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -413,6 +420,13 @@ public class Main {
 					out.close();
 			} catch (IOException e) {
 			}
+		}
+			// Move the tarball into static so we can serve it from the web interface
+			File tFile = new File(targetName);
+		try {
+			FileUtils.moveFile(tFile, finalFile);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
