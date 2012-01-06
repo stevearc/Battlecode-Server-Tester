@@ -45,7 +45,7 @@
         </path>
         <pathconvert property="string.classpath" pathsep=" ">
             <path refid="lib.classpath" />
-            <map from="${build}/" to="./" />
+            <map from="${basedir}" to="." />
         </pathconvert>
         <jar jarfile="${jarfile}" basedir="${build}">
             <manifest>
