@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import model.BSMap;
 import model.BSRun;
 import model.STATUS;
+import model.TEAM;
 
 import common.HibernateUtil;
 
@@ -63,11 +64,16 @@ public class MatchesByMapServlet extends HttpServlet {
 		for (int i = 0; i < valuePairs.size(); i++) {
 			Object[] valuePair = valuePairs.get(i);
 			BSMap map = (BSMap) valuePair[0];
-			long aCount = (Long) valuePair[2];
+			long aCount = 0;
 			long bCount = 0;
-			if (i + 1 < valuePairs.size() && map.equals(valuePairs.get(i+1)[0])) {
-				bCount = (Long) valuePairs.get(i+1)[2];
-				i++;
+			if ((TEAM) valuePair[1] == TEAM.A) {
+				aCount = (Long) valuePair[2];
+				if (i + 1 < valuePairs.size() && map.equals(valuePairs.get(i+1)[0])) {
+					bCount = (Long) valuePairs.get(i+1)[2];
+					i++;
+				}
+			} else {
+				bCount = (Long) valuePair[2];
 			}
 			out.println("<tr>");
 			out.println("<td>" + map.getMapName() + "</td>");
