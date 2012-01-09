@@ -24,15 +24,21 @@ import common.NetworkMatch;
  */
 public class WorkerRepr implements Controller {
 	private static Logger _log = Logger.getLogger(WorkerRepr.class);
+	private int id;
 	private Network net;
 	private HashSet<NetworkMatch> runningMatches;
 	private HashSet<BSScrimmageSet> analyzingMatches;
 	private int numCores = 0;
 
-	public WorkerRepr(Socket s) throws IOException {
+	public WorkerRepr(Socket s, int id) throws IOException {
+		this.id = id;
 		this.net = new Network(this, s);
 		runningMatches = new HashSet<NetworkMatch>();
 		analyzingMatches = new HashSet<BSScrimmageSet>();
+	}
+	
+	public int getId() {
+		return id;
 	}
 
 	/**
@@ -108,6 +114,7 @@ public class WorkerRepr implements Controller {
 			break;
 		case INIT:
 			numCores = (Integer) p.get(0);
+			AbstractMaster.getMaster().sendWorkerMatches(this);
 			break;
 		case REQUEST_DEPENDENCIES:
 			NetworkMatch match = (NetworkMatch) p.get(0);
@@ -128,7 +135,7 @@ public class WorkerRepr implements Controller {
 
 	@Override
 	public String toString() {
-		return net.toString();// + ": " + runningMatches;
+		return id + ": " + net.toString();
 	}
 
 	/**
@@ -137,7 +144,7 @@ public class WorkerRepr implements Controller {
 	 */
 	public String toHTML() {
 		String[] addrs = net.toString().split("/");
-			return addrs[1];
+			return "<span id='" + id + "'>" + addrs[1] + "</span>";
 	}
 
 	@Override

@@ -210,6 +210,8 @@ public class Master extends AbstractMaster {
 	public synchronized void deleteScrimmage(Long scrimId) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSScrimmageSet scrim = em.find(BSScrimmageSet.class, scrimId);
+		if (scrim == null)
+			return;
 		// delete rms file
 		File f = new File(scrim.toPath());
 		if (f.exists()) {
@@ -219,6 +221,11 @@ public class Master extends AbstractMaster {
 		// Then delete database entries
 		em.getTransaction().begin();
 		em.remove(scrim);
+		em.remove(scrim.getScrim1());
+		if (scrim.getScrim2() != null)
+			em.remove(scrim.getScrim2());
+		if (scrim.getScrim3() != null)
+			em.remove(scrim.getScrim3());
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
@@ -234,7 +241,6 @@ public class Master extends AbstractMaster {
 		_log.info("Worker connected: " + worker);
 		workers.add(worker);
 		WebSocketChannelManager.broadcastMsg("connections", "INSERT_TABLE_ROW", worker.toHTML());
-		sendWorkerMatches(worker);
 	}
 
 	/**
@@ -244,7 +250,7 @@ public class Master extends AbstractMaster {
 	@Override
 	synchronized void workerDisconnect(WorkerRepr worker) {
 		_log.info("Worker disconnected: " + worker);
-		WebSocketChannelManager.broadcastMsg("connections", "DELETE_TABLE_ROW", worker.toHTML());
+		WebSocketChannelManager.broadcastMsg("connections", "DELETE_TABLE_ROW", ""+worker.getId());
 		workers.remove(worker);
 	}
 
@@ -252,7 +258,7 @@ public class Master extends AbstractMaster {
 	public synchronized void matchAnalyzed(WorkerRepr worker, Packet p) {
 		BSScrimmageSet scrim = (BSScrimmageSet) p.get(0);
 		STATUS status = (STATUS) p.get(1);
-		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.toHTML() + "," + scrim.getFileName());
+		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.getId() + "," + scrim.getFileName());
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSScrimmageSet dbScrim = em.find(BSScrimmageSet.class, scrim.getId());
 		if (dbScrim == null || dbScrim.getStatus() != STATUS.RUNNING) {
@@ -294,7 +300,7 @@ public class Master extends AbstractMaster {
 		STATUS status = (STATUS) p.get(1);
 		MatchResultImpl result = (MatchResultImpl) p.get(2);
 		byte[] data = (byte[]) p.get(3);
-		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.toHTML() + "," + m.toMapString());
+		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.getId() + "," + m.toMapString());
 		try {
 			EntityManager em = HibernateUtil.getEntityManager();
 			BSMatch match = em.find(BSMatch.class, m.id);
@@ -399,7 +405,7 @@ public class Master extends AbstractMaster {
 					worker.analyzeMatch(s, BSUtil.getFileData(s.toPath()), deps);
 					s.setStatus(STATUS.RUNNING);
 					em.merge(s);
-					WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + s.getFileName());
+					WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + s.getFileName());
 					WebSocketChannelManager.broadcastMsg("scrimmage", "START_SCRIMMAGE", "" + s.getId());
 				} catch (IOException e) {
 					_log.warn("Error reading scrimmage match " + s.toPath(), e);
@@ -420,7 +426,7 @@ public class Master extends AbstractMaster {
 					break sendBlock;
 				NetworkMatch nm = m.buildNetworkMatch();
 				_log.info("Sending match " + nm + " to worker " + worker);
-				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + nm.toMapString());
+				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + nm.toMapString());
 				worker.runMatch(nm, deps);
 				m.setStatus(STATUS.RUNNING);
 				em.merge(m);
@@ -445,7 +451,7 @@ public class Master extends AbstractMaster {
 					nm = m.buildNetworkMatch();
 				} while (worker.getRunningMatches().contains(nm));
 				_log.info("Sending redundant match " + nm + " to worker " + worker);
-				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + nm.toMapString());
+				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + nm.toMapString());
 				worker.runMatch(nm, deps);
 			}
 			if (!worker.isFree())
@@ -464,7 +470,7 @@ public class Master extends AbstractMaster {
 				try {
 					worker.analyzeMatch(s, BSUtil.getFileData(s.toPath()), deps);
 					_log.info("Sending redundant scrimmage match " + s.getFileName() + " to worker " + worker);
-					WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.toHTML() + "," + s.getFileName());
+					WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + s.getFileName());
 				} catch (IOException e) {
 					_log.warn("Error reading scrimmage match " + s.toPath(), e);
 				}
@@ -508,7 +514,7 @@ public class Master extends AbstractMaster {
 			worker.sendDependencies(dep);
 		} catch (IOException e) {
 			_log.error("Could not read data file", e);
-			WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.toHTML() + "," + match.toMapString());
+			WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.getId() + "," + match.toMapString());
 			worker.stopAllMatches();
 			sendWorkerMatches(worker);
 		}
@@ -592,7 +598,7 @@ public class Master extends AbstractMaster {
 		em.getTransaction().commit();
 		em.close();
 		WebSocketChannelManager.broadcastMsg("index", "FINISH_RUN", currentRun.getId() + "," + status.toString());
-		WebSocketChannelManager.broadcastMsg("connections", "FINISH_RUN", currentRun.getId() + "");
+		WebSocketChannelManager.broadcastMsg("connections", "FINISH_RUN", "");
 		for (WorkerRepr c: workers) {
 			c.stopAllMatches();
 		}

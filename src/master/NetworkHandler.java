@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
  */
 public class NetworkHandler implements Runnable {
 	private static Logger _log = Logger.getLogger(NetworkHandler.class);
+	private static int nextWorkerId = 1;
 	private ServerSocket serverSocket;
 	private int dataPort;
 	private ServerSocketFactory ssf;
@@ -47,7 +48,7 @@ public class NetworkHandler implements Runnable {
 		while (true) {
 			try {
 				Socket socket = serverSocket.accept();
-				WorkerRepr worker = new WorkerRepr(socket);
+				WorkerRepr worker = new WorkerRepr(socket, nextWorkerId++);
 				worker.start();
 				AbstractMaster.kickoffWorkerConnect(worker);
 			} catch (IOException e) {

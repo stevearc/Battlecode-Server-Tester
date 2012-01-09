@@ -37,22 +37,22 @@ $(function() {
 });
 
 // Find what row the connection is in
-function getRow(conn) {
+function getRow(connId) {
     var table = $('#conn_table').dataTable();
     var row_index;
     var rows = table.fnGetNodes();
     for (row_index in rows) {
-        if ($($(rows[row_index]).children()[0]).html() === conn) {
-            return row_index;
+        if ($($($(rows[row_index]).children()[0]).children()[0]).attr("id") === connId) {
+            return parseInt(row_index);
         }
     }
     return;
 }
 
 // Remove a map from the list of maps a connection is running
-function removeMap(conn, map) {
+function removeMap(connId, map) {
     var table = $("#conn_table").dataTable();
-    var rowIndex = getRow(conn);
+    var rowIndex = getRow(connId);
     var row = table.fnGetData(rowIndex);
     var new_maps = row[1].split(", ");
     var index = new_maps.indexOf(map);
@@ -67,9 +67,9 @@ function removeMap(conn, map) {
 }
 
 // Add a map to the list of maps a connection is running
-function addMap(conn, map) {
+function addMap(connId, map) {
     var table = $("#conn_table").dataTable();
-    var rowIndex = getRow(conn);
+    var rowIndex = getRow(connId);
     var row = table.fnGetData(rowIndex);
     var newMapsCol;
     if (row[1] === "") {
@@ -92,9 +92,9 @@ function addConn(conn) {
 }
 
 // Remove a connection from the table
-function removeConn(conn) {
+function removeConn(connId) {
     var table = $("#conn_table").dataTable();
-    table.fnDeleteRow(getRow(conn));
+    table.fnDeleteRow(getRow(connId));
 }
 
 // Remove all maps from all connections
