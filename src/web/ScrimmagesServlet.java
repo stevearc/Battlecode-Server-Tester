@@ -73,7 +73,8 @@ public class ScrimmagesServlet extends HttpServlet {
 				} else {
 					BSUtil.writeFileData(scrimmage, scrim.toPath());
 					highlight(response, "Successfully uploaded map: " + scrimmageName);
-					AbstractMaster.kickoffAnalyzeScrimmageMatch(scrim);
+					// Don't spawn a new thread because we *want* the new web thread to block
+					AbstractMaster.getMaster().analyzeScrimmageMatch(scrim);
 				}
 			}
 		}

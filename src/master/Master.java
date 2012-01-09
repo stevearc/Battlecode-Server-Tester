@@ -136,7 +136,7 @@ public class Master extends AbstractMaster {
 	}
 
 	@Override
-	protected synchronized void analyzeScrimmageMatch(BSScrimmageSet scrim) {
+	public synchronized void analyzeScrimmageMatch(BSScrimmageSet scrim) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		em.persist(scrim);
 		em.getTransaction().begin();

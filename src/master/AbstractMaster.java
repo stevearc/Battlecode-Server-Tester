@@ -200,5 +200,5 @@ public abstract class AbstractMaster {
 			}
 		}).start();
 	}
-	protected abstract void analyzeScrimmageMatch(BSScrimmageSet scrim);
+	public abstract void analyzeScrimmageMatch(BSScrimmageSet scrim);
 }
