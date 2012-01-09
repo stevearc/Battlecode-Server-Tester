@@ -138,22 +138,22 @@ function newRun() {
   var url = "action.html?cmd=run&team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
 
 	if (team_a.length==0 || team_b.length==0) {
-		alert("Must have a non-empty team name");
+		bsAlert("error", "Must have a non-empty team name", 5, "overlayAlerts");
 		return false;
 	}
 	xmlhttp1=new XMLHttpRequest();
 	xmlhttp1.onreadystatechange=function() {
 		if (xmlhttp1.readyState==4 && xmlhttp1.status==200) {
 			if (xmlhttp1.responseText == "err team_a") {
-				alert("Must have a valid name for Team A");
+                bsAlert("error", "Must have a valid name for Team A", 5, "overlayAlerts");
 			} else if (xmlhttp1.responseText == "err team_b") {
-				alert("Must have a valid name for Team B");
+                bsAlert("error", "Must have a valid name for Team B", 5, "overlayAlerts");
 			} else if (xmlhttp1.responseText == "err seed") {
-				alert("Seeds must either be an integer");
+                bsAlert("error", "Seeds must be positive integers", 5, "overlayAlerts");
 			} else if (xmlhttp1.responseText == "err maps") {
-				alert("Must select at least one map");
+                bsAlert("error", "Must select at least one map", 5, "overlayAlerts");
 			} else if (xmlhttp1.responseText != "success") {
-				alert(xmlhttp1.responseText);
+				console.log(xmlhttp1.responseText);
 			} else {
         document.getElementById("team_a_button").value = "";
         document.getElementById("team_b_button").value = "";
@@ -174,7 +174,7 @@ function delRun(id, ask) {
 	xmlhttp2.onreadystatechange=function() {
 		if (xmlhttp2.readyState==4 && xmlhttp2.status==200) {
 			if (xmlhttp2.responseText != "success") {
-				alert(xmlhttp2.responseText);
+				console.log(xmlhttp2.responseText);
 			} 
 		}
 	}

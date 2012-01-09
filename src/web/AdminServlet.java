@@ -107,6 +107,7 @@ public class AdminServlet extends HttpServlet {
 		}
 		out.println("</tbody></table>");
 		out.println("</div>");
+		out.println("<script type=\"text/javascript\" src=\"js/bsUtil.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/admin.js\"></script>");
 		out.println("</body></html>");
 	}

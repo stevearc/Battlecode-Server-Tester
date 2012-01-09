@@ -43,7 +43,7 @@ function process(id, username, userid, cmd, response) {
         }
     }
     if (response == "admin_limit") {
-        alert("Must have at least one admin");
+        bsAlert("error", "Must have at least one admin", 5);
     }
     else if (response == "success") {
         if (cmd == "delete") {
