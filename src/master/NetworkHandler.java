@@ -28,6 +28,10 @@ public class NetworkHandler implements Runnable {
 		this.dataPort = dataPort;
 		ssf = ServerSocketFactory.getDefault();
 	}
+	
+	public int getDataPort() {
+		return dataPort;
+	}
 
 	@Override
 	/**

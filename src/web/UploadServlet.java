@@ -16,8 +16,8 @@ import master.WebSocketChannelManager;
 import model.BSPlayer;
 import model.STATUS;
 
-import common.HibernateUtil;
 import common.BSUtil;
+import common.HibernateUtil;
 
 
 /**
@@ -72,7 +72,7 @@ public class UploadServlet extends HttpServlet {
 			} else if (playerName.length() > 45) {
 				warn(response, "Player name is too long");
 			} else {
-				BSUtil.writeFileData(player, "./teams/" + playerName + ".jar");
+				BSUtil.writeFileData(player, "teams" + File.separator + playerName + ".jar");
 				BSPlayer bsPlayer = new BSPlayer();
 				bsPlayer.setPlayerName(playerName);
 				EntityManager em = HibernateUtil.getEntityManager();
@@ -121,12 +121,12 @@ public class UploadServlet extends HttpServlet {
 			if (map == null || !map.exists() || map.isDirectory()) {
 				warn(response, "Please select a valid map file");
 			} else if (mapName == null || mapName.isEmpty() || mapName.contains("/") || mapName.contains(" ")) {
-				warn(response, "Please enter a valid name for your player"); 
+				warn(response, "Map file has invalid name"); 
 			} else {
 				if (mapName.toLowerCase().endsWith(".xml")) {
 					mapName = mapName.substring(0, mapName.length() - 4);
 				}
-				String mapPath = "./maps/" + mapName + ".xml";
+				String mapPath = "maps" + File.separator + mapName + ".xml";
 				if (new File(mapPath).exists()) {
 					warn(response, "Map " + mapName + ".xml already exists!");
 				} else {
@@ -139,7 +139,7 @@ public class UploadServlet extends HttpServlet {
 
 		// Form for uploading your player
 		out.println("<div style='margin:20px 10px 10px 10px; font-size:12px; float:left'>");
-		out.println("<form action='" + NAME + "' method='post' enctype='multipart/form-data'>");
+		out.println("<form action='" + response.encodeURL(NAME) + "' method='post' enctype='multipart/form-data'>");
 		out.println("<table>");
 		out.println("<tr><th colspan='2'>Upload your player<span id='player-info'></span></th></tr>");
 		out.println("<tr>" +
@@ -157,7 +157,7 @@ public class UploadServlet extends HttpServlet {
 		out.println("</form>");
 		
 		// Form for uploading a map
-		out.println("<form id='mapForm' action='" + NAME + "' method='post' enctype='multipart/form-data'>");
+		out.println("<form id='mapForm' action='" + response.encodeURL(NAME) + "' method='post' enctype='multipart/form-data'>");
 		out.println("<table>");
 		out.println("<tr><th colspan='2'>Upload a map<span id='map-info'></span></th></tr>");
 		out.println("<tr>" +
@@ -174,7 +174,7 @@ public class UploadServlet extends HttpServlet {
 		
 		// Form for uploading a new battlecode version
 		out.println("<div style='margin:20px 10px 10px 10px; font-size:12px; float:right;'>");
-		out.println("<form action='" + NAME + "' method='post' enctype='multipart/form-data'>");
+		out.println("<form action='" + response.encodeURL(NAME) + "' method='post' enctype='multipart/form-data'>");
 		out.println("<table>");
 		out.println("<tr><th colspan='2'>Upload battlecode files</th></tr>");
 		out.println("<tr>" +

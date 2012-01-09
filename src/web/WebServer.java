@@ -42,24 +42,26 @@ public class WebServer implements Runnable {
 			context.addServlet(IndexServlet.class, "/");
 			context.addServlet(IndexServlet.class, IndexServlet.NAME);
 			context.addServlet(ConnectionsServlet.class, ConnectionsServlet.NAME);
-			context.addServlet(DeleteServlet.class, DeleteServlet.NAME);
 			context.addServlet(MatchWrapperServlet.class, MatchWrapperServlet.NAME);
 			context.addServlet(MatchesServlet.class, MatchesServlet.NAME);
 			context.addServlet(MatchesByMapServlet.class, MatchesByMapServlet.NAME);
-			context.addServlet(RunServlet.class, RunServlet.NAME);
 			context.addServlet(LoginServlet.class, LoginServlet.NAME);
 			context.addServlet(LogoutServlet.class, LogoutServlet.NAME);
 			context.addServlet(AdminServlet.class, AdminServlet.NAME);
 			context.addServlet(AdminActionServlet.class, AdminActionServlet.NAME);
+			context.addServlet(ActionServlet.class, ActionServlet.NAME);
 			context.addServlet(UploadServlet.class, UploadServlet.NAME);
 			context.addServlet(AnalysisServlet.class, AnalysisServlet.NAME);
 			context.addServlet(AnalysisContentServlet.class, AnalysisContentServlet.NAME);
 			context.addServlet(MyWebSocketServlet.class, MyWebSocketServlet.NAME);
+			context.addServlet(ScrimmagesServlet.class, ScrimmagesServlet.NAME);
+			context.addServlet(ScrimmageViewServlet.class, ScrimmageViewServlet.NAME);
 
 			EnumSet<DispatcherType> en = EnumSet.of(DispatcherType.REQUEST);
 			// Set up filters for login blocking and handling file uploads
 			context.addFilter(new FilterHolder(new LoginFilter()), "/*", en);
 			context.addFilter(new FilterHolder(new MultiPartFilter()), UploadServlet.NAME, en);
+			context.addFilter(new FilterHolder(new MultiPartFilter()), ScrimmagesServlet.NAME, en);
 			File tmpDir = new File("tmp");
 			if (tmpDir.exists()) {
 				FileUtils.deleteDirectory(tmpDir);

@@ -47,6 +47,14 @@ body {
 	color:#F00;
 }
 
+.win {
+    background-color:#beb;
+}
+
+.loss {
+    background-color:#fcc;
+}
+
 .code {
 	background:#EEE;
 	font-family:Consolas, Liberation Mono;

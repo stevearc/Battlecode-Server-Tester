@@ -10,12 +10,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import main.Main;
-import model.BSMatch;
-import model.MatchResult;
+import model.BSScrimmageSet;
+import model.MatchResultImpl;
+import model.STATUS;
+import model.ScrimmageMatchResult;
+import model.TEAM;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -39,14 +43,23 @@ import common.NetworkMatch;
 public class MatchRunner implements Runnable {
 	private static Logger _log = Logger.getLogger(MatchRunner.class);
 	private Worker worker;
-	private boolean running = true;
+	private boolean running;
 	private NetworkMatch match;
+	private BSScrimmageSet scrim;
+	private byte[] scrimData;
 	private int core;
 	private Process currentProcess;
 
 	public MatchRunner(Worker worker, NetworkMatch match, int core) {
 		this.match = match;
 		this.worker = worker;
+		this.core = core;
+	}
+	
+	public MatchRunner(Worker worker, BSScrimmageSet scrim, byte[] scrimData, int core) {
+		this.worker = worker;
+		this.scrim = scrim;
+		this.scrimData = scrimData;
 		this.core = core;
 	}
 
@@ -58,6 +71,10 @@ public class MatchRunner implements Runnable {
 		if (currentProcess != null) {
 			currentProcess.destroy();
 		}
+	}
+	
+	public boolean isRunning() {
+		return running;
 	}
 
 	private static void extractAndRenameTeam(String jarfile, String team) throws IOException {
@@ -111,6 +128,62 @@ public class MatchRunner implements Runnable {
 	 * Runs the battlecode match
 	 */
 	public void run() {
+		running = true;
+		if (match != null) {
+			runMatch();
+		} else if (scrim != null) {
+			analyzeMatch();
+		} else {
+			_log.error("MatchRunner is dazed and confused");
+		}
+		running = false;
+	}
+	
+	private void analyzeMatch() {
+		_log.info("Analyzing: " + scrim.getFileName());
+		// Read in the replay file
+		try {
+			GameAnalyzer ga = new GameAnalyzer(scrimData);
+			List<ScrimmageMatchResult> results = ga.analyzeScrimmageMatches();
+			switch (results.size()) {
+			case 3:
+				scrim.setScrim3(results.get(2));
+			case 2:
+				scrim.setScrim2(results.get(1));
+			case 1:
+				scrim.setScrim1(results.get(0));
+				break;
+			default:
+				_log.error("Expected 1, 2, or 3 results.  Got " + results.size());	
+				worker.matchAnalyzed(this, core, null, STATUS.CANCELED);
+			}
+			int[] wins = new int[TEAM.values().length];
+			for (ScrimmageMatchResult smr: results) {
+				wins[smr.getWinner().ordinal()]++;
+			}
+			if (wins[TEAM.A.ordinal()] > wins[TEAM.B.ordinal()]) {
+				scrim.setWinner(TEAM.A);
+			} else {
+				scrim.setWinner(TEAM.B);
+			}
+			scrim.setPlayerA(ga.getTeamA());
+			scrim.setPlayerB(ga.getTeamB());
+			scrim.setStatus(STATUS.COMPLETE);
+			
+			if (running) {
+				_log.info("Finished analyzing: " + scrim.getFileName());
+				worker.matchAnalyzed(this, core, scrim, STATUS.COMPLETE);
+			}
+		} catch (IOException e) {
+			_log.error("Error parsing scrimmage match data", e);
+			worker.matchAnalyzed(this, core, scrim, STATUS.CANCELED);
+		} catch (ClassNotFoundException e) {
+			_log.error("Error parsing scrimmage match data", e);
+			worker.matchAnalyzed(this, core, scrim, STATUS.CANCELED);
+		}
+	}
+	
+	private void runMatch() {
 		_log.info("Running: " + match);
 		if (Config.MOCK_WORKER) {
 			try {
@@ -118,7 +191,7 @@ public class MatchRunner implements Runnable {
 			} catch (InterruptedException e) {
 			}
 			if (running) {
-				worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, MatchResult.constructMockMatchResult(), new byte[0]);
+				worker.matchFinish(this, core, match, STATUS.COMPLETE, MatchResultImpl.constructMockMatchResult(), new byte[0]);
 			}
 			return;
 		}
@@ -143,7 +216,13 @@ public class MatchRunner implements Runnable {
 			}
 
 			// Read in the replay file
-			GameData gameData = new GameData(matchFile);
+			GameAnalyzer ga = new GameAnalyzer(matchFile);
+			List<MatchResultImpl> results = ga.analyzeMatches();
+			if (results.size() != 1) {
+				_log.error("Number of MatchResults is incorrect");
+				worker.matchFailed(this, core, match);
+			}
+			
 			byte[] data;
 			try {
 				data = BSUtil.getFileData(matchFile);
@@ -160,7 +239,7 @@ public class MatchRunner implements Runnable {
 
 			if (running) {
 				_log.info("Finished: " + match);
-				worker.matchFinish(this, core, match, BSMatch.STATUS.FINISHED, gameData.analyzeMatch(), data);
+				worker.matchFinish(this, core, match, STATUS.COMPLETE, results.get(0), data);
 			}
 		} catch (IOException e) {
 			if (running) {

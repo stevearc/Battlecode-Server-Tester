@@ -7,8 +7,10 @@ import model.BSMap;
 import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
+import model.BSScrimmageSet;
 import model.BSUser;
-import model.MatchResult;
+import model.MatchResultImpl;
+import model.ScrimmageMatchResult;
 import model.TeamMatchResult;
 
 import org.hibernate.HibernateException;
@@ -41,7 +43,10 @@ public class HibernateUtil {
 			cfg.addAnnotatedClass(BSUser.class);
 			cfg.addAnnotatedClass(BSMatch.class);
 			cfg.addAnnotatedClass(BSPlayer.class);
-			cfg.addAnnotatedClass(MatchResult.class);
+			cfg.addAnnotatedClass(MatchResultImpl.class);
+			cfg.addAnnotatedClass(ScrimmageMatchResult.class);
+			cfg.addAnnotatedClass(TeamMatchResult.class);
+			cfg.addAnnotatedClass(BSScrimmageSet.class);
 			for (String[] keyVal: properties) {
 				cfg.setProperty(keyVal[0], keyVal[1]);
 			}
@@ -84,8 +89,10 @@ public class HibernateUtil {
 		cfg.addAnnotatedClass(BSUser.class);
 		cfg.addAnnotatedClass(BSMatch.class);
 		cfg.addAnnotatedClass(BSPlayer.class);
-		cfg.addAnnotatedClass(MatchResult.class);
+		cfg.addAnnotatedClass(MatchResultImpl.class);
+		cfg.addAnnotatedClass(ScrimmageMatchResult.class);
 		cfg.addAnnotatedClass(TeamMatchResult.class);
+		cfg.addAnnotatedClass(BSScrimmageSet.class);
 		for (String[] keyVal: properties) {
 			cfg.setProperty(keyVal[0], keyVal[1]);
 		}

@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.BSMatch;
 import model.BSUser;
+import model.MatchResult;
+import model.ScrimmageMatchResult;
 
 import common.HibernateUtil;
 
@@ -43,11 +45,16 @@ public class AnalysisContentServlet extends HttpServlet {
 		}
 		long id = new Long(Integer.parseInt(strId));
 		EntityManager em = HibernateUtil.getEntityManager();
-		BSMatch match = em.find(BSMatch.class, id);
-		printContent(request, response, match);
+		if (request.getParameter("scrimmage") != null) {
+			ScrimmageMatchResult result = em.find(ScrimmageMatchResult.class, id);
+			printContent(request, response, result, result.getMap(), null);
+		} else {
+			BSMatch match = em.find(BSMatch.class, id);
+			printContent(request, response, match.getResult(), match.getMap().getMapName(), ""+match.getSeed());
+		}
 	}
 
-	public static void printContent(HttpServletRequest request, HttpServletResponse response, BSMatch match) throws ServletException, IOException {
+	public static void printContent(HttpServletRequest request, HttpServletResponse response, MatchResult result, String mapName, String seed) throws ServletException, IOException {
 		BSUser user = (BSUser) request.getSession().getAttribute("user");
 		PrintWriter out = response.getWriter();
 		out.println("<link rel=\"stylesheet\" href=\"css/jquery.jqplot.min.css\" />");
@@ -55,22 +62,22 @@ public class AnalysisContentServlet extends HttpServlet {
 		out.println("<script src='js/jqplot.cursor.min.js'></script>");
 		out.println(user.getPrefs().toJavascript());
 
-		out.println("<h2 style='text-align:center'>" + match.getMap().getMapName() + " (" + match.getSeed() + ")</h2>");
+		out.println("<h2 style='text-align:center'>" + mapName + (seed != null ? " (" + seed + ")" : "") + "</h2>");
 		
 		out.println("<script type='text/javascript'>" +
 				"var dataMap = [];" +
 				"</script>");
-		printArray(out, "aFluxIncome", match.getResult().getaResult().getFluxIncome());
-		printArray(out, "aFluxDrain", match.getResult().getaResult().getFluxDrain());
-		printArray(out, "aFluxReserve", match.getResult().getaResult().getFluxReserve());
-		printArray(out, "aActiveRobots", match.getResult().getaResult().getActiveRobots());
+		printArray(out, "aFluxIncome", result.getaResult().getFluxIncome());
+		printArray(out, "aFluxDrain", result.getaResult().getFluxDrain());
+		printArray(out, "aFluxReserve", result.getaResult().getFluxReserve());
+		printArray(out, "aActiveRobots", result.getaResult().getActiveRobots());
 		
-		printArray(out, "bFluxIncome", match.getResult().getbResult().getFluxIncome());
-		printArray(out, "bFluxDrain", match.getResult().getbResult().getFluxDrain());
-		printArray(out, "bFluxReserve", match.getResult().getbResult().getFluxReserve());
-		printArray(out, "bActiveRobots", match.getResult().getbResult().getActiveRobots());
+		printArray(out, "bFluxIncome", result.getbResult().getFluxIncome());
+		printArray(out, "bFluxDrain", result.getbResult().getFluxDrain());
+		printArray(out, "bFluxReserve", result.getbResult().getFluxReserve());
+		printArray(out, "bActiveRobots", result.getbResult().getActiveRobots());
 		out.print("<script type='text/javascript'>" +
-				"var rounds = " + match.getResult().getRounds() + 
+				"var rounds = " + result.getRounds() + 
 				"</script>");
 		
 		out.println("<div id='buttonWrapper' style='height:70px; text-align:center'>");

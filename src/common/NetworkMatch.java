@@ -19,8 +19,6 @@ public class NetworkMatch implements Serializable {
 	public final String team_b;
 	public final BSMap map;
 	public final Long seed;
-	public String battlecodeServerHash;
-	public String idataHash;
 	
 	public NetworkMatch(Long run_id, Long id, String team_a, String team_b, BSMap map, Long seed) {
 		this.run_id = run_id;

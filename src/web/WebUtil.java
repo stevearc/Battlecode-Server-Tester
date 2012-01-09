@@ -11,10 +11,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSMap;
-import model.BSMatch;
 import model.BSRun;
 import model.BSUser;
 import model.BSUserPrefs;
+import model.STATUS;
 import model.TEAM;
 
 import org.apache.log4j.Logger;
@@ -51,7 +51,8 @@ public class WebUtil {
 			out.println("<a href='" + LogoutServlet.NAME + "' style='float:right; margin: 0 10px'>sign out</a>");
 		}
 		out.println("<ul class='ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all'>");
-		writeTab(out, response, current, IndexServlet.NAME, "Home");
+		writeTab(out, response, current, IndexServlet.NAME, "Runs");
+		writeTab(out, response, current, ScrimmagesServlet.NAME, "Scrimmages");
 		writeTab(out, response, current, ConnectionsServlet.NAME, "Connections");
 		writeTab(out, response, current, UploadServlet.NAME, "Upload");
 		writeTab(out, response, current, AdminServlet.NAME, "Admin");
@@ -131,7 +132,7 @@ public class WebUtil {
 				"match.map = ? and match.status = ? group by match.result.winner", Object[].class)
 				.setParameter(1, run)
 				.setParameter(2, map)
-				.setParameter(3, BSMatch.STATUS.FINISHED)
+				.setParameter(3, STATUS.COMPLETE)
 				.getResultList();
 		long teamAWins = 0;
 		long teamBWins = 0;

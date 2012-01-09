@@ -21,7 +21,7 @@ import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
 import model.BSUser;
-import model.MatchResult;
+import model.MatchResultImpl;
 import model.STATUS;
 import model.TEAM;
 
@@ -47,9 +47,9 @@ import web.WebUtil;
 import worker.MatchRunner;
 import worker.Worker;
 
+import common.BSUtil;
 import common.Config;
 import common.HibernateUtil;
-import common.BSUtil;
 
 
 /**
@@ -166,7 +166,7 @@ public class Main {
 				}
 
 				new Thread(new WebServer(httpPort)).start();
-				Master m = new Master(dataPort);
+				Master m = Master.createMaster(dataPort);
 				m.start();
 				if (cmd.hasOption('o')) {
 					createMockData(m);
@@ -250,12 +250,12 @@ public class Main {
 		}
 
 		List<BSMatch> matches = em.createQuery("from BSMatch", BSMatch.class).getResultList();
-		MatchResult mock;
+		MatchResultImpl mock;
 		int i = 0;
 		for (BSMatch m: matches) {
-			mock = MatchResult.constructMockMatchResult();
+			mock = MatchResultImpl.constructMockMatchResult();
 			m.setResult(mock);
-			m.setStatus(BSMatch.STATUS.FINISHED);
+			m.setStatus(STATUS.COMPLETE);
 			em.persist(mock);
 			em.merge(m);
 			if (i++ % 50 == 0) {
@@ -346,6 +346,7 @@ public class Main {
 	private static void createDirectoryStructure(boolean isServer) {
 		if (isServer) {
 			new File("static" + File.separator + "matches").mkdir();
+			new File("static" + File.separator + "scrimmages").mkdir();
 		}
 		new File("teams").mkdir();
 		new File("maps").mkdir();

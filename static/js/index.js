@@ -75,9 +75,7 @@ $(function() {
         }
     }
     socket.onclose = function(){  
-        // TODO: auto-reconnect
-        $("<p class='ui-state-error' style='padding:10px'>Lost connection to server! Please refresh page.</p>")
-        .appendTo($("#alerts"));
+        bsAlert("error", "Lost connection to server! Please refresh page.");
     }             
 });
 
@@ -121,7 +119,7 @@ function newRun() {
     for (var i = 1; i <= num_matches; i++) {
         var seed = $('#seed' + i + " input:first").attr("value");
         if (isNaN(seed) || seed <= 0) {
-            alert("Map seeds must be positive integers");
+            bsAlert("error", "Map seeds must be positive integers", 5, "overlayAlerts");
             return false;
         }
         seeds.push(seed);
@@ -134,10 +132,10 @@ function newRun() {
         }
     });
     if (maps.length == 0) {
-        alert("Must select at least one map");
+        bsAlert("error", "Must select at least one map", 5, "overlayAlerts");
         return false;
     }
-  var url = "run.html?team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
+  var url = "action.html?cmd=run&team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
 
 	if (team_a.length==0 || team_b.length==0) {
 		alert("Must have a non-empty team name");
@@ -180,7 +178,7 @@ function delRun(id, ask) {
 			} 
 		}
 	}
-	xmlhttp2.open("GET","delete.html?id="+id,true);
+	xmlhttp2.open("GET","action.html?cmd=delete&id="+id,true);
 	xmlhttp2.send();
 }
 

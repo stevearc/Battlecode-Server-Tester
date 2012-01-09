@@ -15,7 +15,8 @@ import java.security.NoSuchAlgorithmException;
  *
  */
 public class BSUtil {
-	private static final String HEXES = "0123456789ABCDEF";
+	private static final String[] HEXES = {"0","1","2","3","4",
+		"5","6","7","8","9","A","B","C","D","E","F"};
 
 	public static String convertToHex(byte[] raw) {
 		if (raw == null) {
@@ -23,8 +24,8 @@ public class BSUtil {
 		}
 		final StringBuilder hex = new StringBuilder(2 * raw.length);
 		for (final byte b: raw) {
-			hex.append(HEXES.charAt((b & 0xF0) >> 4))
-			.append(HEXES.charAt((b & 0x0F)));
+			hex.append(HEXES[((b & 0xF0) >> 4)])
+			.append(HEXES[b & 0x0F]);
 		}
 		return hex.toString();
 	}

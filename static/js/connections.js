@@ -32,9 +32,7 @@ $(function() {
         }
     }
     socket.onclose = function(){  
-        // TODO: auto-reconnect
-        $("<p class='ui-state-error' style='padding:10px'>Lost connection to server! Please refresh page.</p>")
-        .appendTo($("#alerts"));
+        bsAlert("error", "Lost connection to server! Please refresh page.");
     } 
 });
 

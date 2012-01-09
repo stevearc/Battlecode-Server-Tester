@@ -1,15 +1,11 @@
 package worker;
 
-import java.io.EOFException;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.zip.GZIPInputStream;
 
-import model.MatchResult;
+import model.MatchResultImpl;
 import model.TEAM;
 import model.TeamMatchResult;
 import model.MatchResult.WIN_CONDITION;
@@ -17,13 +13,13 @@ import battlecode.common.Chassis;
 import battlecode.common.GameConstants;
 import battlecode.common.Team;
 import battlecode.engine.signal.Signal;
+import battlecode.serial.ExtensibleMetadata;
 import battlecode.serial.GameStats;
 import battlecode.serial.MatchFooter;
 import battlecode.serial.MatchHeader;
 import battlecode.serial.RoundDelta;
 import battlecode.serial.RoundStats;
 import battlecode.server.proxy.Proxy;
-import battlecode.server.proxy.XStreamProxy;
 import battlecode.world.signal.DeathSignal;
 import battlecode.world.signal.SpawnSignal;
 import battlecode.world.signal.TurnOffSignal;
@@ -42,35 +38,10 @@ public class GameData extends Proxy {
 	private ArrayList<RoundDelta> rounds = new ArrayList<RoundDelta>();
 	private ArrayList<RoundStats> stats = new ArrayList<RoundStats>();
 	private GameStats gameStats;
+	private String teamA;
+	private String teamB;
+	private String[] maps;
 	
-	public GameData(){
-		
-	}
-
-	public GameData(String filename) throws IOException, ClassNotFoundException {
-		ObjectInputStream input = null;
-		input = XStreamProxy.getXStream().createObjectInputStream(new GZIPInputStream(new FileInputStream(filename)));
-
-		Object o;
-		try {
-			while ((o = input.readObject()) != null) {
-				if (o instanceof RoundDelta) {
-					rounds.add((RoundDelta) o);
-				} else if (o instanceof RoundStats) {
-					stats.add((RoundStats) o);
-				} else if (o instanceof MatchFooter) {
-					footer = (MatchFooter) o;
-				} else if (o instanceof GameStats) {
-					gameStats = (GameStats) o;
-				}
-			}
-		} catch (EOFException e) {
-			// Aaaaaand we're done
-		} finally {
-			input.close();
-		}
-	}
-
 	@Override
 	public void open() throws IOException {
 	}
@@ -83,11 +54,30 @@ public class GameData extends Proxy {
 	protected OutputStream getOutputStream() throws IOException {
 		return null;
 	}
-
+	
+	public void addData(Object o) throws IOException {
+		if (o instanceof RoundDelta) {
+			writeRound((RoundDelta) o);
+		} else if (o instanceof MatchFooter) {
+			writeFooter((MatchFooter) o);
+		} else if (o instanceof RoundStats) {
+			writeStats((RoundStats) o);
+		} else {
+			writeObject(o);
+		}
+	}
+	
 	@Override
 	public void writeObject(Object o) {
 		if (o instanceof GameStats) {
 			gameStats = (GameStats) o;
+		} else if (o instanceof ExtensibleMetadata) {
+			ExtensibleMetadata em = (ExtensibleMetadata)o;
+			if (em.get("type", "").equals("header")) {
+				teamA = (String)em.get("team-a", "");
+				teamB = (String)em.get("team-b", "");
+				maps = (String[])em.get("maps", "");
+			}
 		}
 	}
 
@@ -109,10 +99,22 @@ public class GameData extends Proxy {
 	public void writeStats(RoundStats stats) throws IOException {
 		this.stats.add(stats);
 	}
+	
+	public String getTeamA() {
+		return teamA;
+	}
+	
+	public String getTeamB() {
+		return teamB;
+	}
+	
+	public String[] getMaps() {
+		return maps;
+	}
 
 	@SuppressWarnings("unchecked")
-	public MatchResult analyzeMatch() {
-		MatchResult matchResult = new MatchResult();
+	public MatchResultImpl analyzeMatch() {
+		MatchResultImpl matchResult = new MatchResultImpl();
 		RobotStat r;
 		Team[] teams = Team.values();
 		TeamMatchResult[] teamResults = new TeamMatchResult[teams.length];

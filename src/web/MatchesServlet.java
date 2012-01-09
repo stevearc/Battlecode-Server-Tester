@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.BSMatch;
 import model.BSRun;
+import model.STATUS;
 import model.TEAM;
 
 import common.HibernateUtil;
@@ -59,7 +60,7 @@ public class MatchesServlet extends HttpServlet {
 
 		List<BSMatch> matches = em.createQuery("from BSMatch match where match.run = ? and match.status = ? order by match.map.mapName", BSMatch.class)
 		.setParameter(1, run)
-		.setParameter(2, BSMatch.STATUS.FINISHED)
+		.setParameter(2, STATUS.COMPLETE)
 		.getResultList();
 		for (BSMatch match: matches) {
 			out.println("<tr>");

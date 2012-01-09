@@ -11,13 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSMap;
-import model.BSMatch;
 import model.BSPlayer;
 import model.BSRun;
 import model.STATUS;
 
-import common.HibernateUtil;
 import common.BSUtil;
+import common.HibernateUtil;
 
 /**
  * Displays the list of all runs
@@ -59,7 +58,8 @@ public class IndexServlet extends HttpServlet {
 		out.println("<div class='overlay'>");
 		out.println("</div>");
 		out.println("<div class='overlay-contents'>");
-		out.println("<form action='" + response.encodeURL(RunServlet.NAME) + "'>");
+		out.println("<div id='overlayAlerts' style='text-align: center; width:100%'></div>");
+		out.println("<form>");
 		out.println("<table>");
 		out.println("<tr>");
 		out.println("<td>");
@@ -146,7 +146,7 @@ public class IndexServlet extends HttpServlet {
 					td + r.getaWins() + "/" + r.getbWins() + "</td>");
 			switch (r.getStatus()){
 			case QUEUED:
-				out.println("<td>" + r.getStatus() + "</td>");
+				out.println(td + r.getStatus() + "</td>");
 				out.println("<td>&nbsp</td>");
 				out.println("<td><input type=\"button\" value=\"dequeue\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
 				break;
@@ -158,7 +158,7 @@ public class IndexServlet extends HttpServlet {
 				.setParameter(1, r)
 				.getResultList();
 				for (Object[] valuePair: resultList) {
-					if (valuePair[0] == BSMatch.STATUS.FINISHED) {
+					if (valuePair[0] == STATUS.COMPLETE) {
 						currentMatches += (Long) valuePair[1];
 					}
 					totalMatches += (Long) valuePair[1];
@@ -171,11 +171,6 @@ public class IndexServlet extends HttpServlet {
 				out.println(td + r.getStatus() + "</td>");
 				out.println(td + "<span style='display:none'>" + r.calculateTimeTaken()/10000000. + "</span>" + r.printTimeTaken() + "</td>");
 				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", true)\"></td>");
-				break;
-			case ERROR:
-				out.println("<td>" + r.getStatus() + "</td>");
-				out.println("<td>&nbsp</td>");
-				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
 				break;
 			case CANCELED:
 				out.println(td + r.getStatus() + "</td>");
@@ -193,6 +188,7 @@ public class IndexServlet extends HttpServlet {
 		out.println("</table>");
 		out.println("</div>");
 		
+		out.println("<script type=\"text/javascript\" src=\"js/bsUtil.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/countdown.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/index.js\"></script>");
 		out.println("</body></html>");

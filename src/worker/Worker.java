@@ -14,9 +14,12 @@ import java.util.Arrays;
 import javax.net.SocketFactory;
 
 import model.BSMap;
-import model.BSMatch;
-import model.MatchResult;
+import model.BSScrimmageSet;
+import model.MatchResultImpl;
+import model.STATUS;
 import networking.Controller;
+import networking.Dependencies;
+import networking.DependencyHashes;
 import networking.Network;
 import networking.Packet;
 import networking.PacketCmd;
@@ -26,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import common.BSUtil;
 import common.Config;
-import common.Dependencies;
 import common.NetworkMatch;
 
 /**
@@ -67,12 +69,23 @@ public class Worker implements Controller, Runnable {
 	 * @param b_points
 	 * @param data
 	 */
-	public synchronized void matchFinish(MatchRunner runner, int core, NetworkMatch match, BSMatch.STATUS status, MatchResult result, byte[] data) {
+	public synchronized void matchFinish(MatchRunner runner, int core, NetworkMatch match, STATUS status, MatchResultImpl result, byte[] data) {
 		// If the runner is out of date, we should ignore it
 		if (running[core] != runner) {
 			return;
 		}
 		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, result, data});
+		network.send(p);
+		running[core].stop();
+		running[core] = null;
+	}
+
+	public synchronized void matchAnalyzed(MatchRunner runner, int core, BSScrimmageSet scrim, STATUS status) {
+		// If the runner is out of date, we should ignore it
+		if (running[core] != runner) {
+			return;
+		}
+		Packet p = new Packet(PacketCmd.ANALYZE_REPLY, new Object[] {scrim, status});
 		network.send(p);
 		running[core].stop();
 		running[core] = null;
@@ -100,12 +113,15 @@ public class Worker implements Controller, Runnable {
 		}
 	}
 
-	private boolean battlecodeUpToDate(NetworkMatch nm) {
+	private boolean battlecodeUpToDate(DependencyHashes deps) {
+		if (deps == null) {
+			return true;
+		}
 		try {
-			if (!nm.battlecodeServerHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar")))) {
+			if (!deps.battlecodeServerHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar")))) {
 				return false;
 			}
-			if (!nm.idataHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("idata")))) {
+			if (!deps.idataHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("idata")))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -145,13 +161,13 @@ public class Worker implements Controller, Runnable {
 	 * @param match
 	 * @return
 	 */
-	private boolean resolveDependencies(NetworkMatch match) {
+	private boolean resolveDependencies(NetworkMatch match, DependencyHashes deps) {
 		boolean allClear = true;
 		boolean needUpdate = false;
 		boolean needMap = false;
 		boolean needTeamA = false;
 		boolean needTeamB = false;
-		if (!battlecodeUpToDate(match)) {
+		if (!battlecodeUpToDate(deps)) {
 			allClear = false;
 			needUpdate = true;
 		}
@@ -172,10 +188,23 @@ public class Worker implements Controller, Runnable {
 					(needMap ? "map: " + match.map + ", " : "") + 
 					(needTeamA ? "player: " + match.team_a + ", " : "") + 
 					(needTeamB ? "player: " + match.team_b : ""));
-			Packet requestPacket = new Packet(PacketCmd.REQUEST, new Object[]{match, needUpdate, needMap, needTeamA, needTeamB});
+			Packet requestPacket = new Packet(PacketCmd.REQUEST_DEPENDENCIES, new Object[]{match, needUpdate, needMap, needTeamA, needTeamB});
 			network.send(requestPacket);
 		}
 		return allClear;
+	}
+
+	private boolean resolveDependencies(DependencyHashes deps) {
+		boolean needUpdate = false;
+		if (!battlecodeUpToDate(deps)) {
+			needUpdate = true;
+		}
+		if (needUpdate) {
+			_log.info("Requesting " + (needUpdate ? "battlecode files" : ""));
+			Packet requestPacket = new Packet(PacketCmd.REQUEST_DEPENDENCIES, new Object[]{null, needUpdate, false, false, false});
+			network.send(requestPacket);
+		}
+		return !needUpdate;
 	}
 
 	private boolean fileEqualsData(File file, byte[] data) throws IOException {
@@ -201,13 +230,20 @@ public class Worker implements Controller, Runnable {
 		ostream.close();
 	}
 
-	private void writeDependencies(Dependencies dep) {
+	/**
+	 * Write dependency file data to the file system.  
+	 * @param dep
+	 * @return true if battlecode-server.jar was updated and we need to restart
+	 */
+	private boolean writeDependencies(Dependencies dep) {
 		if (dep == null) {
-			return;
+			return false;
 		}
+		boolean needRestart = false;
 		try {
 			if (dep.battlecodeServer != null) {
-				writeDataToFile(dep.battlecodeServer, "lib/battlecode-server.jar");
+				writeDataToFile(dep.battlecodeServer, "lib" + File.separator + "battlecode-server.jar");
+				needRestart = true;
 			}
 			if (dep.idata != null) {
 				writeDataToFile(dep.idata, "idata");
@@ -222,47 +258,79 @@ public class Worker implements Controller, Runnable {
 				writeDataToFile(dep.teamB, "teams" + File.separator + dep.teamBName + ".jar");
 			}
 
-			// If we wrote the battlecode-server.jar file, we need to restart
-			if (dep.battlecodeServer != null) {
-				_log.info("battlecode-server.jar updated, restarting worker");
-				System.exit(Config.RESTART_STATUS);
-			}
 		} catch (IOException e) {
 			_log.error("Could not create player or map file", e);
 		}
+		return needRestart;
 	}
 
 	@Override
 	public synchronized void addPacket(Packet p) {
+		int core;
 		switch (p.getCmd()) {
 		case RUN:
-			try {
-				// Find a free core
-				int core;
-				for (core = 0; core < cores; core++) {
-					if (running[core] == null)
-						break;
-				}
-				// Could not find free core
-				if (core == cores)
+			// Find a free core
+			for (core = 0; core < cores; core++) {
+				if (running[core] == null)
 					break;
+			}
+			// Could not find free core
+			if (core == cores)
+				break;
 
-				NetworkMatch match = (NetworkMatch) p.get(0);
-				Dependencies dep = (Dependencies) p.get(1);
-				writeDependencies(dep);
-				if (resolveDependencies(match)) {
+			NetworkMatch match = (NetworkMatch) p.get(0);
+			DependencyHashes deps = (DependencyHashes) p.get(1);
+			MatchRunner m = new MatchRunner(this, match, core);
+			running[core] = m;
+			if (resolveDependencies(match, deps)) {
+				new Thread(m).start();
+			}
+			break;
+		case ANALYZE:
+			// Find a free core
+			for (core = 0; core < cores; core++) {
+				if (running[core] == null)
+					break;
+			}
+			// Could not find free core
+			if (core == cores)
+				break;
+			BSScrimmageSet scrim = (BSScrimmageSet) p.get(0);
+			byte[] fileData = (byte[]) p.get(1);
+			DependencyHashes depHashes = (DependencyHashes) p.get(2);
+			MatchRunner mr = new MatchRunner(this, scrim, fileData, core);
+			running[core] = mr;
+			if (resolveDependencies(depHashes)) {
+				new Thread(mr).start();
+			}
+			break;
+		case DEPENDENCIES:
+			Dependencies dep = (Dependencies) p.get(0);
 
-					String team_a = match.team_a.replaceAll("\\W", "_");
-					String team_b = match.team_b.replaceAll("\\W", "_");
-					MatchRunner.compilePlayer("A" + team_a, "teams" + File.separator + match.team_a + ".jar");
-					MatchRunner.compilePlayer("B" + team_b, "teams" + File.separator + match.team_b + ".jar");
-
-					MatchRunner m = new MatchRunner(this, (NetworkMatch) p.get(0), core);
-					new Thread(m).start();
-					running[core] = m;
+			boolean needRestart = writeDependencies(dep);
+			try {
+				// If we only requested battlecode-server.jar and idata, the response won't have teams
+				if (dep.teamAName != null) {
+					String team_a = dep.teamAName.replaceAll("\\W", "_");
+					MatchRunner.compilePlayer("A" + team_a, "teams" + File.separator + dep.teamAName + ".jar");
 				}
-			} catch (Exception e) {
-				_log.warn("Error running match");
+				if (dep.teamBName != null) {
+					String team_b = dep.teamBName.replaceAll("\\W", "_");
+					MatchRunner.compilePlayer("B" + team_b, "teams" + File.separator + dep.teamBName + ".jar");
+				}
+
+			} catch (IOException e1) {
+				_log.error("Error compiling player", e1);
+				break;
+			}
+			if (needRestart) {
+				_log.info("battlecode-server.jar updated, restarting worker");
+				System.exit(Config.RESTART_STATUS);
+			}
+			for (MatchRunner matchRunner: running) {
+				if (!matchRunner.isRunning()) {
+					new Thread(matchRunner).start();
+				}
 			}
 			break;
 		case STOP:

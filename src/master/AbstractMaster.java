@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 
+import model.BSScrimmageSet;
 import networking.Packet;
 
 import common.NetworkMatch;
@@ -14,10 +15,14 @@ import common.NetworkMatch;
  *
  */
 public abstract class AbstractMaster {
-	static AbstractMaster singleton;
+	protected static AbstractMaster singleton;
 	
-	public AbstractMaster() {
+	protected AbstractMaster() {
 		singleton = this;
+	}
+	
+	public static AbstractMaster getMaster() {
+		return singleton;
 	}
 
 	/**
@@ -70,6 +75,8 @@ public abstract class AbstractMaster {
 		}).start();
 	}
 	protected abstract void deleteRun(final Long run_id);
+	
+	public abstract void deleteScrimmage(Long scrimId);
 
 	/**
 	 * Send the finished match data to the master
@@ -86,8 +93,24 @@ public abstract class AbstractMaster {
 
 		}).start();
 	}
-	protected abstract void matchFinished(final WorkerRepr worker, final Packet p);
+	public abstract void matchFinished(final WorkerRepr worker, final Packet p);
 
+	/**
+	 * Send the analyzed scrimmage match data to the master
+	 * @param worker
+	 * @param p
+	 */
+	public static void kickoffMatchAnalyzed(final WorkerRepr worker, final Packet p) {
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				singleton.matchAnalyzed(worker, p);
+			}
+		});
+	}
+	public abstract void matchAnalyzed(final WorkerRepr worker, final Packet p);
+	
 	/**
 	 * Tell the master to send matches to a worker
 	 * @param worker
@@ -112,18 +135,18 @@ public abstract class AbstractMaster {
 	 * @param needTeamA
 	 * @param needTeamB
 	 */
-	public static void kickoffSendWorkerMatchDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdate, 
+	public static void kickoffSendWorkerDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdate, 
 			final boolean needMap, final boolean needTeamA, final boolean needTeamB) {
 		new Thread(new Runnable() {
 			
 			@Override
 			public void run() {
-				singleton.sendWorkerMatchDependencies(worker, match, needUpdate, needMap, needTeamA, needTeamB);
+				singleton.sendWorkerDependencies(worker, match, needUpdate, needMap, needTeamA, needTeamB);
 			}
 			
 		}).start();
 	}
-	protected abstract void sendWorkerMatchDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdate, 
+	public abstract void sendWorkerDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdate, 
 			final boolean needMap, final boolean needTeamA, final boolean needTeamB);
 	
 	public static void kickoffUpdateMaps() {
@@ -166,4 +189,16 @@ public abstract class AbstractMaster {
 		return singleton.getConnections();
 	}
 	protected abstract Set<WorkerRepr> getConnections();
+	
+	
+	public static void kickoffAnalyzeScrimmageMatch(final BSScrimmageSet scrim) {
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				singleton.analyzeScrimmageMatch(scrim);
+			}
+		}).start();
+	}
+	protected abstract void analyzeScrimmageMatch(BSScrimmageSet scrim);
 }

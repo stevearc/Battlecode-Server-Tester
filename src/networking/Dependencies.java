@@ -1,4 +1,4 @@
-package common;
+package networking;
 
 import java.io.Serializable;
 

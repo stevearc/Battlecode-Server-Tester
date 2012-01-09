@@ -16,13 +16,12 @@ import common.NetworkMatch;
 
 @Entity
 public class BSMatch {
-	public static enum STATUS {QUEUED, RUNNING, FINISHED}
 	private Long id;
 	private BSRun run;
 	private BSMap map;
 	private Long seed;
 	private STATUS status;
-	private MatchResult result;
+	private MatchResultImpl result;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="match_id_gen")
@@ -49,7 +48,7 @@ public class BSMatch {
 		return status;
 	}
 	@OneToOne
-	public MatchResult getResult() {
+	public MatchResultImpl getResult() {
 		return result;
 	}
 	
@@ -68,7 +67,7 @@ public class BSMatch {
 	public void setStatus(STATUS status) {
 		this.status = status;
 	}
-	public void setResult(MatchResult results) {
+	public void setResult(MatchResultImpl results) {
 		this.result = results;
 	}
 	

@@ -33,7 +33,7 @@ $(function() {
         chart.resetZoom();
     });
     $("#back").button().click(function() {
-        document.location="matches.html?id=" + $(this).attr("name");
+        document.location=$(this).attr("name");
     });
 
 

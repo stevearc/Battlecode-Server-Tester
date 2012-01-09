@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import master.AbstractMaster;
 import master.WorkerRepr;
+import model.BSScrimmageSet;
 
 import common.NetworkMatch;
 
@@ -52,7 +53,10 @@ public class ConnectionsServlet extends HttpServlet {
 			for (NetworkMatch m: c.getRunningMatches()) {
 				sb.append(m.toMapString() + ", ");
 			}
-			if (sb.length() > 2) 
+			for (BSScrimmageSet s: c.getAnalyzingMatches()) {
+				sb.append(s.getFileName() + ", ");
+			}
+			if (sb.length() > 0) 
 				out.print(sb.substring(0, sb.length() - 2));
 			else
 				out.print("&nbsp;");

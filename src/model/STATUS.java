@@ -3,7 +3,7 @@
  */
 package model;
 
-public enum STATUS {QUEUED, RUNNING, COMPLETE, ERROR, CANCELED;
+public enum STATUS {QUEUED, RUNNING, COMPLETE, CANCELED;
 
 	STATUS () {
 		
@@ -15,8 +15,6 @@ public enum STATUS {QUEUED, RUNNING, COMPLETE, ERROR, CANCELED;
 			return "Canceled";
 		case COMPLETE:
 			return "Complete";
-		case ERROR:
-			return "Error";
 		case QUEUED:
 			return "Queued";
 		case RUNNING:
