@@ -118,16 +118,16 @@ public class Worker implements Controller, Runnable {
 			return true;
 		}
 		try {
-			if (!deps.battlecodeServerHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar")))) {
+			if (!deps.battlecodeServerHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.battlecodeServerFile)))) {
 				return false;
 			}
-			if (!deps.allowedPackagesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("AllowedPackages.txt")))) {
+			if (!deps.allowedPackagesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.allowedPackagesFile)))) {
 				return false;
 			}
-			if (!deps.disallowedClassesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("DisallowedClasses.txt")))) {
+			if (!deps.disallowedClassesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.disallowedClassesFile)))) {
 				return false;
 			}
-			if (!deps.methodCostsHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("MethodCosts.txt")))) {
+			if (!deps.methodCostsHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.methodCostsFile)))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -144,7 +144,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean haveMap(BSMap map) {
-		File mapFile = new File("maps" + File.separator + map.getMapName() + ".xml");
+		File mapFile = new File(Config.mapsDir + map.getMapName() + ".xml");
 		if (mapFile.exists()) {
 			try {
 				return map.getHash().equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(mapFile.getAbsolutePath())));
@@ -158,7 +158,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean havePlayer(String player) {
-		File playerFile = new File("teams" + File.separator + player + ".jar");
+		File playerFile = new File(Config.teamsDir + player + ".jar");
 		return playerFile.exists();
 	}
 
@@ -248,26 +248,26 @@ public class Worker implements Controller, Runnable {
 		boolean needRestart = false;
 		try {
 			if (dep.battlecodeServer != null) {
-				writeDataToFile(dep.battlecodeServer, "lib" + File.separator + "battlecode-server.jar");
+				writeDataToFile(dep.battlecodeServer, Config.battlecodeServerFile);
 				needRestart = true;
 			}
 			if (dep.allowedPackages != null) {
-				writeDataToFile(dep.allowedPackages, "AllowedPackages.txt");
+				writeDataToFile(dep.allowedPackages, Config.allowedPackagesFile);
 			}
 			if (dep.disallowedClasses != null) {
-				writeDataToFile(dep.disallowedClasses, "DisallowedClasses.txt");
+				writeDataToFile(dep.disallowedClasses, Config.disallowedClassesFile);
 			}
 			if (dep.methodCosts != null) {
-				writeDataToFile(dep.methodCosts, "MethodCosts.txt");
+				writeDataToFile(dep.methodCosts, Config.methodCostsFile);
 			}
 			if (dep.map != null) {
-				writeDataToFile(dep.map, "maps" + File.separator + dep.mapName + ".xml");
+				writeDataToFile(dep.map, Config.mapsDir + dep.mapName + ".xml");
 			}
 			if (dep.teamA != null) {
-				writeDataToFile(dep.teamA, "teams" + File.separator + dep.teamAName + ".jar");
+				writeDataToFile(dep.teamA, Config.teamsDir + dep.teamAName + ".jar");
 			}
 			if (dep.teamB != null) {
-				writeDataToFile(dep.teamB, "teams" + File.separator + dep.teamBName + ".jar");
+				writeDataToFile(dep.teamB, Config.teamsDir + dep.teamBName + ".jar");
 			}
 
 		} catch (IOException e) {
@@ -324,11 +324,11 @@ public class Worker implements Controller, Runnable {
 				// If we only requested battlecode-server.jar and idata, the response won't have teams
 				if (dep.teamAName != null) {
 					String team_a = dep.teamAName.replaceAll("\\W", "_");
-					MatchRunner.compilePlayer("A" + team_a, "teams" + File.separator + dep.teamAName + ".jar");
+					MatchRunner.compilePlayer("A" + team_a, Config.teamsDir + dep.teamAName + ".jar");
 				}
 				if (dep.teamBName != null) {
 					String team_b = dep.teamBName.replaceAll("\\W", "_");
-					MatchRunner.compilePlayer("B" + team_b, "teams" + File.separator + dep.teamBName + ".jar");
+					MatchRunner.compilePlayer("B" + team_b, Config.teamsDir + dep.teamBName + ".jar");
 				}
 
 			} catch (IOException e1) {

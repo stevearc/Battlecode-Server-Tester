@@ -103,16 +103,16 @@ public class Main {
 		}
 		
 		// Configure logger
-		File logDir = new File("log");
+		File logDir = new File(Config.logDir);
 		if (!logDir.exists()) {
 			System.out.println("Creating log directory");
 			logDir.mkdirs();
 		}
 		FileAppender appender = new FileAppender();
 		if (cmd.hasOption('s')) {
-			appender.setFile(logDir.getName() + File.separator + "bs-server.log");
+			appender.setFile(Config.logDir + "bs-server.log");
 		} else {
-			appender.setFile(logDir.getName() + File.separator + "bs-worker.log");
+			appender.setFile(Config.logDir + "bs-worker.log");
 		}
 		appender.setName("logFile");
 		Layout layout = new PatternLayout("%d{ISO8601} [%t] %-5p %c %x - %m%n");
@@ -222,7 +222,7 @@ public class Main {
 	private static void createMockData(Master master) throws IOException {
 		_log.info("Populating database with mock data...");
 		EntityManager em = HibernateUtil.getEntityManager();
-		File checkFile = new File("teams" + File.separator + "mock_player.jar");
+		File checkFile = new File(Config.teamsDir + "mock_player.jar");
 		long numPlayers = em.createQuery("select count(*) from BSPlayer", Long.class).getSingleResult();
 		BSPlayer bsPlayer;
 		if (numPlayers == 0) {
@@ -345,11 +345,11 @@ public class Main {
 
 	private static void createDirectoryStructure(boolean isServer) {
 		if (isServer) {
-			new File("static" + File.separator + "matches").mkdir();
-			new File("static" + File.separator + "scrimmages").mkdir();
+			new File(Config.matchDir).mkdirs();
+			new File(Config.scrimmageDir).mkdirs();
 		}
-		new File("teams").mkdir();
-		new File("maps").mkdir();
+		new File(Config.teamsDir).mkdir();
+		new File(Config.mapsDir).mkdir();
 	}
 	
 	private static void archiveFile(TarArchiveOutputStream out, String prefix, String fileName, FilenameFilter filter) throws IOException {
@@ -397,8 +397,8 @@ public class Main {
 									new FileOutputStream(targetName))));
 			for (String fileName: tarFiles) {
 				archiveFile(out, "bs-worker" + File.separator, fileName, new FilenameFilter() {
-					String[] prefixes = {"lib" + File.separator + "jetty", "lib" + File.separator + "hibernate", 
-							"lib" + File.separator + "servlet-api", "lib" + File.separator + "antlr"};
+					String[] prefixes = {Config.libDir + "jetty", Config.libDir + "hibernate", 
+							Config.libDir + "servlet-api", Config.libDir + "antlr"};
 					@Override
 					public boolean accept(File dir, String name) {
 						for (String p: prefixes) {

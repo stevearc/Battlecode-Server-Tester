@@ -138,7 +138,7 @@ public class BSUtil {
 	}
 
 	public static boolean initializedBattlecode() {
-		File bserver = new File("lib" + File.separator + "battlecode-server.jar");
+		File bserver = new File(Config.battlecodeServerFile);
 		return bserver.exists();
 	}
 	

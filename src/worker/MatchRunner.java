@@ -82,7 +82,7 @@ public class MatchRunner implements Runnable {
 		Enumeration<JarEntry> entries = jar.entries();
 		while (entries.hasMoreElements()) {
 			JarEntry file = entries.nextElement();
-			File f = new File("teams" + File.separator + "tmp" + File.separator + file.getName());
+			File f = new File(Config.teamsDir + "tmp" + File.separator + file.getName());
 			if (file.isDirectory()) {
 				f.mkdir();
 				continue;
@@ -100,11 +100,11 @@ public class MatchRunner implements Runnable {
 	}
 
 	public static void compilePlayer(String teamName, String jarFile) throws IOException {
-		File aPlayer = new File("teams" + File.separator + teamName);
+		File aPlayer = new File(Config.teamsDir + teamName);
 		if (!aPlayer.exists()) {
 			_log.info("Compiling player " + teamName);
 			aPlayer.mkdir();
-			File workingDir = new File("teams" + File.separator + "tmp");
+			File workingDir = new File(Config.teamsDir + "tmp");
 			workingDir.mkdir();
 			extractAndRenameTeam(jarFile, teamName);
 			Collection<File> srcFiles = FileUtils.listFiles(workingDir, new String[] {"java"}, true);
@@ -115,9 +115,9 @@ public class MatchRunner implements Runnable {
 			}
 			String[] javacArgs = new String[4 + srcFiles.size()];
 			javacArgs[0] = "-classpath";
-			javacArgs[1] = "lib" + File.separator + "battlecode-server.jar";
+			javacArgs[1] = Config.battlecodeServerFile;
 			javacArgs[2] = "-d";
-			javacArgs[3] = "teams" + File.separator;
+			javacArgs[3] = Config.teamsDir;
 			System.arraycopy(srcFileNames, 0, javacArgs, 4, srcFiles.size());
 			com.sun.tools.javac.Main.compile(javacArgs);
 			FileUtils.deleteDirectory(workingDir);
@@ -255,8 +255,8 @@ public class MatchRunner implements Runnable {
 	
 	public static void runMatch(long seed, String mapName, String team_a, String team_b) throws IOException {
 		// Construct the map file with the appropriate seeeeeed
-		File seededMap = new File("maps" + File.separator + seed + mapName + ".xml");
-		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File("maps" + File.separator + mapName + ".xml"))));
+		File seededMap = new File(Config.mapsDir + seed + mapName + ".xml");
+		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(Config.mapsDir + mapName + ".xml"))));
 		BufferedWriter fos = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(seededMap)));
 		String line;
 		while ((line = br.readLine()) != null) {

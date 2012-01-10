@@ -32,6 +32,7 @@ import networking.Packet;
 import org.apache.log4j.Logger;
 
 import common.BSUtil;
+import common.Config;
 import common.HibernateUtil;
 import common.NetworkMatch;
 
@@ -166,10 +167,10 @@ public class Master extends AbstractMaster {
 		try {
 			if (pendingBattlecodeServerFile != null) {
 				_log.info("Writing updated battlecode files");
-				BSUtil.writeFileData(pendingBattlecodeServerFile, "lib" + File.separator + "battlecode-server.jar");
-				BSUtil.writeFileData(pendingAllowedPackagesFile, "AllowedPackages.txt");
-				BSUtil.writeFileData(pendingDisallowedClassesFile, "DisallowedClasses.txt");
-				BSUtil.writeFileData(pendingMethodCostsFile, "MethodCosts.txt");
+				BSUtil.writeFileData(pendingBattlecodeServerFile, Config.battlecodeServerFile);
+				BSUtil.writeFileData(pendingAllowedPackagesFile, Config.allowedPackagesFile);
+				BSUtil.writeFileData(pendingDisallowedClassesFile, Config.disallowedClassesFile);
+				BSUtil.writeFileData(pendingMethodCostsFile, Config.methodCostsFile);
 				pendingBattlecodeServerFile = null;
 				pendingAllowedPackagesFile = null;
 				pendingDisallowedClassesFile = null;
@@ -199,7 +200,7 @@ public class Master extends AbstractMaster {
 			// first delete rms files
 			for (BSMatch match: run.getMatches()) {
 				if (match.getStatus() == STATUS.COMPLETE) {
-					File matchFile = new File("static" + File.separator + "matches" + File.separator + match.toMatchFileName());
+					File matchFile = new File(Config.matchDir + match.toMatchFileName());
 					if (matchFile.exists()) {
 						matchFile.delete();
 					}
@@ -316,7 +317,7 @@ public class Master extends AbstractMaster {
 					run.setbWins(run.getbWins() + 1);
 				}
 				_log.info("Match finished: " + m + " winner: " + result.getWinner());
-				File outFile = new File("static" + File.separator + "matches" + File.separator + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
+				File outFile = new File(Config.matchDir + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
 				outFile.createNewFile();
 				FileOutputStream fos = new FileOutputStream(outFile);
 				fos.write(data);
@@ -375,10 +376,10 @@ public class Master extends AbstractMaster {
 		String disallowedClassesHash;
 		String methodCostsHash;
 		try {
-			battlecodeServerHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar"));
-			allowedPackagesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("AllowedPackages.txt"));
-			disallowedClassesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("DisallowedClasses.txt"));
-			methodCostsHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("MethodCosts.txt"));
+			battlecodeServerHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.battlecodeServerFile));
+			allowedPackagesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.allowedPackagesFile));
+			disallowedClassesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.disallowedClassesFile));
+			methodCostsHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.methodCostsFile));
 		} catch (FileNotFoundException e) {
 			_log.warn(e);
 			return;
@@ -495,20 +496,20 @@ public class Master extends AbstractMaster {
 		byte[] methodCosts = null;
 		try {
 			if (needUpdate) {
-				battlecodeServer = BSUtil.getFileData("lib" + File.separator + "battlecode-server.jar");
-				allowedPackages = BSUtil.getFileData("AllowedPackages.txt");
-				disallowedClasses = BSUtil.getFileData("DisallowedClasses.txt");
-				methodCosts = BSUtil.getFileData("MethodCosts.txt");
+				battlecodeServer = BSUtil.getFileData(Config.battlecodeServerFile);
+				allowedPackages = BSUtil.getFileData(Config.allowedPackagesFile);
+				disallowedClasses = BSUtil.getFileData(Config.disallowedClassesFile);
+				methodCosts = BSUtil.getFileData(Config.methodCostsFile);
 			}
 			if (match != null) {
 				if (needMap) {
-					map = BSUtil.getFileData("maps" + File.separator + match.map.getMapName() + ".xml");
+					map = BSUtil.getFileData(Config.mapsDir + match.map.getMapName() + ".xml");
 				}
 				if (needTeamA) {
-					teamA = BSUtil.getFileData("teams" + File.separator + match.team_a + ".jar");
+					teamA = BSUtil.getFileData(Config.teamsDir + match.team_a + ".jar");
 				}
 				if (needTeamB) {
-					teamB = BSUtil.getFileData("teams" + File.separator + match.team_b + ".jar");
+					teamB = BSUtil.getFileData(Config.teamsDir + match.team_b + ".jar");
 				}
 				dep = new Dependencies(battlecodeServer, allowedPackages, disallowedClasses, methodCosts, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			} else {

@@ -17,6 +17,7 @@ import model.BSPlayer;
 import model.STATUS;
 
 import common.BSUtil;
+import common.Config;
 import common.HibernateUtil;
 
 
@@ -72,7 +73,7 @@ public class UploadServlet extends HttpServlet {
 			} else if (playerName.length() > 45) {
 				warn(response, "Player name is too long");
 			} else {
-				BSUtil.writeFileData(player, "teams" + File.separator + playerName + ".jar");
+				BSUtil.writeFileData(player, Config.teamsDir + playerName + ".jar");
 				BSPlayer bsPlayer = new BSPlayer();
 				bsPlayer.setPlayerName(playerName);
 				EntityManager em = HibernateUtil.getEntityManager();
@@ -134,7 +135,7 @@ public class UploadServlet extends HttpServlet {
 				if (mapName.toLowerCase().endsWith(".xml")) {
 					mapName = mapName.substring(0, mapName.length() - 4);
 				}
-				String mapPath = "maps" + File.separator + mapName + ".xml";
+				String mapPath = Config.mapsDir + mapName + ".xml";
 				if (new File(mapPath).exists()) {
 					warn(response, "Map " + mapName + ".xml already exists!");
 				} else {

@@ -1,5 +1,7 @@
 package common;
 
+import java.io.File;
+
 
 
 /**
@@ -25,4 +27,16 @@ public class Config {
 	/** MASTER ONLY: The cutoff value for a map's area for the map to be considered "medium" */
 	public static int map_cutoff_medium = 2400;
 
+	// Static file locations
+	public static final String matchDir = "static" + File.separator + "matches" + File.separator;
+	public static final String scrimmageDir = "static" + File.separator + "scrimmages" + File.separator;
+	public static final String mapsDir = "maps" + File.separator;
+	public static final String teamsDir = "teams" + File.separator;
+	public static final String libDir = "lib" + File.separator;
+	public static final String logDir = "log" + File.separator;
+	public static final String battlecodeServerFile = libDir + "battlecode-server.jar";
+	public static final String allowedPackagesFile = "AllowedPackages.txt";
+	public static final String disallowedClassesFile = "DisallowedClasses.txt";
+	public static final String methodCostsFile = "MethodCosts.txt";
+	
 }

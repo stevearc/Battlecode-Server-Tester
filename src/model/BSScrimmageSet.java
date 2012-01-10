@@ -15,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 
+import common.Config;
+
 /**
  * This represents the set of 2-3 matches that are in a scrimmage
  * @author stevearc
@@ -69,7 +71,7 @@ public class BSScrimmageSet implements Serializable{
 	}
 
 	public String toPath() {
-		return "static" + File.separator + "scrimmages" + File.separator + fileName;
+		return Config.scrimmageDir + fileName;
 	}
 
 	public void setId(Long id) {
