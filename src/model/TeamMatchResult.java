@@ -1,8 +1,6 @@
 package model;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Random;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Lob;
@@ -10,15 +8,24 @@ import javax.persistence.Lob;
 @Embeddable
 public class TeamMatchResult implements Serializable {
 	private static final long serialVersionUID = 5493198563817908787L;
+	private Integer[] totalRobots;
+	private Integer[][] robotsByType;
 	private Integer[] activeRobots;
-	private Double[] fluxDrain;
-	private Double[] fluxIncome;
-	private Double[] fluxReserve;
-	/*
-	private ArrayList<Integer> firepower;
-	*/
+	private Integer[][] activeRobotsByType;
+	private Integer[] totalRobotsBuilt;
+	private Integer[][] robotsBuiltByType;
+	private Integer[] totalRobotsKilled;
+	private Integer[][] robotsKilledByType;
+	private Double[] fluxSpentOnMessaging;
+	private Double[] fluxSpentOnSpawning;
+	private Double[] fluxSpentOnMoving;
+	private Double[] fluxSpentOnUpkeep;
+	
 	
 	public static TeamMatchResult constructTeamMatchResult(long rounds) {
+		// TODO: update this
+		throw new RuntimeException("Not implemented yet for 2012");
+		/*
 		TeamMatchResult tmr = new TeamMatchResult();
 		Random r = new Random();
 		ArrayList<Integer> activeRobots = new ArrayList<Integer>();
@@ -39,11 +46,18 @@ public class TeamMatchResult implements Serializable {
 			fluxDrain.add(drain);
 			fluxReserve.add(reserve);
 		}
-		tmr.setActiveRobots(activeRobots.toArray(new Integer[activeRobots.size()]));
-		tmr.setFluxIncome(fluxIncome.toArray(new Double[fluxIncome.size()]));
-		tmr.setFluxDrain(fluxDrain.toArray(new Double[fluxDrain.size()]));
-		tmr.setFluxReserve(fluxReserve.toArray(new Double[fluxReserve.size()]));
 		return tmr;
+		*/
+	}
+
+	@Lob
+	public Integer[] getTotalRobots() {
+		return totalRobots;
+	}
+
+	@Lob
+	public Integer[][] getRobotsByType() {
+		return robotsByType;
 	}
 
 	@Lob
@@ -52,34 +66,106 @@ public class TeamMatchResult implements Serializable {
 	}
 
 	@Lob
-	public Double[] getFluxDrain() {
-		return fluxDrain;
+	public Integer[][] getActiveRobotsByType() {
+		return activeRobotsByType;
 	}
 
 	@Lob
-	public Double[] getFluxIncome() {
-		return fluxIncome;
+	public Integer[] getTotalRobotsBuilt() {
+		return totalRobotsBuilt;
 	}
 
 	@Lob
-	public Double[] getFluxReserve() {
-		return fluxReserve;
+	public Integer[][] getRobotsBuiltByType() {
+		return robotsBuiltByType;
 	}
+
+	@Lob
+	public Integer[] getTotalRobotsKilled() {
+		return totalRobotsKilled;
+	}
+
+	@Lob
+	public Integer[][] getRobotsKilledByType() {
+		return robotsKilledByType;
+	}
+
+	@Lob
+	public Double[] getFluxSpentOnMessaging() {
+		return fluxSpentOnMessaging;
+	}
+
+	@Lob
+	public Double[] getFluxSpentOnSpawning() {
+		return fluxSpentOnSpawning;
+	}
+
+	@Lob
+	public Double[] getFluxSpentOnMoving() {
+		return fluxSpentOnMoving;
+	}
+
+	@Lob
+	public Double[] getFluxSpentOnUpkeep() {
+		return fluxSpentOnUpkeep;
+	}
+
+
+	public void setTotalRobots(Integer[] totalRobots) {
+		this.totalRobots = totalRobots;
+	}
+
+
+	public void setRobotsByType(Integer[][] robotsByType) {
+		this.robotsByType = robotsByType;
+	}
+
 
 	public void setActiveRobots(Integer[] activeRobots) {
 		this.activeRobots = activeRobots;
 	}
 
-	public void setFluxDrain(Double[] fluxDrain) {
-		this.fluxDrain = fluxDrain;
+	public void setActiveRobotsByType(Integer[][] activeRobotsByType) {
+		this.activeRobotsByType = activeRobotsByType;
 	}
 
-	public void setFluxIncome(Double[] fluxIncome) {
-		this.fluxIncome = fluxIncome;
+	public void setTotalRobotsBuilt(Integer[] totalRobotsBuilt) {
+		this.totalRobotsBuilt = totalRobotsBuilt;
 	}
 
-	public void setFluxReserve(Double[] fluxReserve) {
-		this.fluxReserve = fluxReserve;
+
+	public void setRobotsBuiltByType(Integer[][] robotsBuiltByType) {
+		this.robotsBuiltByType = robotsBuiltByType;
+	}
+
+
+	public void setTotalRobotsKilled(Integer[] totalRobotsKilled) {
+		this.totalRobotsKilled = totalRobotsKilled;
+	}
+
+
+	public void setRobotsKilledByType(Integer[][] robotsKilledByType) {
+		this.robotsKilledByType = robotsKilledByType;
+	}
+
+
+	public void setFluxSpentOnMessaging(Double[] fluxSpentOnMessaging) {
+		this.fluxSpentOnMessaging = fluxSpentOnMessaging;
+	}
+
+
+	public void setFluxSpentOnSpawning(Double[] fluxSpentOnSpawning) {
+		this.fluxSpentOnSpawning = fluxSpentOnSpawning;
+	}
+
+
+	public void setFluxSpentOnMoving(Double[] fluxSpentOnMoving) {
+		this.fluxSpentOnMoving = fluxSpentOnMoving;
+	}
+
+
+	public void setFluxSpentOnUpkeep(Double[] fluxSpentOnUpkeep) {
+		this.fluxSpentOnUpkeep = fluxSpentOnUpkeep;
 	}
 
 }

@@ -2,7 +2,7 @@ package model;
 
 
 public interface MatchResult {
-	public static enum WIN_CONDITION {DESTROY, POINTS, ENERGON}
+	public static enum WIN_CONDITION {DESTROY, ARCHONS, ENERGON}
 	
 	public Long getId();
 	public TeamMatchResult getaResult();
