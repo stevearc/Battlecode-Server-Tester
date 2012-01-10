@@ -55,7 +55,6 @@ public class MatchResultImpl implements MatchResult, Serializable {
 		@AttributeOverride(name="robotsBuiltByType", column = @Column(name="robotsBuiltByType_A")),
 		@AttributeOverride(name="totalRobotsKilled", column = @Column(name="totalRobotsKilled_A")),
 		@AttributeOverride(name="robotsKilledByType", column = @Column(name="robotsKilledByType_A")),
-		@AttributeOverride(name="fluxSpentOnMessaging", column = @Column(name="fluxSpentOnMessaging_A")),
 		@AttributeOverride(name="fluxSpentOnSpawning", column = @Column(name="fluxSpentOnSpawning_A")),
 		@AttributeOverride(name="fluxSpentOnMoving", column = @Column(name="fluxSpentOnMoving_A")),
 		@AttributeOverride(name="fluxSpentOnUpkeep", column = @Column(name="fluxSpentOnUpkeep_A"))
@@ -73,7 +72,6 @@ public class MatchResultImpl implements MatchResult, Serializable {
 		@AttributeOverride(name="robotsBuiltByType", column = @Column(name="robotsBuiltByType_B")),
 		@AttributeOverride(name="totalRobotsKilled", column = @Column(name="totalRobotsKilled_B")),
 		@AttributeOverride(name="robotsKilledByType", column = @Column(name="robotsKilledByType_B")),
-		@AttributeOverride(name="fluxSpentOnMessaging", column = @Column(name="fluxSpentOnMessaging_B")),
 		@AttributeOverride(name="fluxSpentOnSpawning", column = @Column(name="fluxSpentOnSpawning_B")),
 		@AttributeOverride(name="fluxSpentOnMoving", column = @Column(name="fluxSpentOnMoving_B")),
 		@AttributeOverride(name="fluxSpentOnUpkeep", column = @Column(name="fluxSpentOnUpkeep_B"))

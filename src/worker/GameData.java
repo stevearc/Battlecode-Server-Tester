@@ -5,10 +5,10 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import model.MatchResult.WIN_CONDITION;
 import model.MatchResultImpl;
 import model.TEAM;
 import model.TeamMatchResult;
+import model.MatchResult.WIN_CONDITION;
 import battlecode.common.GameConstants;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
@@ -20,7 +20,6 @@ import battlecode.serial.MatchHeader;
 import battlecode.serial.RoundDelta;
 import battlecode.serial.RoundStats;
 import battlecode.server.proxy.Proxy;
-import battlecode.world.signal.BroadcastSignal;
 import battlecode.world.signal.BytecodesUsedSignal;
 import battlecode.world.signal.DeathSignal;
 import battlecode.world.signal.FluxChangeSignal;
@@ -128,8 +127,6 @@ public class GameData extends Proxy {
 		Integer[] currentActiveRobots = new Integer[teams.length];
 		ArrayList<Integer>[][] activeRobotsByType = new ArrayList[teams.length][RobotType.values().length];
 		Integer[][] currentActiveRobotsByType = new Integer[teams.length][RobotType.values().length];
-		ArrayList<Double>[] fluxSpentOnMessaging = new ArrayList[teams.length];
-		Double[] currentFluxSpentOnMessaging = new Double[teams.length];
 		ArrayList<Double>[] fluxSpentOnSpawning = new ArrayList[teams.length];
 		Double[] currentFluxSpentOnSpawning = new Double[teams.length];
 		ArrayList<Double>[] fluxSpentOnMoving = new ArrayList[teams.length];
@@ -151,8 +148,6 @@ public class GameData extends Proxy {
 			currentRobots[i] = 0;
 			activeRobots[i] = new ArrayList<Integer>();
 			currentActiveRobots[i] = 0;
-			fluxSpentOnMessaging[i] = new ArrayList<Double>();
-			currentFluxSpentOnMessaging[i] = 0.0;
 			fluxSpentOnSpawning[i] = new ArrayList<Double>();
 			currentFluxSpentOnSpawning[i] = 0.0;
 			fluxSpentOnMoving[i] = new ArrayList<Double>();
@@ -211,12 +206,6 @@ public class GameData extends Proxy {
 					currentRobotsKilled[r.team.opponent().ordinal()]++;
 					currentRobotsKilledByType[r.team.opponent().ordinal()][r.type.ordinal()]++;
 				} 
-				else if (signal instanceof BroadcastSignal) 
-				{
-					BroadcastSignal s = (BroadcastSignal)signal;
-					r = robots.get(s.robotID);
-					currentFluxSpentOnMessaging[r.team.ordinal()] += s.message.getFluxCost();
-				} 
 				else if (signal instanceof MovementSignal) 
 				{
 					MovementSignal s = (MovementSignal)signal;
@@ -259,7 +248,6 @@ public class GameData extends Proxy {
 			for (int i = 0; i < teams.length; i++) {
 				totalRobots[i].add(currentRobots[i]);
 				activeRobots[i].add(currentActiveRobots[i]);
-				fluxSpentOnMessaging[i].add(currentFluxSpentOnMessaging[i]);
 				fluxSpentOnSpawning[i].add(currentFluxSpentOnSpawning[i]);
 				fluxSpentOnMoving[i].add(currentFluxSpentOnMoving[i]);
 				fluxSpentOnUpkeep[i].add(currentFluxSpentOnUpkeep[i]);
@@ -276,7 +264,6 @@ public class GameData extends Proxy {
 		for (int i = 0; i < teams.length; i++) {
 			teamResults[i].setTotalRobots(totalRobots[i].toArray(new Integer[rounds.size()]));
 			teamResults[i].setActiveRobots(activeRobots[i].toArray(new Integer[rounds.size()]));
-			teamResults[i].setFluxSpentOnMessaging(fluxSpentOnMessaging[i].toArray(new Double[rounds.size()]));
 			teamResults[i].setFluxSpentOnSpawning(fluxSpentOnSpawning[i].toArray(new Double[rounds.size()]));
 			teamResults[i].setFluxSpentOnMoving(fluxSpentOnMoving[i].toArray(new Double[rounds.size()]));
 			teamResults[i].setFluxSpentOnUpkeep(fluxSpentOnUpkeep[i].toArray(new Double[rounds.size()]));

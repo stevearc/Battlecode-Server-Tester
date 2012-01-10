@@ -1,12 +1,12 @@
 $(function() {
     var index;
-    var aButtons = $("#aViewButtons").children("input");
+    var aButtons = $("#aViewButtons").children().children("input");
     for (index = 0; index < aButtons.length; index++) {
         if (viewLines[0][index]) {
             $(aButtons[index]).attr('checked', 'checked');
         }
     }
-    var bButtons = $("#bViewButtons").children("input");
+    var bButtons = $("#bViewButtons").children().children("input");
     for (index = 0; index < bButtons.length; index++) {
         if (viewLines[1][index]) {
             $(bButtons[index]).attr('checked', 'checked');
@@ -63,43 +63,44 @@ var options = {
     },
 };
 
-var nameMap = {
-    aFluxIncome: "A: Flux Income",
-    aFluxDrain: "A: Flux Drain",
-    aFluxReserve: "A: Flux Reserve",
-    aActiveRobots: "A: Active Robots",
-    bFluxIncome: "B: Flux Income",
-    bFluxDrain: "B: Flux Drain",
-    bFluxReserve: "B: Flux Reserve",
-    bActiveRobots: "B: Active Robots",
-};
+var aColorPalatte = [
+    "E82E0C",
+    "FF6E00",
+    "E89B00",
+    "FFDB00",
+];
 
-var colorMap = {
-    aFluxIncome: "E82E0C",
-    aFluxDrain: "FF6E00",
-    aFluxReserve: "E89B00",
-    aActiveRobots: "FFDB00",
-    bFluxIncome: "0020E8",
-    bFluxDrain: "5F00FF",
-    bFluxReserve: "00A2FF",
-    bActiveRobots: "0CE8C9",
-};
+var bColorPalatte = [
+    "0020E8",
+    "5F00FF",
+    "00A2FF",
+    "0CE8C9",
+];
 
 function updateChart() {
     var array = [];
     chartedKeys = [];
     var seriesColors = [];
-    $("#buttonWrapper input").each(function() {
+    var seriesIndex = 0;
+    $("#aViewButtons input").each(function() {
         if ($(this).attr("checked") === "checked") {
             chartedKeys.push($(this).attr("name"));
             array.push(dataMap[$(this).attr("name")]);
-            seriesColors.push(colorMap[$(this).attr("name")]);
+            seriesColors.push(aColorPalatte[(seriesIndex++)%aColorPalatte.length]);
+        }
+    });
+    seriesIndex = 0;
+    $("#bViewButtons input").each(function() {
+        if ($(this).attr("checked") === "checked") {
+            chartedKeys.push($(this).attr("name"));
+            array.push(dataMap[$(this).attr("name")]);
+            seriesColors.push(bColorPalatte[(seriesIndex++)%bColorPalatte.length]);
         }
     });
     options['seriesColors'] = seriesColors;
 
     // Update the session preferences
-    var aButtons = $("#aViewButtons").children("input");
+    var aButtons = $("#aViewButtons").children().children("input");
     for (index = 0; index < aButtons.length; index++) {
         if ($(aButtons[index]).attr('checked') === 'checked') {
             viewLines[0][index] = 1;
@@ -107,7 +108,7 @@ function updateChart() {
             viewLines[0][index] = 0;
         }
     }
-    var bButtons = $("#bViewButtons").children("input");
+    var bButtons = $("#bViewButtons").children().children("input");
     for (index = 0; index < bButtons.length; index++) {
         if ($(bButtons[index]).attr('checked') === 'checked') {
             viewLines[1][index] = 1;

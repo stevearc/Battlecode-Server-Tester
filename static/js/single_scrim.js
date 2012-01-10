@@ -22,7 +22,7 @@ function rowClick(scrimId) {
 
     $("<iframe />")
         .attr("src", 'analysis_content.html?id=' + scrimId + "&scrimmage=true")
-        .attr("style", "width:1000px; height:530px; border:0;")
+        .attr("style", "width:1000px; height:630px; border:0;")
         .appendTo(container);
 
     var overlay = $("<div />")

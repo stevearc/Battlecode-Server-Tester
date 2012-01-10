@@ -18,7 +18,7 @@ function rowClick(matchId) {
         .appendTo("body");
     $("<iframe />")
         .attr("src", 'analysis_content.html?id=' + matchId)
-        .attr("style", "width:1000px; height:530px; border:0;")
+        .attr("style", "width:1000px; height:630px; border:0;")
         .appendTo(container);
 
     var buttonContainer = $("<div />").appendTo(container);

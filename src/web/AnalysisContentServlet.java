@@ -70,25 +70,51 @@ public class AnalysisContentServlet extends HttpServlet {
 				"</script>");
 		printArray(out, "aTotalRobots", result.getaResult().getTotalRobots());
 		printArray(out, "aActiveRobots", result.getaResult().getActiveRobots());
-		for (int i = 0; i < BSRobotType.values().length; i++) {
-			printArray(out, "aRobots" + i, result.getaResult().getRobotsByType()[i]);
-			printArray(out, "aActiveRobots" + i, result.getaResult().getActiveRobotsByType()[i]);
+		for (BSRobotType type: BSRobotType.values()) {
+//			printArray(out, "aRobots" + i, result.getaResult().getRobotsByType()[i]);
+			printArray(out, "aActiveRobots" + type, result.getaResult().getActiveRobotsByType()[type.ordinal()]);
 		}
-		printArray(out, "aFluxMsg", result.getaResult().getFluxSpentOnMessaging());
 		printArray(out, "aFluxSpawn", result.getaResult().getFluxSpentOnSpawning());
 		printArray(out, "aFluxMove", result.getaResult().getFluxSpentOnMoving());
 		printArray(out, "aFluxUpkeep", result.getaResult().getFluxSpentOnUpkeep());
 
 		printArray(out, "bTotalRobots", result.getbResult().getTotalRobots());
 		printArray(out, "bActiveRobots", result.getbResult().getActiveRobots());
-		for (int i = 0; i < BSRobotType.values().length; i++) {
-			printArray(out, "bRobots" + i, result.getbResult().getRobotsByType()[i]);
-			printArray(out, "bActiveRobots" + i, result.getbResult().getActiveRobotsByType()[i]);
+		for (BSRobotType type: BSRobotType.values()) {
+//			printArray(out, "bRobots" + i, result.getbResult().getRobotsByType()[i]);
+			printArray(out, "bActiveRobots" + type, result.getbResult().getActiveRobotsByType()[type.ordinal()]);
 		}
-		printArray(out, "bFluxMsg", result.getbResult().getFluxSpentOnMessaging());
 		printArray(out, "bFluxSpawn", result.getbResult().getFluxSpentOnSpawning());
 		printArray(out, "bFluxMove", result.getbResult().getFluxSpentOnMoving());
 		printArray(out, "bFluxUpkeep", result.getbResult().getFluxSpentOnUpkeep());
+
+		out.println("<script type='text/javascript'>" +
+				"var nameMap = {" +
+				"aTotalRobots: 'A: Total Robots'," +
+				"aActiveRobots: 'A: Active Robots'," +
+				"aFluxSpawn: 'A: Flux Spent (spawning)'," +
+				"aFluxMove: 'A: Flux Spent (moving)'," +
+				"aFluxUpkeep: 'A: Flux Spent (upkeep)'," +
+				"aActiveRobots" + BSRobotType.ARCHON + ": 'A: Active " + BSRobotType.ARCHON + "s'," +
+				"aActiveRobots" + BSRobotType.SOLDIER + ": 'A: Active " + BSRobotType.SOLDIER + "s'," +
+				"aActiveRobots" + BSRobotType.SCOUT + ": 'A: Active " + BSRobotType.SCOUT + "s'," +
+				"aActiveRobots" + BSRobotType.DISRUPTER + ": 'A: Active " + BSRobotType.DISRUPTER + "s'," +
+				"aActiveRobots" + BSRobotType.SCORCHER + ": 'A: Active " + BSRobotType.SCORCHER + "s'," +
+				"aActiveRobots" + BSRobotType.TOWER + ": 'A: Active " + BSRobotType.TOWER + "s'," +
+				"" +
+				"bTotalRobots: 'B: Total Robots'," +
+				"bActiveRobots: 'B: Active Robots'," +
+				"bFluxSpawn: 'B: Flux Spent (spawning)'," +
+				"bFluxMove: 'B: Flux Spent (moving)'," +
+				"bFluxUpkeep: 'B: Flux Spent (upkeep)'," +
+				"bActiveRobots" + BSRobotType.ARCHON + ": 'B: Active " + BSRobotType.ARCHON + "s'," +
+				"bActiveRobots" + BSRobotType.SOLDIER + ": 'B: Active " + BSRobotType.SOLDIER + "s'," +
+				"bActiveRobots" + BSRobotType.SCOUT + ": 'B: Active " + BSRobotType.SCOUT + "s'," +
+				"bActiveRobots" + BSRobotType.DISRUPTER + ": 'B: Active " + BSRobotType.DISRUPTER + "s'," +
+				"bActiveRobots" + BSRobotType.SCORCHER + ": 'B: Active " + BSRobotType.SCORCHER + "s'," +
+				"bActiveRobots" + BSRobotType.TOWER + ": 'B: Active " + BSRobotType.TOWER + "s'," +
+				"};" +
+				"</script>");
 		out.print("<script type='text/javascript'>" +
 				"var rounds = " + result.getRounds() + 
 				"</script>");
@@ -96,33 +122,52 @@ public class AnalysisContentServlet extends HttpServlet {
 		// TODO: aggregate view for some stats
 		out.println("<div id='buttonWrapper' style='height:70px; text-align:center'>");
 		out.println("<div id='aViewButtons' style='margin-left:15px; float:left'>" +
-				"<input type='radio' id='aTotalRobots' name='aTotalRobots' /><label for='aTotalRobots'>All Robots</label>");
-		for (int i = 0; i < BSRobotType.values().length; i++) {
-			out.println("<input type='radio' id='aRobots" + i + "' name='aRobots" + i + "' /><label for='aRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
-			out.println("<input type='radio' id='aActiveRobots" + i + "' name='aActiveRobots" + i + "' /><label for='aActiveRobots" + i + "'>Active " + BSRobotType.values()[i] + "s</label>");
+				"<div>" +
+				"<input type='radio' id='aTotalRobots' name='aTotalRobots' /><label for='aTotalRobots'>All Robots</label>" + 
+				"<input type='radio' id='aActiveRobots' name='aActiveRobots' /><label for='aActiveRobots'>All Active Robots</label>" +
+				"</div>");
+		out.println("<div>");
+		int index = 0;
+		for (BSRobotType type: BSRobotType.values()) {
+//			out.println("<input type='radio' id='aRobots" + i + "' name='aRobots" + i + "' /><label for='aRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
+			out.println("<input type='radio' id='aActiveRobots" + type + "' name='aActiveRobots" + type + "' />" +
+					"<label for='aActiveRobots" + type + "'>Active " + BSRobotType.values()[type.ordinal()] + "s</label>");
+			if (++index % 3 == 0) {
+				out.println("</div><div>");
+			}
 		}
-		out.println("<input type='radio' id='aFluxMsg' name='aFluxMsg' /><label for='aFluxMsg'>Flux (messaging)</label>" +
-				"<input type='radio' id='aFluxSpawn' name='aFluxSpawn' /><label for='aFluxSpawn'>Flux (spawning)</label>" +
-				"<input type='radio' id='aFluxMove' name='aFluxMove' /><label for='aFluxMove'>Flux (moving)</label>" +
-				"<input type='radio' id='aFluxUpkeep' name='aFluxUpkeep' /><label for='aFluxUpkeep'>Flux (upkeep)</label>" +
+		out.println("</div>");
+		out.println("<div><span style='font-weight:bold; margin-right:10px'>Flux Spent:</span>" +
+				"<input type='radio' id='aFluxSpawn' name='aFluxSpawn' /><label for='aFluxSpawn'>Spawning</label>" +
+				"<input type='radio' id='aFluxMove' name='aFluxMove' /><label for='aFluxMove'>Moving</label>" +
+				"<input type='radio' id='aFluxUpkeep' name='aFluxUpkeep' /><label for='aFluxUpkeep'>Upkeep</label>");
+		out.println("</div>" +
 				"</div>");
 		
 		out.println("<div id='bViewButtons' style='margin-left:20px; float:right'>" +
-				"<input type='radio' id='bTotalRobots' name='bTotalRobots' /><label for='bTotalRobots'>Robots</label>");
-		for (int i = 0; i < BSRobotType.values().length; i++) {
-			out.println("<input type='radio' id='bRobots" + i + "' name='bRobots" + i + "' /><label for='bRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
-			out.println("<input type='radio' id='bActiveRobots" + i + "' name='bActiveRobots" + i + "' /><label for='bActiveRobots" + i + "'>Active " + BSRobotType.values()[i] + "s</label>");
+				"<div>" +
+				"<input type='radio' id='bTotalRobots' name='bTotalRobots' /><label for='bTotalRobots'>All Robots</label>" + 
+				"<input type='radio' id='bActiveRobots' name='bActiveRobots' /><label for='bActiveRobots'>All Active Robots</label>" +
+				"</div>");
+		out.println("<div>");
+		for (BSRobotType type: BSRobotType.values()) {
+//			out.println("<input type='radio' id='bRobots" + i + "' name='bRobots" + i + "' /><label for='bRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
+			out.println("<input type='radio' id='bActiveRobots" + type + "' name='bActiveRobots" + type + "' />" +
+					"<label for='bActiveRobots" + type + "'>Active " + BSRobotType.values()[type.ordinal()] + "s</label>");
+			if (++index % 3 == 0) {
+				out.println("</div><div>");
+			}
 		}
-		out.println("<input type='radio' id='bFluxMsg' name='bFluxMsg' /><label for='bFluxMsg'>Flux (messaging)</label>" +
-				"<input type='radio' id='bFluxSpawn' name='bFluxSpawn' /><label for='bFluxSpawn'>Flux (spawning)</label>" +
-				"<input type='radio' id='bFluxMove' name='bFluxMove' /><label for='bFluxMove'>Flux (moving)</label>" +
-				"<input type='radio' id='bFluxUpkeep' name='bFluxUpkeep' /><label for='bFluxUpkeep'>Flux (upkeep)</label>" +
+		out.println("</div>");
+		out.println("<div><span style='font-weight:bold; margin-right:10px'>Flux Spent:</span>" +
+				"<input type='radio' id='bFluxSpawn' name='bFluxSpawn' /><label for='bFluxSpawn'>Spawning</label>" +
+				"<input type='radio' id='bFluxMove' name='bFluxMove' /><label for='bFluxMove'>Moving</label>" +
+				"<input type='radio' id='bFluxUpkeep' name='bFluxUpkeep' /><label for='bFluxUpkeep'>Upkeep</label>");
+		out.println("</div>" +
 				"</div>");
 		out.println("<button id='resetZoom' style='margin-top:10px'>Reset zoom</button>");
 		out.println("</div>");
-		out.println("<div id='chart' style='height: 400px; width:100%'></div>");
-
-
+		out.println("<div id='chart' style='height: 400px; width:100%; top:100px'></div>");
 		out.println("<script src='js/analysis.js'></script>");
 		out.println("</body></html>");
 	}

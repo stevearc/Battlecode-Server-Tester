@@ -16,7 +16,6 @@ public class TeamMatchResult implements Serializable {
 	private Integer[][] robotsBuiltByType;
 	private Integer[] totalRobotsKilled;
 	private Integer[][] robotsKilledByType;
-	private Double[] fluxSpentOnMessaging;
 	private Double[] fluxSpentOnSpawning;
 	private Double[] fluxSpentOnMoving;
 	private Double[] fluxSpentOnUpkeep;
@@ -91,11 +90,6 @@ public class TeamMatchResult implements Serializable {
 	}
 
 	@Lob
-	public Double[] getFluxSpentOnMessaging() {
-		return fluxSpentOnMessaging;
-	}
-
-	@Lob
 	public Double[] getFluxSpentOnSpawning() {
 		return fluxSpentOnSpawning;
 	}
@@ -146,11 +140,6 @@ public class TeamMatchResult implements Serializable {
 
 	public void setRobotsKilledByType(Integer[][] robotsKilledByType) {
 		this.robotsKilledByType = robotsKilledByType;
-	}
-
-
-	public void setFluxSpentOnMessaging(Double[] fluxSpentOnMessaging) {
-		this.fluxSpentOnMessaging = fluxSpentOnMessaging;
 	}
 
 

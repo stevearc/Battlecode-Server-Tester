@@ -2,7 +2,9 @@ package model;
 
 
 public class BSUserPrefs {
-	private int[][] analysisViewLines = {{1,0,0,0}, {1,0,0,0}};
+	private int[][] analysisViewLines = {
+			{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+			{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 
 	public int[][] getAnalysisViewLines() {
 		return analysisViewLines;
