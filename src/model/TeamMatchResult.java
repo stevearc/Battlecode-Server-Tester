@@ -19,6 +19,7 @@ public class TeamMatchResult implements Serializable {
 	private Double[] fluxSpentOnSpawning;
 	private Double[] fluxSpentOnMoving;
 	private Double[] fluxSpentOnUpkeep;
+	private Double[] totalFluxGathered;
 	
 	
 	public static TeamMatchResult constructTeamMatchResult(long rounds) {
@@ -104,6 +105,11 @@ public class TeamMatchResult implements Serializable {
 		return fluxSpentOnUpkeep;
 	}
 
+	@Lob
+	public Double[] getTotalFluxGathered() {
+		return totalFluxGathered;
+	}
+
 
 	public void setTotalRobots(Integer[] totalRobots) {
 		this.totalRobots = totalRobots;
@@ -155,6 +161,11 @@ public class TeamMatchResult implements Serializable {
 
 	public void setFluxSpentOnUpkeep(Double[] fluxSpentOnUpkeep) {
 		this.fluxSpentOnUpkeep = fluxSpentOnUpkeep;
+	}
+	
+	
+	public void setTotalFluxGathered(Double[] totalFluxGathered) {
+		this.totalFluxGathered = totalFluxGathered;
 	}
 
 }

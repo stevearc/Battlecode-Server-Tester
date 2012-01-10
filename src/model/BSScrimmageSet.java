@@ -1,6 +1,5 @@
 package model;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 

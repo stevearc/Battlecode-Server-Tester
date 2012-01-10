@@ -10,6 +10,7 @@ import model.TEAM;
 import model.TeamMatchResult;
 import model.MatchResult.WIN_CONDITION;
 import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.engine.signal.Signal;
@@ -34,6 +35,7 @@ import battlecode.world.signal.SpawnSignal;
 public class GameData extends Proxy {
 	// Maps robotID to info
 	private HashMap<Integer, RobotStat> robots = new HashMap<Integer, RobotStat>();
+	private HashMap<Integer, RobotStat>[] archons;
 
 	private MatchFooter footer;
 	private ArrayList<RoundDelta> rounds = new ArrayList<RoundDelta>();
@@ -41,7 +43,7 @@ public class GameData extends Proxy {
 	private String teamA;
 	private String teamB;
 	private String[] maps;
-	
+
 	@Override
 	public void open() throws IOException {
 	}
@@ -54,7 +56,7 @@ public class GameData extends Proxy {
 	protected OutputStream getOutputStream() throws IOException {
 		return null;
 	}
-	
+
 	public void addData(Object o) throws IOException {
 		if (o instanceof RoundDelta) {
 			writeRound((RoundDelta) o);
@@ -66,7 +68,7 @@ public class GameData extends Proxy {
 			writeObject(o);
 		}
 	}
-	
+
 	@Override
 	public void writeObject(Object o) {
 		if (o instanceof GameStats) {
@@ -83,7 +85,7 @@ public class GameData extends Proxy {
 
 	@Override
 	public void writeHeader(MatchHeader header) throws IOException {
-		
+
 	}
 
 	@Override
@@ -98,17 +100,17 @@ public class GameData extends Proxy {
 
 	@Override
 	public void writeStats(RoundStats stats) throws IOException {
-		
+
 	}
-	
+
 	public String getTeamA() {
 		return teamA;
 	}
-	
+
 	public String getTeamB() {
 		return teamB;
 	}
-	
+
 	public String[] getMaps() {
 		return maps;
 	}
@@ -118,6 +120,7 @@ public class GameData extends Proxy {
 		MatchResultImpl matchResult = new MatchResultImpl();
 		RobotStat r;
 		Team[] teams = Team.values();
+		archons = new HashMap[teams.length];
 		TeamMatchResult[] teamResults = new TeamMatchResult[teams.length];
 		ArrayList<Integer>[] totalRobots = new ArrayList[teams.length];
 		Integer[] currentRobots = new Integer[teams.length];
@@ -141,8 +144,11 @@ public class GameData extends Proxy {
 		Integer[] currentRobotsKilled = new Integer[teams.length];
 		ArrayList<Integer>[][] robotsKilledByType = new ArrayList[teams.length][RobotType.values().length];
 		Integer[][] currentRobotsKilledByType = new Integer[teams.length][RobotType.values().length];
+		ArrayList<Double>[] fluxGathered = new ArrayList[teams.length];
+		Double[] currentFluxGathered = new Double[teams.length];
 
 		for (int i = 0; i < teams.length; i++) {
+			archons[i] = new HashMap<Integer, RobotStat>();
 			teamResults[i] = new TeamMatchResult();
 			totalRobots[i] = new ArrayList<Integer>();
 			currentRobots[i] = 0;
@@ -158,6 +164,8 @@ public class GameData extends Proxy {
 			currentRobotsBuilt[i] = 0;
 			robotsKilled[i] = new ArrayList<Integer>();
 			currentRobotsKilled[i] = 0;
+			fluxGathered[i] = new ArrayList<Double>();
+			currentFluxGathered[i] = 0.0;
 			for (int j = 0; j < RobotType.values().length; j++) {
 				robotsByType[i][j] = new ArrayList<Integer>();
 				currentRobotsByType[i][j] = 0;
@@ -182,6 +190,7 @@ public class GameData extends Proxy {
 					currentRobots[s.getTeam().ordinal()]++;
 					currentRobotsByType[s.getTeam().ordinal()][s.getType().ordinal()]++;
 					r = new RobotStat(s.getTeam(), s.getType());
+					r.setLocation(s.getLoc());
 					if (r.recalculateOnStatus()) {
 						if (r.isOn()) {
 							currentActiveRobots[s.getTeam().ordinal()]++;
@@ -192,25 +201,34 @@ public class GameData extends Proxy {
 					currentRobotsBuilt[s.getTeam().ordinal()]++;
 					currentRobotsBuiltByType[s.getTeam().ordinal()][s.getType().ordinal()]++;
 					robots.put(s.getRobotID(), r);
+					if (s.getType() == RobotType.ARCHON) {
+						archons[r.team.ordinal()].put(s.getRobotID(), r);
+					}
 				} 
 				else if(signal instanceof DeathSignal) 
 				{
 					DeathSignal s = (DeathSignal)signal;
 					r = robots.remove(s.getObjectID());
-					currentRobots[r.team.ordinal()]--;
-					currentRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
-					if (r.isOn()) {
-						currentActiveRobots[r.team.ordinal()]--;
-						currentActiveRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
+					if (r != null) {
+						currentRobots[r.team.ordinal()]--;
+						currentRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
+						if (r.isOn()) {
+							currentActiveRobots[r.team.ordinal()]--;
+							currentActiveRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
+						}
+						currentRobotsKilled[r.team.opponent().ordinal()]++;
+						currentRobotsKilledByType[r.team.opponent().ordinal()][r.type.ordinal()]++;
+						if (r.type == RobotType.ARCHON) {
+							archons[r.team.ordinal()].remove(s.getObjectID());
+						}
 					}
-					currentRobotsKilled[r.team.opponent().ordinal()]++;
-					currentRobotsKilledByType[r.team.opponent().ordinal()][r.type.ordinal()]++;
 				} 
 				else if (signal instanceof MovementSignal) 
 				{
 					MovementSignal s = (MovementSignal)signal;
 					r = robots.get(s.getRobotID());
 					currentFluxSpentOnMoving[r.team.ordinal()] += r.type.moveCost;
+					r.setLocation(s.getNewLoc());
 				} 
 				else if (signal instanceof FluxChangeSignal) 
 				{
@@ -240,8 +258,23 @@ public class GameData extends Proxy {
 						int bytecodesBelowBase = GameConstants.BYTECODE_LIMIT - s.getNumBytecodes()[i];
 						if(bytecodesBelowBase > 0 && r.type != RobotType.ARCHON)
 							currentFluxSpentOnUpkeep[r.team.ordinal()] += 
-							(GameConstants.YIELD_BONUS*bytecodesBelowBase/GameConstants.BYTECODE_LIMIT*GameConstants.UNIT_UPKEEP);		
+								(GameConstants.YIELD_BONUS*bytecodesBelowBase/GameConstants.BYTECODE_LIMIT*GameConstants.UNIT_UPKEEP);		
 					}
+				}
+			}
+			// Calculate the flux produced this round
+			// This algorithm is copy/pasted from InternalRobot
+			for (int i = 0; i < teams.length; i++) {
+				for (RobotStat rs: archons[i].values()) {
+					int d, dmin = GameConstants.PRODUCTION_PENALTY_R2;
+					for (RobotStat other: archons[i].values()) {
+						d = rs.getLocation().distanceSquaredTo(other.getLocation());
+						if(d>0&&d<=dmin)
+							dmin=d;
+					}
+					double prod = GameConstants.MIN_PRODUCTION + (GameConstants.MAX_PRODUCTION - GameConstants.MIN_PRODUCTION)*
+					Math.sqrt(((double)dmin)/GameConstants.PRODUCTION_PENALTY_R2);
+					currentFluxGathered[i] += prod;
 				}
 			}
 
@@ -253,6 +286,7 @@ public class GameData extends Proxy {
 				fluxSpentOnUpkeep[i].add(currentFluxSpentOnUpkeep[i]);
 				robotsBuilt[i].add(currentRobotsBuilt[i]);
 				robotsKilled[i].add(currentRobotsKilled[i]);
+				fluxGathered[i].add(currentFluxGathered[i]);
 				for (int j = 0; j < RobotType.values().length; j++) {
 					robotsByType[i][j].add(currentRobotsByType[i][j]);
 					activeRobotsByType[i][j].add(currentActiveRobotsByType[i][j]);
@@ -269,7 +303,8 @@ public class GameData extends Proxy {
 			teamResults[i].setFluxSpentOnUpkeep(fluxSpentOnUpkeep[i].toArray(new Double[rounds.size()]));
 			teamResults[i].setTotalRobotsBuilt(robotsBuilt[i].toArray(new Integer[rounds.size()]));
 			teamResults[i].setTotalRobotsKilled(robotsKilled[i].toArray(new Integer[rounds.size()]));
-			
+			teamResults[i].setTotalFluxGathered(fluxGathered[i].toArray(new Double[rounds.size()]));
+
 			Integer[][] robotsByTypeArray = new Integer[RobotType.values().length][];
 			Integer[][] activeRobotsByTypeArray = new Integer[RobotType.values().length][];
 			Integer[][] robotsBuiltByTypeArray = new Integer[RobotType.values().length][];
@@ -284,7 +319,7 @@ public class GameData extends Proxy {
 			teamResults[i].setActiveRobotsByType(activeRobotsByTypeArray);
 			teamResults[i].setRobotsBuiltByType(robotsBuiltByTypeArray);
 			teamResults[i].setRobotsKilledByType(robotsKilledByTypeArray);
-			
+
 		}
 
 		matchResult.setRounds(new Long(rounds.size()));
@@ -321,20 +356,29 @@ public class GameData extends Proxy {
 		public final Team team;
 		private double flux;
 		private boolean on;
+		private MapLocation location;
 
 		public RobotStat(Team team, RobotType type) {
 			this.team = team;
 			this.type = type;
 		}
-		
+
 		public void setFlux(double flux) {
 			this.flux = flux;
 		}
-		
+
+		public void setLocation(MapLocation location) {
+			this.location = location;
+		}
+
+		public MapLocation getLocation() {
+			return location;
+		}
+
 		public boolean isOn() {
 			return on;
 		}
-		
+
 		/**
 		 * 
 		 * @return true if the status has changed

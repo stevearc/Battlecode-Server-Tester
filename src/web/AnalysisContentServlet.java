@@ -77,6 +77,7 @@ public class AnalysisContentServlet extends HttpServlet {
 		printArray(out, "aFluxSpawn", result.getaResult().getFluxSpentOnSpawning());
 		printArray(out, "aFluxMove", result.getaResult().getFluxSpentOnMoving());
 		printArray(out, "aFluxUpkeep", result.getaResult().getFluxSpentOnUpkeep());
+		printArray(out, "aFluxGained", result.getaResult().getTotalFluxGathered());
 
 		printArray(out, "bTotalRobots", result.getbResult().getTotalRobots());
 		printArray(out, "bActiveRobots", result.getbResult().getActiveRobots());
@@ -87,6 +88,7 @@ public class AnalysisContentServlet extends HttpServlet {
 		printArray(out, "bFluxSpawn", result.getbResult().getFluxSpentOnSpawning());
 		printArray(out, "bFluxMove", result.getbResult().getFluxSpentOnMoving());
 		printArray(out, "bFluxUpkeep", result.getbResult().getFluxSpentOnUpkeep());
+		printArray(out, "bFluxGained", result.getbResult().getTotalFluxGathered());
 
 		out.println("<script type='text/javascript'>" +
 				"var nameMap = {" +
@@ -101,6 +103,7 @@ public class AnalysisContentServlet extends HttpServlet {
 				"aActiveRobots" + BSRobotType.DISRUPTER + ": 'A: Active " + BSRobotType.DISRUPTER + "s'," +
 				"aActiveRobots" + BSRobotType.SCORCHER + ": 'A: Active " + BSRobotType.SCORCHER + "s'," +
 				"aActiveRobots" + BSRobotType.TOWER + ": 'A: Active " + BSRobotType.TOWER + "s'," +
+				"aFluxGained: 'A: Total Flux Gained'," +
 				"" +
 				"bTotalRobots: 'B: Total Robots'," +
 				"bActiveRobots: 'B: Active Robots'," +
@@ -113,6 +116,7 @@ public class AnalysisContentServlet extends HttpServlet {
 				"bActiveRobots" + BSRobotType.DISRUPTER + ": 'B: Active " + BSRobotType.DISRUPTER + "s'," +
 				"bActiveRobots" + BSRobotType.SCORCHER + ": 'B: Active " + BSRobotType.SCORCHER + "s'," +
 				"bActiveRobots" + BSRobotType.TOWER + ": 'B: Active " + BSRobotType.TOWER + "s'," +
+				"bFluxGained: 'B: Total Flux Gained'," +
 				"};" +
 				"</script>");
 		out.print("<script type='text/javascript'>" +
@@ -137,7 +141,10 @@ public class AnalysisContentServlet extends HttpServlet {
 			}
 		}
 		out.println("</div>");
-		out.println("<div><span style='font-weight:bold; margin-right:10px'>Flux Spent:</span>" +
+		out.println("<div>" +
+				"<span style='font-weight:bold; margin:10px'>Flux:</span>" +
+				"<input type='radio' id='aFluxGained' name='aFluxGained' /><label for='aFluxGained'>Gained</label>" +
+				"<span style='font-weight:bold; margin:10px'>Spent:</span>" +
 				"<input type='radio' id='aFluxSpawn' name='aFluxSpawn' /><label for='aFluxSpawn'>Spawning</label>" +
 				"<input type='radio' id='aFluxMove' name='aFluxMove' /><label for='aFluxMove'>Moving</label>" +
 				"<input type='radio' id='aFluxUpkeep' name='aFluxUpkeep' /><label for='aFluxUpkeep'>Upkeep</label>");
@@ -159,7 +166,10 @@ public class AnalysisContentServlet extends HttpServlet {
 			}
 		}
 		out.println("</div>");
-		out.println("<div><span style='font-weight:bold; margin-right:10px'>Flux Spent:</span>" +
+		out.println("<div>" +
+				"<span style='font-weight:bold; margin:10px'>Flux:</span>" +
+				"<input type='radio' id='bFluxGained' name='bFluxGained' /><label for='bFluxGained'>Gained</label>" +
+				"<span style='font-weight:bold; margin:10px'>Spent:</span>" +
 				"<input type='radio' id='bFluxSpawn' name='bFluxSpawn' /><label for='bFluxSpawn'>Spawning</label>" +
 				"<input type='radio' id='bFluxMove' name='bFluxMove' /><label for='bFluxMove'>Moving</label>" +
 				"<input type='radio' id='bFluxUpkeep' name='bFluxUpkeep' /><label for='bFluxUpkeep'>Upkeep</label>");
