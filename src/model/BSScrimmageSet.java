@@ -2,15 +2,17 @@ package model;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 
 /**
@@ -28,9 +30,7 @@ public class BSScrimmageSet implements Serializable{
 	private String playerA;
 	private String playerB;
 	private TEAM winner;
-	private ScrimmageMatchResult scrim1;
-	private ScrimmageMatchResult scrim2;
-	private ScrimmageMatchResult scrim3;
+	private List<ScrimmageMatchResult> scrimmageMatches;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="scrimmage_id_gen")
@@ -63,21 +63,11 @@ public class BSScrimmageSet implements Serializable{
 		return winner;
 	}
 
-	@OneToOne
-	public ScrimmageMatchResult getScrim1() {
-		return scrim1;
+	@OneToMany(mappedBy="scrimmageSet", fetch=FetchType.LAZY, orphanRemoval=true)
+	public List<ScrimmageMatchResult> getScrimmageMatches() {
+		return scrimmageMatches;
 	}
 
-	@OneToOne
-	public ScrimmageMatchResult getScrim2() {
-		return scrim2;
-	}
-
-	@OneToOne
-	public ScrimmageMatchResult getScrim3() {
-		return scrim3;
-	}
-	
 	public String toPath() {
 		return "static" + File.separator + "scrimmages" + File.separator + fileName;
 	}
@@ -106,16 +96,8 @@ public class BSScrimmageSet implements Serializable{
 		this.winner = winner;
 	}
 
-	public void setScrim1(ScrimmageMatchResult scrim1) {
-		this.scrim1 = scrim1;
-	}
-
-	public void setScrim2(ScrimmageMatchResult scrim2) {
-		this.scrim2 = scrim2;
-	}
-
-	public void setScrim3(ScrimmageMatchResult scrim3) {
-		this.scrim3 = scrim3;
+	public void setScrimmageMatches(List<ScrimmageMatchResult> scrimmageMatches) {
+		this.scrimmageMatches = scrimmageMatches;
 	}
 
 	@Override

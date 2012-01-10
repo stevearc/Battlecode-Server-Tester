@@ -145,18 +145,11 @@ public class MatchRunner implements Runnable {
 		try {
 			GameAnalyzer ga = new GameAnalyzer(scrimData);
 			List<ScrimmageMatchResult> results = ga.analyzeScrimmageMatches();
-			switch (results.size()) {
-			case 3:
-				scrim.setScrim3(results.get(2));
-			case 2:
-				scrim.setScrim2(results.get(1));
-			case 1:
-				scrim.setScrim1(results.get(0));
-				break;
-			default:
-				_log.error("Expected 1, 2, or 3 results.  Got " + results.size());	
+			if (results.isEmpty()) {
+				_log.error("Analysis turned up no results!");
 				worker.matchAnalyzed(this, core, null, STATUS.CANCELED);
 			}
+			scrim.setScrimmageMatches(results);
 			int[] wins = new int[TEAM.values().length];
 			for (ScrimmageMatchResult smr: results) {
 				wins[smr.getWinner().ordinal()]++;

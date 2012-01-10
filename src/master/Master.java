@@ -23,6 +23,7 @@ import model.BSRun;
 import model.BSScrimmageSet;
 import model.MatchResultImpl;
 import model.STATUS;
+import model.ScrimmageMatchResult;
 import model.TEAM;
 import networking.Dependencies;
 import networking.DependencyHashes;
@@ -189,15 +190,16 @@ public class Master extends AbstractMaster {
 		BSRun run = em.find(BSRun.class, runId);
 		// If it's running right now, just cancel it
 		if (run.getStatus() == STATUS.RUNNING) {
-			_log.info("canceling run");
+			_log.info("canceling run " + runId);
 			stopCurrentRun(STATUS.CANCELED);
 			startRun();
 		} else {
+			_log.info("deleting run " + runId);
 			// otherwise, delete it
 			// first delete rms files
 			for (BSMatch match: run.getMatches()) {
 				if (match.getStatus() == STATUS.COMPLETE) {
-					File matchFile = new File("matches" + File.separator + match.toMatchFileName());
+					File matchFile = new File("static" + File.separator + "matches" + File.separator + match.toMatchFileName());
 					if (matchFile.exists()) {
 						matchFile.delete();
 					}
@@ -229,11 +231,6 @@ public class Master extends AbstractMaster {
 		// Then delete database entries
 		em.getTransaction().begin();
 		em.remove(scrim);
-		em.remove(scrim.getScrim1());
-		if (scrim.getScrim2() != null)
-			em.remove(scrim.getScrim2());
-		if (scrim.getScrim3() != null)
-			em.remove(scrim.getScrim3());
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
@@ -272,20 +269,11 @@ public class Master extends AbstractMaster {
 		if (dbScrim == null || dbScrim.getStatus() != STATUS.RUNNING) {
 			// Match was already analyzed by another worker or it was canceled
 		} else if (status == STATUS.COMPLETE) {
-			em.persist(scrim.getScrim1());
-			if (scrim.getScrim2() != null)
-				em.persist(scrim.getScrim2());
-			if (scrim.getScrim3() != null)
-				em.persist(scrim.getScrim3());
-			em.getTransaction().begin();
-			em.flush();
-			em.getTransaction().commit();
+			for (ScrimmageMatchResult smr: scrim.getScrimmageMatches()) {
+				smr.setScrimmageSet(scrim);
+				em.persist(smr);
+			}
 			em.merge(scrim);
-			scrim.getScrim1().setScrimmageSet(scrim);
-			if (scrim.getScrim2() != null)
-				scrim.getScrim2().setScrimmageSet(scrim);
-			if (scrim.getScrim3() != null)
-				scrim.getScrim3().setScrimmageSet(scrim);
 			em.getTransaction().begin();
 			em.flush();
 			em.getTransaction().commit();

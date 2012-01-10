@@ -2,8 +2,6 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
@@ -59,13 +57,7 @@ public class ScrimmageViewServlet extends HttpServlet{
 				"</thead>" +
 		"<tbody>");
 
-		List<ScrimmageMatchResult> rounds = new ArrayList<ScrimmageMatchResult>();
-		rounds.add(scrim.getScrim1());
-		if (scrim.getScrim2() != null)
-			rounds.add(scrim.getScrim2());
-		if (scrim.getScrim3() != null)
-			rounds.add(scrim.getScrim3());
-		for (ScrimmageMatchResult result: rounds) {
+		for (ScrimmageMatchResult result: scrim.getScrimmageMatches()) {
 			out.println("<tr>");
 			out.println(td(result) + result.getId() + "</td>");
 			out.println(td(result) + result.getMap() + "</td>");
