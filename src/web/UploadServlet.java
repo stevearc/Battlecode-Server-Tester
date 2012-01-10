@@ -94,16 +94,24 @@ public class UploadServlet extends HttpServlet {
 				em.close();
 			}
 		} else if (request.getParameter("submit-update") != null) {
-			File idata = (File) request.getAttribute("idata");
 			File battlecode_server = (File) request.getAttribute("battlecode-server");
-			if (idata == null || !idata.exists() || idata.isDirectory()) {
-				warn(response, "Please select a valid idata file");
+			File allowedPackages = (File) request.getAttribute("allowedPackages");
+			File disallowedClasses = (File) request.getAttribute("disallowedClasses");
+			File methodCosts = (File) request.getAttribute("methodCosts");
+			if (allowedPackages == null || !allowedPackages.exists() || allowedPackages.isDirectory()) {
+				warn(response, "Please select a valid AllowedPackages.txt file");
+			} 
+			else if (disallowedClasses == null || !disallowedClasses.exists() || disallowedClasses.isDirectory()) {
+				warn(response, "Please select a valid DisallowedClasses.txt file");
+			} 
+			else if (methodCosts == null || !methodCosts.exists() || methodCosts.isDirectory()) {
+				warn(response, "Please select a valid MethodCosts.txt file");
 			} 
 			else if (battlecode_server == null || !battlecode_server.exists() || battlecode_server.isDirectory()) {
 				warn(response, "Please select a valid battlecode-server.jar file");
 			} 
 			else {
-				AbstractMaster.kickoffUpdateBattlecodeFiles(battlecode_server, idata);
+				AbstractMaster.kickoffUpdateBattlecodeFiles(battlecode_server, allowedPackages, disallowedClasses, methodCosts);
 				EntityManager em = HibernateUtil.getEntityManager();
 				Long numRunning = em.createQuery("select count(*) from BSRun run where run.status = ?", Long.class)
 				.setParameter(1, STATUS.RUNNING)
@@ -182,8 +190,16 @@ public class UploadServlet extends HttpServlet {
 				"<td><input type='file' name='battlecode-server'/></td>" +
 				"</tr>");
 		out.println("<tr>" +
-				"<td style='text-align:right'>idata file:</td>" +
-				"<td><input type='file' name='idata'/></td>" +
+				"<td style='text-align:right'>AllowedPackages.txt:</td>" +
+				"<td><input type='file' name='allowedPackages'/></td>" +
+				"</tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>DisallowedClasses.txt:</td>" +
+				"<td><input type='file' name='disallowedClasses'/></td>" +
+				"</tr>");
+		out.println("<tr>" +
+				"<td style='text-align:right'>MethodCosts.txt:</td>" +
+				"<td><input type='file' name='methodCosts'/></td>" +
 				"</tr>");
 		out.println("<tr><td></td>" +
 				"<td><input type='submit' name='submit-update' value='Upload'/></td>" +

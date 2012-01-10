@@ -30,17 +30,19 @@ public abstract class AbstractMaster {
 	 * @param battlecode_server
 	 * @param idata
 	 */
-	public static void kickoffUpdateBattlecodeFiles(final File battlecode_server, final File idata) {
+	public static void kickoffUpdateBattlecodeFiles(final File battlecode_server, final File allowedPackages, 
+			final File disallowedClasses, final File methodCosts) {
 		new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				singleton.updateBattlecodeFiles(battlecode_server, idata);
+				singleton.updateBattlecodeFiles(battlecode_server, allowedPackages, disallowedClasses, methodCosts);
 			}
 
 		}).start();
 	}
-	protected abstract void updateBattlecodeFiles(final File battlecode_server, final File idata);
+	protected abstract void updateBattlecodeFiles(final File battlecode_server, final File allowedPackages, 
+			final File disallowedClasses, final File methodCosts);
 		
 	/**
 	 * Queues a run

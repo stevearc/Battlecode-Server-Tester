@@ -46,7 +46,9 @@ public class Master extends AbstractMaster {
 	private HashSet<WorkerRepr> workers = new HashSet<WorkerRepr>();
 	private Date mapsLastModifiedDate;
 	private File pendingBattlecodeServerFile;
-	private File pendingIdataFile;
+	private File pendingAllowedPackagesFile;
+	private File pendingDisallowedClassesFile;
+	private File pendingMethodCostsFile;
 	private boolean initialized;
 
 	public static Master createMaster(int dataPort) throws Exception {
@@ -149,9 +151,11 @@ public class Master extends AbstractMaster {
 	}
 
 	@Override
-	protected synchronized void updateBattlecodeFiles(File battlecode_server, File idata) {
+	protected synchronized void updateBattlecodeFiles(File battlecode_server, File allowedPackages, File disallowedClasses, File methodCosts) {
 		pendingBattlecodeServerFile = battlecode_server;
-		pendingIdataFile = idata;
+		pendingAllowedPackagesFile = allowedPackages;
+		pendingDisallowedClassesFile = disallowedClasses;
+		pendingMethodCostsFile = methodCosts;
 		if (getCurrentRun() == null) {
 			writeBattlecodeFiles();
 		}
@@ -159,12 +163,16 @@ public class Master extends AbstractMaster {
 
 	private void writeBattlecodeFiles() {
 		try {
-			if (pendingBattlecodeServerFile != null && pendingIdataFile != null) {
+			if (pendingBattlecodeServerFile != null) {
 				_log.info("Writing updated battlecode files");
 				BSUtil.writeFileData(pendingBattlecodeServerFile, "lib" + File.separator + "battlecode-server.jar");
-				BSUtil.writeFileData(pendingIdataFile, "idata");
+				BSUtil.writeFileData(pendingAllowedPackagesFile, "AllowedPackages.txt");
+				BSUtil.writeFileData(pendingDisallowedClassesFile, "DisallowedClasses.txt");
+				BSUtil.writeFileData(pendingMethodCostsFile, "MethodCosts.txt");
 				pendingBattlecodeServerFile = null;
-				pendingIdataFile = null;
+				pendingAllowedPackagesFile = null;
+				pendingDisallowedClassesFile = null;
+				pendingMethodCostsFile = null;
 			}
 		} catch (IOException e) {
 			_log.error("Error updating battlecode version", e);
@@ -375,10 +383,14 @@ public class Master extends AbstractMaster {
 	protected synchronized void sendWorkerMatches(WorkerRepr worker) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		String battlecodeServerHash;
-		String idataHash;
+		String allowedPackagesHash;
+		String disallowedClassesHash;
+		String methodCostsHash;
 		try {
 			battlecodeServerHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar"));
-			idataHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("idata"));
+			allowedPackagesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("AllowedPackages.txt"));
+			disallowedClassesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("DisallowedClasses.txt"));
+			methodCostsHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("MethodCosts.txt"));
 		} catch (FileNotFoundException e) {
 			_log.warn(e);
 			return;
@@ -389,7 +401,7 @@ public class Master extends AbstractMaster {
 			_log.error("Error hashing battlecode-server.jar or idata", e);
 			return;
 		}
-		DependencyHashes deps = new DependencyHashes(battlecodeServerHash, idataHash);
+		DependencyHashes deps = new DependencyHashes(battlecodeServerHash, allowedPackagesHash, disallowedClassesHash, methodCostsHash);
 
 		sendBlock:
 		{
@@ -490,11 +502,15 @@ public class Master extends AbstractMaster {
 		byte[] teamA = null;
 		byte[] teamB = null;
 		byte[] battlecodeServer = null;
-		byte[] idata = null;
+		byte[] allowedPackages = null;
+		byte[] disallowedClasses = null;
+		byte[] methodCosts = null;
 		try {
 			if (needUpdate) {
 				battlecodeServer = BSUtil.getFileData("lib" + File.separator + "battlecode-server.jar");
-				idata = BSUtil.getFileData("idata");
+				allowedPackages = BSUtil.getFileData("AllowedPackages.txt");
+				disallowedClasses = BSUtil.getFileData("DisallowedClasses.txt");
+				methodCosts = BSUtil.getFileData("MethodCosts.txt");
 			}
 			if (match != null) {
 				if (needMap) {
@@ -506,9 +522,9 @@ public class Master extends AbstractMaster {
 				if (needTeamB) {
 					teamB = BSUtil.getFileData("teams" + File.separator + match.team_b + ".jar");
 				}
-				dep = new Dependencies(battlecodeServer, idata, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
+				dep = new Dependencies(battlecodeServer, allowedPackages, disallowedClasses, methodCosts, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			} else {
-				dep = new Dependencies(battlecodeServer, idata, null, map, null, teamA, null, teamB);
+				dep = new Dependencies(battlecodeServer, allowedPackages, disallowedClasses, methodCosts, null, map, null, teamA, null, teamB);
 			}
 			_log.info("Sending " + worker + " " + dep);
 			worker.sendDependencies(dep);

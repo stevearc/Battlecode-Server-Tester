@@ -121,7 +121,13 @@ public class Worker implements Controller, Runnable {
 			if (!deps.battlecodeServerHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("lib" + File.separator + "battlecode-server.jar")))) {
 				return false;
 			}
-			if (!deps.idataHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("idata")))) {
+			if (!deps.allowedPackagesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("AllowedPackages.txt")))) {
+				return false;
+			}
+			if (!deps.disallowedClassesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("DisallowedClasses.txt")))) {
+				return false;
+			}
+			if (!deps.methodCostsHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("MethodCosts.txt")))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -245,8 +251,14 @@ public class Worker implements Controller, Runnable {
 				writeDataToFile(dep.battlecodeServer, "lib" + File.separator + "battlecode-server.jar");
 				needRestart = true;
 			}
-			if (dep.idata != null) {
-				writeDataToFile(dep.idata, "idata");
+			if (dep.allowedPackages != null) {
+				writeDataToFile(dep.allowedPackages, "AllowedPackages.txt");
+			}
+			if (dep.disallowedClasses != null) {
+				writeDataToFile(dep.disallowedClasses, "DisallowedClasses.txt");
+			}
+			if (dep.methodCosts != null) {
+				writeDataToFile(dep.methodCosts, "MethodCosts.txt");
 			}
 			if (dep.map != null) {
 				writeDataToFile(dep.map, "maps" + File.separator + dep.mapName + ".xml");

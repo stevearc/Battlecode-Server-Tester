@@ -12,12 +12,17 @@ public class Dependencies implements Serializable {
 	public final String teamAName;
 	public final String teamBName;
 	public final byte[] battlecodeServer;
-	public final byte[] idata;
+	public final byte[] allowedPackages;
+	public final byte[] disallowedClasses;
+	public final byte[] methodCosts;
 	
-	public Dependencies(byte[] battlecodeServer, byte[] idata, String mapName, 
-			byte[] map, String teamAName, byte[] teamA, String teamBName, byte[] teamB) {
+	public Dependencies(byte[] battlecodeServer, byte[] allowedPackages, byte[] disallowedClasses, 
+			byte[] methodCosts, String mapName, byte[] map, String teamAName, byte[] teamA, 
+			String teamBName, byte[] teamB) {
 		this.battlecodeServer = battlecodeServer;
-		this.idata = idata;
+		this.allowedPackages = allowedPackages;
+		this.disallowedClasses = disallowedClasses;
+		this.methodCosts = methodCosts;
 		this.mapName = mapName;
 		this.map = map;
 		this.teamAName = teamAName;
@@ -29,7 +34,9 @@ public class Dependencies implements Serializable {
 	@Override
 	public String toString() {
 		return "Dependency: " + (battlecodeServer == null ? "" : "battlecode-server.jar ") + 
-		(idata == null ? "" : "idata ") + 
+		(allowedPackages == null ? "" : "AllowedPackages.txt ") + 
+		(disallowedClasses == null ? "" : "DisallowedClasses.txt ") + 
+		(methodCosts == null ? "" : "MethodCosts.txt ") + 
 		(map == null ? "" : mapName + ".xml ") + 
 		(teamA == null ? "" : teamAName + ".jar ") + 
 		(teamB == null ? "" : teamBName + ".jar ");

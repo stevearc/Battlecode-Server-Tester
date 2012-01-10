@@ -56,20 +56,36 @@ public class ScrimmageMatchResult implements MatchResult, Serializable{
 	}
 	@Embedded
 	@AttributeOverrides( {
+		@AttributeOverride(name="totalRobots", column = @Column(name="totalRobots_A")),
+		@AttributeOverride(name="robotsByType", column = @Column(name="robotsByType_A")),
 		@AttributeOverride(name="activeRobots", column = @Column(name="activeRobots_A")),
-		@AttributeOverride(name="fluxDrain", column = @Column(name="fluxDrain_A")),
-		@AttributeOverride(name="fluxIncome", column = @Column(name="fluxIncome_A")),
-		@AttributeOverride(name="fluxReserve", column = @Column(name="fluxReserve_A"))
+		@AttributeOverride(name="activeRobotsByType", column = @Column(name="activeRobotsByType_A")),
+		@AttributeOverride(name="totalRobotsBuilt", column = @Column(name="totalRobotsBuilt_A")),
+		@AttributeOverride(name="robotsBuiltByType", column = @Column(name="robotsBuiltByType_A")),
+		@AttributeOverride(name="totalRobotsKilled", column = @Column(name="totalRobotsKilled_A")),
+		@AttributeOverride(name="robotsKilledByType", column = @Column(name="robotsKilledByType_A")),
+		@AttributeOverride(name="fluxSpentOnMessaging", column = @Column(name="fluxSpentOnMessaging_A")),
+		@AttributeOverride(name="fluxSpentOnSpawning", column = @Column(name="fluxSpentOnSpawning_A")),
+		@AttributeOverride(name="fluxSpentOnMoving", column = @Column(name="fluxSpentOnMoving_A")),
+		@AttributeOverride(name="fluxSpentOnUpkeep", column = @Column(name="fluxSpentOnUpkeep_A"))
 	})
 	public TeamMatchResult getaResult() {
 		return aResult;
 	}
 	@Embedded
 	@AttributeOverrides( {
+		@AttributeOverride(name="totalRobots", column = @Column(name="totalRobots_B")),
+		@AttributeOverride(name="robotsByType", column = @Column(name="robotsByType_B")),
 		@AttributeOverride(name="activeRobots", column = @Column(name="activeRobots_B")),
-		@AttributeOverride(name="fluxDrain", column = @Column(name="fluxDrain_B")),
-		@AttributeOverride(name="fluxIncome", column = @Column(name="fluxIncome_B")),
-		@AttributeOverride(name="fluxReserve", column = @Column(name="fluxReserve_B"))
+		@AttributeOverride(name="activeRobotsByType", column = @Column(name="activeRobotsByType_B")),
+		@AttributeOverride(name="totalRobotsBuilt", column = @Column(name="totalRobotsBuilt_B")),
+		@AttributeOverride(name="robotsBuiltByType", column = @Column(name="robotsBuiltByType_B")),
+		@AttributeOverride(name="totalRobotsKilled", column = @Column(name="totalRobotsKilled_B")),
+		@AttributeOverride(name="robotsKilledByType", column = @Column(name="robotsKilledByType_B")),
+		@AttributeOverride(name="fluxSpentOnMessaging", column = @Column(name="fluxSpentOnMessaging_B")),
+		@AttributeOverride(name="fluxSpentOnSpawning", column = @Column(name="fluxSpentOnSpawning_B")),
+		@AttributeOverride(name="fluxSpentOnMoving", column = @Column(name="fluxSpentOnMoving_B")),
+		@AttributeOverride(name="fluxSpentOnUpkeep", column = @Column(name="fluxSpentOnUpkeep_B"))
 	})
 	public TeamMatchResult getbResult() {
 		return bResult;
