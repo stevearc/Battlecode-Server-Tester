@@ -50,6 +50,11 @@ public class IndexServlet extends HttpServlet {
 		WebUtil.writeTabs(request, response, NAME);
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 		
+		out.println("<div id='match-info-dialog' style='text-align:center'>Battlecode handles Random methods " +
+				"deterministically by setting a static seed in the map file.  If you change the map seed, you will " +
+				"theoretically get different results for the same map (useful for testing).  " +
+				"This control lets you manually set how many matches to run on each map and " +
+				"what the seeds will be for each match.</div>");
 		EntityManager em = HibernateUtil.getEntityManager();
 		// Begin the New Run form
 		List<BSPlayer> players = em.createQuery("from BSPlayer player order by player.playerName desc", BSPlayer.class).getResultList();
@@ -76,7 +81,7 @@ public class IndexServlet extends HttpServlet {
 		}
 		out.println("</select>");
 		out.println("</p>");
-		out.println("Matches per map: " +
+		out.println("Matches per map<span id='match-info'></span>: " +
 		"<select id='seed_selector' onChange='numSeedsChange()'>");
 		for (int i = 1; i < 21; i++) 
 			out.println("<option name='" + i + "'>" + i + "</option>");

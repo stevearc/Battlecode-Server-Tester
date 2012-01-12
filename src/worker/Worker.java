@@ -93,7 +93,7 @@ public class Worker implements Controller, Runnable {
 
 	@Override
 	public void run() {
-		cleanCompiledPlayers();
+		cleanWorkingFiles();
 		while (runWorker) {
 			try {
 				if (network == null || !network.isConnected()) {
@@ -237,7 +237,7 @@ public class Worker implements Controller, Runnable {
 		ostream.close();
 	}
 	
-	private void cleanCompiledPlayers() {
+	private void cleanWorkingFiles() {
 		File[] garbageDirs = new File("teams").listFiles(new FileFilter() {
 			@Override
 			public boolean accept(File pathname) {
@@ -249,6 +249,17 @@ public class Worker implements Controller, Runnable {
 				FileUtils.deleteDirectory(f);
 			} catch (IOException e) {
 				_log.warn("Error cleaning up compiled player dir: " + f.getAbsolutePath(), e);
+			}
+		}
+		garbageDirs = new File(".").listFiles(new FileFilter() {
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.getAbsolutePath().endsWith(".rms");
+			}
+		});
+		for (File f: garbageDirs) {
+			if (!f.delete()) {
+				_log.warn("Error deleting file: " + f.getPath());
 			}
 		}
 	}
@@ -371,7 +382,7 @@ public class Worker implements Controller, Runnable {
 					running[i] = null;
 				}
 			}
-			cleanCompiledPlayers();
+			cleanWorkingFiles();
 			break;
 		default:
 			_log.warn("Unrecognized packet command: " + p.getCmd());

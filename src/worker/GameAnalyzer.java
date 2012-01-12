@@ -95,4 +95,12 @@ public class GameAnalyzer {
 
 		return results;
 	}
+	
+	public void close() {
+		try {
+			input.close();
+		} catch (IOException e) {
+			_log.error("Error closing input stream", e);
+		}
+	}
 }

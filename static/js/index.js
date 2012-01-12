@@ -32,6 +32,15 @@ $(function() {
         runTable.fnAdjustColumnSizing();
     } );
 
+    $('#match-info').attr('class','ui-icon ui-icon-info').button().click(function() {
+        $('#match-info-dialog').dialog("open");
+    });
+    $('#match-info-dialog').dialog({
+        autoOpen:false,
+        width:500,
+        zIndex:1020,
+    });
+
     $("#newRunButton").button();
     $("#newRunButton").click(function() {
         $("#newRunForm").show();

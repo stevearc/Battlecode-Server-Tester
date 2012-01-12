@@ -167,6 +167,7 @@ public class MatchRunner implements Runnable {
 				_log.info("Finished analyzing: " + scrim.getFileName());
 				worker.matchAnalyzed(this, core, scrim, STATUS.COMPLETE);
 			}
+			ga.close();
 		} catch (IOException e) {
 			_log.error("Error parsing scrimmage match data", e);
 			worker.matchAnalyzed(this, core, scrim, STATUS.CANCELED);
@@ -217,6 +218,7 @@ public class MatchRunner implements Runnable {
 				_log.error("Number of MatchResults is incorrect");
 				worker.matchFailed(this, core, match);
 			}
+			ga.close();
 			
 			byte[] data;
 			try {
