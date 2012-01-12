@@ -41,7 +41,7 @@ public abstract class AbstractMaster {
 
 		}).start();
 	}
-	protected abstract void updateBattlecodeFiles(final File battlecode_server, final File allowedPackages, 
+	public abstract void updateBattlecodeFiles(final File battlecode_server, final File allowedPackages, 
 			final File disallowedClasses, final File methodCosts);
 		
 	/**

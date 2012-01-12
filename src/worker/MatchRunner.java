@@ -204,7 +204,9 @@ public class MatchRunner implements Runnable {
 			String matchFile = match.seed + match.map.getMapName() + ".rms";
 			
 			if (!running) {
-				new File(matchFile).delete();
+				if (!new File(matchFile).delete()) {
+					_log.warn("Error deleting file: " + matchFile);
+				}
 				return;
 			}
 
@@ -228,7 +230,9 @@ public class MatchRunner implements Runnable {
 			}
 			
 			File mf = new File(matchFile);
-			mf.delete();
+			if (!mf.delete()) {
+				_log.warn("Error deleting file: " + matchFile);
+			}
 
 			if (running) {
 				_log.info("Finished: " + match);
@@ -283,7 +287,9 @@ public class MatchRunner implements Runnable {
 		controller.addObserver(bcServer);
 		bcServer.run();
 		
-		seededMap.delete();
+		if (!seededMap.delete()) {
+			_log.warn("Error deleting file: " + seededMap.getPath());
+		}
 	}
 
 	@Override

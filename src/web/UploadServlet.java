@@ -50,9 +50,6 @@ public class UploadServlet extends HttpServlet {
 		out.println("<body>");
 
 		WebUtil.writeTabs(request, response, NAME);
-		if (!BSUtil.initializedBattlecode()) {
-			highlight(response, "You must upload battlecode files, maps, and a player");
-		}
 		out.println("<div id='player-info-dialog' style='text-align:center'>Compile your player using" +
 		"<div class='code'>ant jar -Dteam=teamXXX</div>" + 
 		"where XXX is your team number.</div>");
@@ -112,7 +109,7 @@ public class UploadServlet extends HttpServlet {
 				warn(response, "Please select a valid battlecode-server.jar file");
 			} 
 			else {
-				AbstractMaster.kickoffUpdateBattlecodeFiles(battlecode_server, allowedPackages, disallowedClasses, methodCosts);
+				AbstractMaster.getMaster().updateBattlecodeFiles(battlecode_server, allowedPackages, disallowedClasses, methodCosts);
 				EntityManager em = HibernateUtil.getEntityManager();
 				Long numRunning = em.createQuery("select count(*) from BSRun run where run.status = ?", Long.class)
 				.setParameter(1, STATUS.RUNNING)
@@ -144,6 +141,9 @@ public class UploadServlet extends HttpServlet {
 					AbstractMaster.kickoffUpdateMaps();
 				}
 			}
+		}
+		if (!BSUtil.initializedBattlecode()) {
+			warn(response, "You must upload battlecode files, maps, and a player");
 		}
 
 		// Form for uploading your player

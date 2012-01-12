@@ -93,6 +93,7 @@ public class Worker implements Controller, Runnable {
 
 	@Override
 	public void run() {
+		cleanCompiledPlayers();
 		while (runWorker) {
 			try {
 				if (network == null || !network.isConnected()) {
@@ -235,6 +236,22 @@ public class Worker implements Controller, Runnable {
 		ostream.write(data);
 		ostream.close();
 	}
+	
+	private void cleanCompiledPlayers() {
+		File[] garbageDirs = new File("teams").listFiles(new FileFilter() {
+			@Override
+			public boolean accept(File pathname) {
+				return !pathname.getAbsolutePath().endsWith(".jar");
+			}
+		});
+		for (File f: garbageDirs) {
+			try {
+				FileUtils.deleteDirectory(f);
+			} catch (IOException e) {
+				_log.warn("Error cleaning up compiled player dir: " + f.getAbsolutePath(), e);
+			}
+		}
+	}
 
 	/**
 	 * Write dependency file data to the file system.  
@@ -295,6 +312,22 @@ public class Worker implements Controller, Runnable {
 			MatchRunner m = new MatchRunner(this, match, core);
 			running[core] = m;
 			if (resolveDependencies(match, deps)) {
+				// Make sure we have compiled the players
+				String aJar = Config.teamsDir + match.team_a + ".jar";
+				String bJar = Config.teamsDir + match.team_b + ".jar";
+				String team_a = match.team_a.replaceAll("\\W", "_");
+				String team_b = match.team_b.replaceAll("\\W", "_");
+				if (!new File(Config.teamsDir + "A" + team_a).exists() || 
+						!new File(Config.teamsDir + "B" + team_b).exists()) {
+					try {
+						MatchRunner.compilePlayer("A" + team_a, aJar);
+						MatchRunner.compilePlayer("B" + team_b, bJar);
+					} catch (IOException e1) {
+						_log.error("Error compiling player", e1);
+						matchFailed(m, core, match);
+						break;
+					}
+				}
 				new Thread(m).start();
 			}
 			break;
@@ -320,21 +353,6 @@ public class Worker implements Controller, Runnable {
 			Dependencies dep = (Dependencies) p.get(0);
 
 			boolean needRestart = writeDependencies(dep);
-			try {
-				// If we only requested battlecode-server.jar and idata, the response won't have teams
-				if (dep.teamAName != null) {
-					String team_a = dep.teamAName.replaceAll("\\W", "_");
-					MatchRunner.compilePlayer("A" + team_a, Config.teamsDir + dep.teamAName + ".jar");
-				}
-				if (dep.teamBName != null) {
-					String team_b = dep.teamBName.replaceAll("\\W", "_");
-					MatchRunner.compilePlayer("B" + team_b, Config.teamsDir + dep.teamBName + ".jar");
-				}
-
-			} catch (IOException e1) {
-				_log.error("Error compiling player", e1);
-				break;
-			}
 			if (needRestart) {
 				_log.info("battlecode-server.jar updated, restarting worker");
 				System.exit(Config.RESTART_STATUS);
@@ -353,19 +371,7 @@ public class Worker implements Controller, Runnable {
 					running[i] = null;
 				}
 			}
-			File[] garbageDirs = new File("teams").listFiles(new FileFilter() {
-				@Override
-				public boolean accept(File pathname) {
-					return !pathname.getAbsolutePath().endsWith(".jar");
-				}
-			});
-			for (File f: garbageDirs) {
-				try {
-					FileUtils.deleteDirectory(f);
-				} catch (IOException e) {
-					_log.warn("Error cleaning up compiled player dir: " + f.getAbsolutePath(), e);
-				}
-			}
+			cleanCompiledPlayers();
 			break;
 		default:
 			_log.warn("Unrecognized packet command: " + p.getCmd());

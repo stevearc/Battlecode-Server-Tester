@@ -153,7 +153,7 @@ public class Master extends AbstractMaster {
 	}
 
 	@Override
-	protected synchronized void updateBattlecodeFiles(File battlecode_server, File allowedPackages, File disallowedClasses, File methodCosts) {
+	public synchronized void updateBattlecodeFiles(File battlecode_server, File allowedPackages, File disallowedClasses, File methodCosts) {
 		pendingBattlecodeServerFile = battlecode_server;
 		pendingAllowedPackagesFile = allowedPackages;
 		pendingDisallowedClassesFile = disallowedClasses;
