@@ -303,6 +303,19 @@ public class Worker implements Controller, Runnable {
 		}
 		return needRestart;
 	}
+	
+	private void compilePlayers(String teamA, String teamB) throws IOException {
+		// Make sure we have compiled the players
+		String team_a = teamA.replaceAll("\\W", "_");
+		String team_b = teamB.replaceAll("\\W", "_");
+		if (!new File(Config.teamsDir + "A" + team_a).exists() || 
+				!new File(Config.teamsDir + "B" + team_b).exists()) {
+			String aJar = Config.teamsDir + teamA + ".jar";
+			String bJar = Config.teamsDir + teamB + ".jar";
+			MatchRunner.compilePlayer("A" + team_a, aJar);
+			MatchRunner.compilePlayer("B" + team_b, bJar);
+		}
+	}
 
 	@Override
 	public synchronized void addPacket(Packet p) {
@@ -323,23 +336,13 @@ public class Worker implements Controller, Runnable {
 			MatchRunner m = new MatchRunner(this, match, core);
 			running[core] = m;
 			if (resolveDependencies(match, deps)) {
-				// Make sure we have compiled the players
-				String aJar = Config.teamsDir + match.team_a + ".jar";
-				String bJar = Config.teamsDir + match.team_b + ".jar";
-				String team_a = match.team_a.replaceAll("\\W", "_");
-				String team_b = match.team_b.replaceAll("\\W", "_");
-				if (!new File(Config.teamsDir + "A" + team_a).exists() || 
-						!new File(Config.teamsDir + "B" + team_b).exists()) {
-					try {
-						MatchRunner.compilePlayer("A" + team_a, aJar);
-						MatchRunner.compilePlayer("B" + team_b, bJar);
-					} catch (IOException e1) {
-						_log.error("Error compiling player", e1);
-						matchFailed(m, core, match);
-						break;
-					}
+				try {
+					compilePlayers(match.team_a, match.team_b);
+					new Thread(m).start();
+				} catch (IOException e) {
+					_log.error("Error compiling players", e);
+					matchFailed(m, core, match);
 				}
-				new Thread(m).start();
 			}
 			break;
 		case ANALYZE:
@@ -370,7 +373,13 @@ public class Worker implements Controller, Runnable {
 			}
 			for (MatchRunner matchRunner: running) {
 				if (!matchRunner.isRunning()) {
-					new Thread(matchRunner).start();
+					try {
+						compilePlayers(matchRunner.getMatch().team_a, matchRunner.getMatch().team_b);
+						new Thread(matchRunner).start();
+					} catch (IOException e) {
+						_log.error("Error compiling players", e);
+						matchFailed(matchRunner, matchRunner.getCore(), matchRunner.getMatch());
+					}
 				}
 			}
 			break;

@@ -62,6 +62,14 @@ public class MatchRunner implements Runnable {
 		this.scrimData = scrimData;
 		this.core = core;
 	}
+	
+	public NetworkMatch getMatch() {
+		return match;
+	}
+	
+	public int getCore() {
+		return core;
+	}
 
 	/**
 	 * Safely halts the execution of the MatchRunner
