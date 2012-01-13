@@ -24,9 +24,6 @@ public class MatchResultImpl implements MatchResult, Serializable {
 	private Long rounds;
 	private TeamMatchResult aResult;
 	private TeamMatchResult bResult;
-	/* TODO:
-	private Double Awesomeness;
-	 */
 	
 	public static MatchResultImpl constructMockMatchResult() {
 		MatchResultImpl result = new MatchResultImpl();

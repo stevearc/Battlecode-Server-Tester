@@ -12,6 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 
+import common.Config;
 import common.NetworkMatch;
 
 @Entity
@@ -77,6 +78,10 @@ public class BSMatch {
 	
 	public String toMatchFileName() {
 		return getRun().getId() + getMap().getMapName() + getSeed() + ".rms";
+	}
+	
+	public String toOutputFileName() {
+		return getRun().getId() + getMap().getMapName() + getSeed() + ".out";
 	}
 
 }

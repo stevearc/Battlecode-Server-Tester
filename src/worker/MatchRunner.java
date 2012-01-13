@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
@@ -193,7 +194,7 @@ public class MatchRunner implements Runnable {
 			} catch (InterruptedException e) {
 			}
 			if (running) {
-				worker.matchFinish(this, core, match, STATUS.COMPLETE, MatchResultImpl.constructMockMatchResult(), new byte[0]);
+				worker.matchFinish(this, core, match, STATUS.COMPLETE, MatchResultImpl.constructMockMatchResult(), new byte[0], new byte[0]);
 			}
 			return;
 		}
@@ -213,10 +214,14 @@ public class MatchRunner implements Runnable {
 			}
 			
 			String matchFile = match.seed + match.map.getMapName() + ".rms";
+			String outputFile = match.seed + match.map.getMapName() + ".out";
 			
 			if (!running) {
 				if (!new File(matchFile).delete()) {
 					_log.warn("Error deleting file: " + matchFile);
+				}
+				if (!new File(outputFile).delete()) {
+					_log.warn("Error deleting file: " + outputFile);
 				}
 				return;
 			}
@@ -227,8 +232,10 @@ public class MatchRunner implements Runnable {
 			if (results.size() != 1) {
 				_log.error("Number of MatchResults is incorrect");
 				worker.matchFailed(this, core, match);
+				return;
 			}
 			ga.close();
+			MatchResultImpl result = results.get(0);
 			
 			byte[] data;
 			try {
@@ -241,14 +248,29 @@ public class MatchRunner implements Runnable {
 				return;
 			}
 			
+			byte[] outputData;
+			try {
+				outputData = BSUtil.getFileData(outputFile);
+			} catch (IOException e) {
+				if (running) {
+					_log.error("Failed to read " + outputFile, e);
+					worker.matchFailed(this, core, match);
+				}
+				return;
+			}
+			
 			File mf = new File(matchFile);
 			if (!mf.delete()) {
 				_log.warn("Error deleting file: " + matchFile);
 			}
+			File of = new File(outputFile);
+			if (!of.delete()) {
+				_log.warn("Error deleting file: " + outputFile);
+			}
 
 			if (running) {
 				_log.info("Finished: " + match);
-				worker.matchFinish(this, core, match, STATUS.COMPLETE, results.get(0), data);
+				worker.matchFinish(this, core, match, STATUS.COMPLETE, result, data, outputData);
 			}
 		} catch (IOException e) {
 			if (running) {
@@ -270,6 +292,11 @@ public class MatchRunner implements Runnable {
 	}
 	
 	public static void runMatch(long seed, String mapName, String team_a, String team_b) throws IOException {
+		PrintStream out = System.out;
+		PrintStream err = System.err;
+		PrintStream fileStream = new PrintStream(new File(seed + mapName + ".out"));
+		System.setOut(fileStream);
+		System.setErr(fileStream);
 		// Construct the map file with the appropriate seeeeeed
 		File seededMap = new File(Config.mapsDir + seed + mapName + ".xml");
 		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(Config.mapsDir + mapName + ".xml"))));
@@ -288,8 +315,6 @@ public class MatchRunner implements Runnable {
 		bcConfig.set("bc.game.team-a", "A" + team_a);
 		bcConfig.set("bc.game.team-b", "B" + team_b);
 		bcConfig.set("bc.server.mode", "headless");
-        bcConfig.set("bc.engine.silence-a", "true");
-        bcConfig.set("bc.engine.silence-b", "true");
 		Controller controller = ControllerFactory
 				.createHeadlessController(bcConfig);
 		Proxy[] proxies = new Proxy[] { 
@@ -302,6 +327,8 @@ public class MatchRunner implements Runnable {
 		if (!seededMap.delete()) {
 			_log.warn("Error deleting file: " + seededMap.getPath());
 		}
+		System.setOut(out);
+		System.setErr(err);
 	}
 
 	@Override

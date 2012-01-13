@@ -55,7 +55,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	public synchronized void matchFailed(MatchRunner runner, int core, NetworkMatch match) {
-		matchFinish(runner, core, match, null, null, null);
+		matchFinish(runner, core, match, null, null, null, null);
 	}
 
 	/**
@@ -69,12 +69,13 @@ public class Worker implements Controller, Runnable {
 	 * @param b_points
 	 * @param data
 	 */
-	public synchronized void matchFinish(MatchRunner runner, int core, NetworkMatch match, STATUS status, MatchResultImpl result, byte[] data) {
+	public synchronized void matchFinish(MatchRunner runner, int core, NetworkMatch match, STATUS status, 
+			MatchResultImpl result, byte[] data, byte[] outputData) {
 		// If the runner is out of date, we should ignore it
 		if (running[core] != runner) {
 			return;
 		}
-		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, result, data});
+		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, result, data, outputData});
 		network.send(p);
 		running[core].stop();
 		running[core] = null;
@@ -254,7 +255,7 @@ public class Worker implements Controller, Runnable {
 		garbageDirs = new File(".").listFiles(new FileFilter() {
 			@Override
 			public boolean accept(File pathname) {
-				return pathname.getAbsolutePath().endsWith(".rms");
+				return pathname.getAbsolutePath().endsWith(".rms") || pathname.getAbsolutePath().endsWith(".out");
 			}
 		});
 		for (File f: garbageDirs) {

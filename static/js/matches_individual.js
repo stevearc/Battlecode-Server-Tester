@@ -3,6 +3,7 @@ $(function() {
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "aoColumnDefs": [ 
+            //{ "bSortable": false, "aTargets": [ 6, 7 ] }
             { "bSortable": false, "aTargets": [ 6 ] }
         ],
         "aLengthMenu": [10, 25, 50],
@@ -10,6 +11,10 @@ $(function() {
 
     runTable.fnSort( [ [0,'asc'] ] );
 });
+
+function downloadFile(fileUrl) {
+    $("<iframe />").attr("src", fileUrl).attr("style", "display:none").appendTo("body");
+}
 
 function rowClick(matchId) {
     $('#container').remove();

@@ -53,7 +53,8 @@ public class MatchesServlet extends HttpServlet {
 				"<th>Size</th>" +
 				"<th>Rounds</th>" +
 				"<th>Win condition</th>" +
-				"<th>&nbsp;</th>" +
+				"<th>Replay File</th>" +
+//				"<th>Match Output</th>" +
 				"</tr>" +
 				"</thead>" +
 		"<tbody>");
@@ -71,8 +72,8 @@ public class MatchesServlet extends HttpServlet {
 			out.println(td(match) + match.getMap().getSize() + "</td>");
 			out.println(td(match) + match.getResult().getRounds() + "</td>");
 			out.println(td(match) + match.getResult().getWinCondition() + "</td>");
-			out.println("<td><input type=button value=\"download\" onclick=\"document.location='/matches/" + 
-					match.toMatchFileName() + "'\"></td>");
+			out.println("<td><input type=button value='download' onclick=\"downloadFile('/matches/" + match.toMatchFileName() + "')\"></td>");
+//			out.println("<td><input type=button value='download' onclick=\"downloadFile('/matches/" + match.toOutputFileName() + "')\"></td>");
 			out.println("</tr>");
 		}
 		em.close();

@@ -204,6 +204,10 @@ public class Master extends AbstractMaster {
 					if (matchFile.exists()) {
 						matchFile.delete();
 					}
+					File outputFile = new File(Config.matchDir + match.toOutputFileName());
+					if (outputFile.exists()) {
+						outputFile.delete();
+					}
 				}
 			}
 
@@ -297,6 +301,7 @@ public class Master extends AbstractMaster {
 		STATUS status = (STATUS) p.get(1);
 		MatchResultImpl result = (MatchResultImpl) p.get(2);
 		byte[] data = (byte[]) p.get(3);
+		byte[] outputData = (byte[]) p.get(4);
 		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.getId() + "," + m.toMapString());
 		try {
 			EntityManager em = HibernateUtil.getEntityManager();
@@ -317,10 +322,16 @@ public class Master extends AbstractMaster {
 					run.setbWins(run.getbWins() + 1);
 				}
 				_log.info("Match finished: " + m + " winner: " + result.getWinner());
-				File outFile = new File(Config.matchDir + match.getRun().getId() + match.getMap().getMapName() + m.seed + ".rms");
-				outFile.createNewFile();
-				FileOutputStream fos = new FileOutputStream(outFile);
+				File matchFile = new File(Config.matchDir + match.toMatchFileName());
+				matchFile.createNewFile();
+				FileOutputStream fos = new FileOutputStream(matchFile);
 				fos.write(data);
+				fos.close();
+				File outFile = new File(Config.matchDir + match.toOutputFileName());
+				outFile.createNewFile();
+				fos = new FileOutputStream(outFile);
+				fos.write(outputData);
+				fos.close();
 				em.getTransaction().begin();
 				em.merge(match);
 				em.merge(run);
