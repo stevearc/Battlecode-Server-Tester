@@ -105,7 +105,7 @@ public class Main {
 		// Configure logger
 		File logDir = new File(Config.logDir);
 		if (!logDir.exists()) {
-			System.out.println("Creating log directory");
+			System.out.println("Creating log dithairectory");
 			logDir.mkdirs();
 		}
 		FileAppender appender = new FileAppender();
@@ -123,6 +123,8 @@ public class Main {
 		rootLogger.addAppender(new ConsoleAppender(layout));
 		Logger.getLogger("org.hibernate").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
 		Logger.getLogger("org.eclipse.jetty").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
+		Logger.getLogger("java.sql").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
+		Logger.getLogger("hsqldb.db").setLevel(Config.DEBUG ? Level.INFO : Level.WARN);
 		
 		if (cmd.hasOption(runMatchArg)) {
 			// This should only be run programmatically from MatchRunner

@@ -18,6 +18,8 @@ import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.hbm2ddl.SchemaUpdate;
+import org.hibernate.tool.hbm2ddl.Target;
 
 
 public class HibernateUtil {
@@ -65,18 +67,12 @@ public class HibernateUtil {
 
 	private static SessionFactory buildSessionFactory() {
 		try {
-			SessionFactory sf;
-			try {
-				sf = config.buildSessionFactory();
-				return sf;
-			} catch (HibernateException e) {
-				SchemaExport schema = new SchemaExport(config);
-				schema.create(true, true);
-			}
-			sf = config.buildSessionFactory();
+			SchemaUpdate su = new SchemaUpdate(config);
+			su.execute(Config.DEBUG, true);
+			SessionFactory sf = config.buildSessionFactory();
 			return sf;
 		} catch (Throwable ex) {
-			System.err.println("SEVERE: SessionFactory creation failed." + ex);
+			System.err.println("SEVERE: SessionFactory creation failed: " + ex);
 			ex.printStackTrace();
 			throw new ExceptionInInitializerError(ex);
 		}
