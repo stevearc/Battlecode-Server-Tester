@@ -198,15 +198,17 @@ public class MatchRunner implements Runnable {
 			return;
 		}
 
+		String team_a = match.team_a.replaceAll("\\W", "_");
+		String team_b = match.team_b.replaceAll("\\W", "_");
 
 		try {
 			// Run the match inside this JVM if we're the first core.  Otherwise we need to start a new process
 			if (core == 0) {
-				runMatch(match.seed, match.map.getMapName(), match.team_a, match.team_b);
+				runMatch(match.seed, match.map.getMapName(), team_a, team_b);
 			} else {
 				_log.debug("Forking process");
 				Runtime run = Runtime.getRuntime();
-				Process p = run.exec(new String[] {"/bin/bash", "run.sh", "-" + Main.runMatchArg, match.seed + "", match.map.getMapName(), match.team_a, match.team_b});
+				Process p = run.exec(new String[] {"/bin/bash", "run.sh", "-" + Main.runMatchArg, match.seed + "", match.map.getMapName(), team_a, team_b});
 				p.waitFor();
 			}
 			
