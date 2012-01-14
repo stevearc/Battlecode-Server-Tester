@@ -144,33 +144,32 @@ function newRun() {
         bsAlert("error", "Must select at least one map", 5, "overlayAlerts");
         return false;
     }
-  var url = "action.html?cmd=run&team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
 
 	if (team_a.length==0 || team_b.length==0) {
 		bsAlert("error", "Must have a non-empty team name", 5, "overlayAlerts");
 		return false;
 	}
-	xmlhttp1=new XMLHttpRequest();
-	xmlhttp1.onreadystatechange=function() {
-		if (xmlhttp1.readyState==4 && xmlhttp1.status==200) {
-			if (xmlhttp1.responseText == "err team_a") {
+
+    var urlData = "cmd=run&team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
+
+    $.ajax({
+        url: "action.html",
+        data: urlData,
+        error: function(data) {
+			if (data === "err team_a") {
                 bsAlert("error", "Must have a valid name for Team A", 5, "overlayAlerts");
-			} else if (xmlhttp1.responseText == "err team_b") {
+			} else if (data === "err team_b") {
                 bsAlert("error", "Must have a valid name for Team B", 5, "overlayAlerts");
-			} else if (xmlhttp1.responseText == "err seed") {
+			} else if (data === "err seed") {
                 bsAlert("error", "Seeds must be positive integers", 5, "overlayAlerts");
-			} else if (xmlhttp1.responseText == "err maps") {
+			} else if (data === "err maps") {
                 bsAlert("error", "Must select at least one map", 5, "overlayAlerts");
-			} else if (xmlhttp1.responseText != "success") {
-				console.log(xmlhttp1.responseText);
 			} else {
-        document.getElementById("team_a_button").value = "";
-        document.getElementById("team_b_button").value = "";
-			}
-		}
-	}
-	xmlhttp1.open("GET",url,true);
-	xmlhttp1.send();
+                bsAlert("error", "Unknown error adding run", 5, "overlayAlerts");
+                console.log(data);
+            }
+        },
+    });
     return true;
 }
 
@@ -179,16 +178,13 @@ function delRun(id, ask) {
 	if(ask && !confirm("This will delete the run and all replay files.  Continue?")) {
 		return;
 	}
-	xmlhttp2=new XMLHttpRequest();
-	xmlhttp2.onreadystatechange=function() {
-		if (xmlhttp2.readyState==4 && xmlhttp2.status==200) {
-			if (xmlhttp2.responseText != "success") {
-				console.log(xmlhttp2.responseText);
-			} 
-		}
-	}
-	xmlhttp2.open("GET","action.html?cmd=delete&id="+id,true);
-	xmlhttp2.send();
+    $.ajax({
+        url: "action.html",
+        data: "cmd=delete&id="+id,
+        success: function(data) {
+            deleteTableRow(id);
+        },
+    });
 }
 
 // Delete selected row of the table

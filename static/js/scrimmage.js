@@ -50,16 +50,13 @@ function doNavMatches(id) {
 
 // Send query to server to delete a run
 function delScrimmage(id) {
-	xmlhttp2=new XMLHttpRequest();
-	xmlhttp2.onreadystatechange=function() {
-		if (xmlhttp2.readyState==4 && xmlhttp2.status==200) {
-			if (xmlhttp2.responseText != "success") {
-				console.log(xmlhttp2.responseText);
-			} 
-		}
-	}
-	xmlhttp2.open("GET","action.html?cmd=deleteScrim&id="+id,true);
-	xmlhttp2.send();
+    $.ajax({
+        url: "action.html",
+        data: "cmd=deleteScrim&id="+id,
+        success: function(data) {
+            deleteTableRow(id);
+        },
+    });
 }
 
 // Delete selected row of the table
