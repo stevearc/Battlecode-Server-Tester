@@ -12,24 +12,30 @@ $(function() {
 
 function buttonChange() {
     if ($("#byMatch").prop('checked')) {
-        var iframe = $("#byMatchFrame");
-        if (iframe.length === 0) {
-            iframe = $("<iframe id='byMatchFrame' src='matches_individual.html" + 
-                document.location.search + "'" + 
-                "style='width:1000px; height: 2000px; border:0'/>")
-                .appendTo("body");
+        if ($('#matches_table').size() === 0) {
+            $.ajax({
+                async: false,
+                url: "matches_individual.html",
+                data: "id=" + $("#match_id").html(),
+                success: function(data) {
+                    $("#individual_container").html(data);
+                },
+            });
         }
-        iframe.show();
-        $("#byMapFrame").hide();
+        $("#individual_container").show();
+        $("#map_container").hide();
     } else {
-        var iframe = $("#byMapFrame");
-        if (iframe.length === 0) {
-            iframe = $("<iframe id='byMapFrame' src='matches_by_map.html" + 
-                document.location.search + "'" + 
-                "style='width:1000px; height: 2000px; border:0'/>")
-                .appendTo("body");
+        if ($('#matches_by_map_table').size() === 0) {
+            $.ajax({
+                async: false,
+                url: "matches_by_map.html",
+                data: "id=" + $("#match_id").html(),
+                success: function(data) {
+                    $("#map_container").html(data);
+                },
+            });
         }
-        iframe.show();
-        $("#byMatchFrame").hide();
+        $("#individual_container").hide();
+        $("#map_container").show();
     }
 }

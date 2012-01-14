@@ -1,5 +1,5 @@
 $(function() {
-    var runTable = $('#matches_table').dataTable({
+    var runTable = $('#matches_by_map_table').dataTable({
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "aLengthMenu": [10, 25, 50],

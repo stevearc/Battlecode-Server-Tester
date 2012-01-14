@@ -48,9 +48,17 @@ public class AnalysisContentServlet extends HttpServlet {
 		EntityManager em = HibernateUtil.getEntityManager();
 		if (request.getParameter("scrimmage") != null) {
 			ScrimmageMatchResult result = em.find(ScrimmageMatchResult.class, id);
+			if (result == null) {
+				out.println("Invalid id</body></html>");
+				return;
+			}
 			printContent(request, response, result, result.getMap(), null);
 		} else {
 			BSMatch match = em.find(BSMatch.class, id);
+			if (match == null) {
+				out.println("Invalid id</body></html>");
+				return;
+			}
 			printContent(request, response, match.getResult(), match.getMap().getMapName(), ""+match.getSeed());
 		}
 	}
@@ -67,11 +75,11 @@ public class AnalysisContentServlet extends HttpServlet {
 
 		out.println("<script type='text/javascript'>" +
 				"var dataMap = [];" +
-				"</script>");
+		"</script>");
 		printArray(out, "aTotalRobots", result.getaResult().getTotalRobots());
 		printArray(out, "aActiveRobots", result.getaResult().getActiveRobots());
 		for (BSRobotType type: BSRobotType.values()) {
-//			printArray(out, "aRobots" + i, result.getaResult().getRobotsByType()[i]);
+			//			printArray(out, "aRobots" + i, result.getaResult().getRobotsByType()[i]);
 			printArray(out, "aActiveRobots" + type, result.getaResult().getActiveRobotsByType()[type.ordinal()]);
 		}
 		printArray(out, "aFluxSpawn", result.getaResult().getFluxSpentOnSpawning());
@@ -82,7 +90,7 @@ public class AnalysisContentServlet extends HttpServlet {
 		printArray(out, "bTotalRobots", result.getbResult().getTotalRobots());
 		printArray(out, "bActiveRobots", result.getbResult().getActiveRobots());
 		for (BSRobotType type: BSRobotType.values()) {
-//			printArray(out, "bRobots" + i, result.getbResult().getRobotsByType()[i]);
+			//			printArray(out, "bRobots" + i, result.getbResult().getRobotsByType()[i]);
 			printArray(out, "bActiveRobots" + type, result.getbResult().getActiveRobotsByType()[type.ordinal()]);
 		}
 		printArray(out, "bFluxSpawn", result.getbResult().getFluxSpentOnSpawning());
@@ -118,10 +126,10 @@ public class AnalysisContentServlet extends HttpServlet {
 				"bActiveRobots" + BSRobotType.TOWER + ": 'B: Active " + BSRobotType.TOWER + "s'," +
 				"bFluxGained: 'B: Total Flux Gained'," +
 				"};" +
-				"</script>");
+		"</script>");
 		out.print("<script type='text/javascript'>" +
 				"var rounds = " + result.getRounds() + 
-				"</script>");
+		"</script>");
 
 		// TODO: aggregate view for some stats
 		out.println("<div id='buttonWrapper' style='height:70px; text-align:center'>");
@@ -129,11 +137,11 @@ public class AnalysisContentServlet extends HttpServlet {
 				"<div>" +
 				"<input type='radio' id='aTotalRobots' name='aTotalRobots' /><label for='aTotalRobots'>All Robots</label>" + 
 				"<input type='radio' id='aActiveRobots' name='aActiveRobots' /><label for='aActiveRobots'>All Active Robots</label>" +
-				"</div>");
+		"</div>");
 		out.println("<div>");
 		int index = 0;
 		for (BSRobotType type: BSRobotType.values()) {
-//			out.println("<input type='radio' id='aRobots" + i + "' name='aRobots" + i + "' /><label for='aRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
+			//			out.println("<input type='radio' id='aRobots" + i + "' name='aRobots" + i + "' /><label for='aRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
 			out.println("<input type='radio' id='aActiveRobots" + type + "' name='aActiveRobots" + type + "' />" +
 					"<label for='aActiveRobots" + type + "'>Active " + BSRobotType.values()[type.ordinal()] + "s</label>");
 			if (++index % 3 == 0) {
@@ -147,18 +155,18 @@ public class AnalysisContentServlet extends HttpServlet {
 				"<span style='font-weight:bold; margin:10px'>Spent:</span>" +
 				"<input type='radio' id='aFluxSpawn' name='aFluxSpawn' /><label for='aFluxSpawn'>Spawning</label>" +
 				"<input type='radio' id='aFluxMove' name='aFluxMove' /><label for='aFluxMove'>Moving</label>" +
-				"<input type='radio' id='aFluxUpkeep' name='aFluxUpkeep' /><label for='aFluxUpkeep'>Upkeep</label>");
+		"<input type='radio' id='aFluxUpkeep' name='aFluxUpkeep' /><label for='aFluxUpkeep'>Upkeep</label>");
 		out.println("</div>" +
-				"</div>");
-		
+		"</div>");
+
 		out.println("<div id='bViewButtons' style='margin-left:20px; float:right'>" +
 				"<div>" +
 				"<input type='radio' id='bTotalRobots' name='bTotalRobots' /><label for='bTotalRobots'>All Robots</label>" + 
 				"<input type='radio' id='bActiveRobots' name='bActiveRobots' /><label for='bActiveRobots'>All Active Robots</label>" +
-				"</div>");
+		"</div>");
 		out.println("<div>");
 		for (BSRobotType type: BSRobotType.values()) {
-//			out.println("<input type='radio' id='bRobots" + i + "' name='bRobots" + i + "' /><label for='bRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
+			//			out.println("<input type='radio' id='bRobots" + i + "' name='bRobots" + i + "' /><label for='bRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
 			out.println("<input type='radio' id='bActiveRobots" + type + "' name='bActiveRobots" + type + "' />" +
 					"<label for='bActiveRobots" + type + "'>Active " + BSRobotType.values()[type.ordinal()] + "s</label>");
 			if (++index % 3 == 0) {
@@ -172,9 +180,9 @@ public class AnalysisContentServlet extends HttpServlet {
 				"<span style='font-weight:bold; margin:10px'>Spent:</span>" +
 				"<input type='radio' id='bFluxSpawn' name='bFluxSpawn' /><label for='bFluxSpawn'>Spawning</label>" +
 				"<input type='radio' id='bFluxMove' name='bFluxMove' /><label for='bFluxMove'>Moving</label>" +
-				"<input type='radio' id='bFluxUpkeep' name='bFluxUpkeep' /><label for='bFluxUpkeep'>Upkeep</label>");
+		"<input type='radio' id='bFluxUpkeep' name='bFluxUpkeep' /><label for='bFluxUpkeep'>Upkeep</label>");
 		out.println("</div>" +
-				"</div>");
+		"</div>");
 		out.println("<button id='resetZoom' style='margin-top:10px'>Reset zoom</button>");
 		out.println("</div>");
 		out.println("<div id='chart' style='height: 400px; width:100%; top:100px'></div>");
@@ -193,7 +201,7 @@ public class AnalysisContentServlet extends HttpServlet {
 			out.print("[0,0],");
 		}
 		out.println("];" +
-				"</script>");
+		"</script>");
 	}
 
 }

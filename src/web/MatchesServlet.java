@@ -28,16 +28,9 @@ public class MatchesServlet extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		PrintWriter out = response.getWriter();
-		out.println("<html><head>");
-		out.println("<title>Battlecode Tester</title>");
-		out.println("<link rel=\"stylesheet\" href=\"css/table.css\" />");
-		out.println("<link rel='stylesheet' href='/css/jquery-ui-1.8.16.custom.css' />");
-		out.println("<link rel='stylesheet' href='/css/jquery-ui.css' />");
-		out.println("</head>");
-		out.println("<body style='background:none'>");
 		String strId = request.getParameter("id");
 		if (strId == null || !strId.matches("\\d+")) {
-			out.println("Invalid id</body></html>");
+			out.println("<div class='ui-state-error'>Could not load match table</div>");
 			return;
 		}
 		long id = new Long(Integer.parseInt(strId));
@@ -54,7 +47,7 @@ public class MatchesServlet extends HttpServlet {
 				"<th>Rounds</th>" +
 				"<th>Win condition</th>" +
 				"<th>Replay File</th>" +
-//				"<th>Match Output</th>" +
+				"<th>Match Output</th>" +
 				"</tr>" +
 				"</thead>" +
 		"<tbody>");
@@ -73,18 +66,14 @@ public class MatchesServlet extends HttpServlet {
 			out.println(td(match) + match.getResult().getRounds() + "</td>");
 			out.println(td(match) + match.getResult().getWinCondition() + "</td>");
 			out.println("<td><input type=button value='download' onclick=\"downloadFile('/matches/" + match.toMatchFileName() + "')\"></td>");
-//			out.println("<td><input type=button value='download' onclick=\"downloadFile('/matches/" + match.toOutputFileName() + "')\"></td>");
+			out.println("<td><input type=button value='download' onclick=\"downloadFile('/matches/" + match.toOutputFileName() + "')\"></td>");
 			out.println("</tr>");
 		}
 		em.close();
 		out.println("</tbody>");
 		out.println("</table>");
 
-		out.println("<script src='/js/jquery-1.7.1.min.js'></script>");
-		out.println("<script src='/js/jquery-ui-1.8.16.custom.min.js'></script>");
-		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/matches_individual.js\"></script>");
-		out.println("</body></html>");
 	}
 	
 	public String td(BSMatch match) {

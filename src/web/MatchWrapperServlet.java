@@ -35,6 +35,7 @@ public class MatchWrapperServlet extends HttpServlet {
 			return;
 		}
 		long id = new Long(Integer.parseInt(strId));
+		out.println("<span id='match_id' style='display:none'>" + strId + "</span>");
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
 		out.println("<h2 style='text-align:center'><font color='red'>" + run.getTeamA().getPlayerName() + 
@@ -45,9 +46,11 @@ public class MatchWrapperServlet extends HttpServlet {
 				"<input type='radio' id='byMatch' name='byMatch' checked='checked' /><label for='byMatch'>By Match</label>" +
 				"<input type='radio' id='byMap' name='byMap' /><label for='byMap'>By Map</label>" +
 				" </div>");
+		out.println("<div id='individual_container'></div>");
+		out.println("<div id='map_container'></div>");
 		
+		out.println("<script src='js/jquery.dataTables.min.js'></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/matches.js\"></script>");
 		out.println("</body></html>");
-
 	}
 }
