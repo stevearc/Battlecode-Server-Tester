@@ -3,6 +3,7 @@ package master;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 import org.eclipse.jetty.websocket.WebSocket.Connection;
@@ -18,18 +19,57 @@ import org.eclipse.jetty.websocket.WebSocket.Connection;
  */
 public class WebSocketChannelManager {
 	private static HashMap<String, Set<Connection>> socketChannels = new HashMap<String, Set<Connection>>();
-	
-	public static void startHeartbeatManager() {
+	private static LinkedList<QueuedMessage> messageQueue = new LinkedList<QueuedMessage>();
+
+	public static void start() {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				try {
-					Thread.sleep(15000);
-				} catch (InterruptedException e) {
+				while(true) {
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+					}
+					sendQueuedMessages();
 				}
-				sendHeartbeat();
 			}
-		});
+		}).start();
+		startHeartbeatManager();
+	}
+
+	private static void startHeartbeatManager() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(30000);
+					} catch (InterruptedException e) {
+					}
+					sendHeartbeat();
+				}
+			}
+		}).start();
+	}
+
+	public static synchronized void sendQueuedMessages() {
+		while (!messageQueue.isEmpty()) {
+			QueuedMessage msg = messageQueue.poll();
+			Set<Connection> failures = new HashSet<Connection>();
+			Set<Connection> socketConnections = socketChannels.get(msg.channel);
+			if (socketConnections != null) {
+				for (Connection c: socketConnections) {
+					try {
+						c.sendMessage(msg.message);
+					} catch (IOException e) {
+						failures.add(c);
+					}
+				}
+				for (Connection c: failures) {
+					socketChannels.remove(c);
+				}
+			}
+		}
 	}
 
 	public static synchronized void subscribe(String channel, Connection connection) {
@@ -38,7 +78,7 @@ public class WebSocketChannelManager {
 		}
 		socketChannels.get(channel).add(connection);
 	}
-	
+
 	private static synchronized void sendHeartbeat() {
 		for (Set<Connection> connections: socketChannels.values()) {
 			Set<Connection> failed = new HashSet<Connection>();
@@ -61,22 +101,19 @@ public class WebSocketChannelManager {
 	 * @param msg The message to send
 	 */
 	public static synchronized void broadcastMsg(String channel, String cmd, String message) {
-		Set<Connection> failures = new HashSet<Connection>();
-		Set<Connection> socketConnections = socketChannels.get(channel);
-		if (socketConnections != null) {
-			for (Connection c: socketConnections) {
-				try {
-					c.sendMessage(cmd + "," + message);
-				} catch (IOException e) {
-					failures.add(c);
-				}
-			}
-			for (Connection c: failures) {
-				socketChannels.remove(c);
-			}
+		messageQueue.add(new QueuedMessage(channel, cmd + "," + message));
+	}
+
+	private static class QueuedMessage {
+		public final String channel;
+		public final String message;
+
+		private QueuedMessage(String channel, String message) {
+			this.channel = channel;
+			this.message = message;
 		}
 	}
-	
+
 	public static synchronized void disconnect(String channel, Connection connection) {
 		Set<Connection> socketConnections = socketChannels.get(channel);
 		if (socketConnections != null) {

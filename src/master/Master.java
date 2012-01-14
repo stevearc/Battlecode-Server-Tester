@@ -90,7 +90,7 @@ public class Master extends AbstractMaster {
 				}
 			}
 		}).start();
-		WebSocketChannelManager.startHeartbeatManager();
+		WebSocketChannelManager.start();
 		initialized = true;
 	}
 

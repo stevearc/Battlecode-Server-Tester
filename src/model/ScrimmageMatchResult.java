@@ -27,9 +27,6 @@ public class ScrimmageMatchResult implements MatchResult, Serializable{
 	private TeamMatchResult aResult;
 	private TeamMatchResult bResult;
 	private String map;
-	/* TODO:
-	private Double Awesomeness;
-	 */
 	
 	public ScrimmageMatchResult() {
 		

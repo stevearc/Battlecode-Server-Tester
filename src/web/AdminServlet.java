@@ -82,7 +82,6 @@ public class AdminServlet extends HttpServlet {
 		out.println("</tr>");
 		out.println("</thead><tbody>");
 
-		// TODO: pass user ids instead of usernames
 		List<BSUser> users = em.createQuery("from BSUser user where user.privs != ?", BSUser.class).setParameter(1, BSUser.PRIVS.PENDING).getResultList();
 		for (BSUser regUser: users) {
 			out.println("<tr>");
