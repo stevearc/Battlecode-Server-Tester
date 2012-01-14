@@ -399,8 +399,7 @@ public class Main {
 									new FileOutputStream(targetName))));
 			for (String fileName: tarFiles) {
 				archiveFile(out, "bs-worker" + File.separator, fileName, new FilenameFilter() {
-					String[] prefixes = {Config.libDir + "jetty", Config.libDir + "hibernate", 
-							Config.libDir + "servlet-api", Config.libDir + "antlr"};
+					String[] prefixes = {Config.libDir + "jetty", Config.libDir + "servlet-api"};
 					@Override
 					public boolean accept(File dir, String name) {
 						for (String p: prefixes) {
