@@ -84,7 +84,7 @@ public class IndexServlet extends HttpServlet {
 		out.println("Matches per map<span id='match-info'></span>: " +
 		"<select id='seed_selector' onChange='numSeedsChange()'>");
 		for (int i = 1; i < 21; i++) 
-			out.println("<option name='" + i + "'>" + i + "</option>");
+			out.println("<option>" + i + "</option>");
 		out.println("</select>");
 		out.println("<div id='seeds' style='font-size:13px'>");
 		for (int i = 1; i < 21; i++)

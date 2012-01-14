@@ -136,7 +136,6 @@ public class Master extends AbstractMaster {
 		WebSocketChannelManager.broadcastMsg("index", "INSERT_TABLE_ROW", newRun.getId() + "," + 
 				teamA.getPlayerName() + "," +  teamB.getPlayerName());
 		startRun();
-		_log.info("Queued new run: " + newRun);
 	}
 
 	@Override

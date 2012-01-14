@@ -2,6 +2,7 @@ package web;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
 import javax.persistence.EntityManager;
 import javax.servlet.ServletException;
@@ -97,95 +98,66 @@ public class AnalysisContentServlet extends HttpServlet {
 		printArray(out, "bFluxMove", result.getbResult().getFluxSpentOnMoving());
 		printArray(out, "bFluxUpkeep", result.getbResult().getFluxSpentOnUpkeep());
 		printArray(out, "bFluxGained", result.getbResult().getTotalFluxGathered());
+		
+		
+		ArrayList<String[]> selections = new ArrayList<String[]>();
+		selections.add(new String[] {"TotalRobots", "Total Robots"});
+		selections.add(new String[] {"ActiveRobots", "Active Robots"});
+		for (BSRobotType bsrt: BSRobotType.values()) {
+			selections.add(new String[] {"ActiveRobots" + bsrt, "Active " + bsrt + "s"});
+		};
+		selections.add(new String[] {"FluxGained", "Total Flux Gained"});
+		selections.add(new String[] {"FluxSpawn", "Flux Spent (spawning)"});
+		selections.add(new String[] {"FluxMove", "Flux Spent (moving)"});
+		selections.add(new String[] {"FluxUpkeep", "Flux Spent (upkeep)"});
 
 		out.println("<script type='text/javascript'>" +
-				"var nameMap = {" +
-				"aTotalRobots: 'A: Total Robots'," +
-				"aActiveRobots: 'A: Active Robots'," +
-				"aFluxSpawn: 'A: Flux Spent (spawning)'," +
-				"aFluxMove: 'A: Flux Spent (moving)'," +
-				"aFluxUpkeep: 'A: Flux Spent (upkeep)'," +
-				"aActiveRobots" + BSRobotType.ARCHON + ": 'A: Active " + BSRobotType.ARCHON + "s'," +
-				"aActiveRobots" + BSRobotType.SOLDIER + ": 'A: Active " + BSRobotType.SOLDIER + "s'," +
-				"aActiveRobots" + BSRobotType.SCOUT + ": 'A: Active " + BSRobotType.SCOUT + "s'," +
-				"aActiveRobots" + BSRobotType.DISRUPTER + ": 'A: Active " + BSRobotType.DISRUPTER + "s'," +
-				"aActiveRobots" + BSRobotType.SCORCHER + ": 'A: Active " + BSRobotType.SCORCHER + "s'," +
-				"aActiveRobots" + BSRobotType.TOWER + ": 'A: Active " + BSRobotType.TOWER + "s'," +
-				"aFluxGained: 'A: Total Flux Gained'," +
-				"" +
-				"bTotalRobots: 'B: Total Robots'," +
-				"bActiveRobots: 'B: Active Robots'," +
-				"bFluxSpawn: 'B: Flux Spent (spawning)'," +
-				"bFluxMove: 'B: Flux Spent (moving)'," +
-				"bFluxUpkeep: 'B: Flux Spent (upkeep)'," +
-				"bActiveRobots" + BSRobotType.ARCHON + ": 'B: Active " + BSRobotType.ARCHON + "s'," +
-				"bActiveRobots" + BSRobotType.SOLDIER + ": 'B: Active " + BSRobotType.SOLDIER + "s'," +
-				"bActiveRobots" + BSRobotType.SCOUT + ": 'B: Active " + BSRobotType.SCOUT + "s'," +
-				"bActiveRobots" + BSRobotType.DISRUPTER + ": 'B: Active " + BSRobotType.DISRUPTER + "s'," +
-				"bActiveRobots" + BSRobotType.SCORCHER + ": 'B: Active " + BSRobotType.SCORCHER + "s'," +
-				"bActiveRobots" + BSRobotType.TOWER + ": 'B: Active " + BSRobotType.TOWER + "s'," +
-				"bFluxGained: 'B: Total Flux Gained'," +
-				"};" +
-		"</script>");
-		out.print("<script type='text/javascript'>" +
+		"var nameMap = {");
+		for (String[] keyVal: selections) {
+			out.println("a" + keyVal[0] + ": 'A: " + keyVal[1] + "',");
+			out.println("b" + keyVal[0] + ": 'B: " + keyVal[1] + "',");
+		}
+		out.println("};" +
 				"var rounds = " + result.getRounds() + 
 		"</script>");
 
-		// TODO: aggregate view for some stats
 		out.println("<div id='buttonWrapper' style='height:70px; text-align:center'>");
-		out.println("<div id='aViewButtons' style='margin-left:15px; float:left'>" +
-				"<div>" +
-				"<input type='radio' id='aTotalRobots' name='aTotalRobots' /><label for='aTotalRobots'>All Robots</label>" + 
-				"<input type='radio' id='aActiveRobots' name='aActiveRobots' /><label for='aActiveRobots'>All Active Robots</label>" +
-		"</div>");
+		out.println("<div id='aViewButtons' style='margin-left:15px; float:left'>");
 		out.println("<div>");
-		int index = 0;
-		for (BSRobotType type: BSRobotType.values()) {
-			//			out.println("<input type='radio' id='aRobots" + i + "' name='aRobots" + i + "' /><label for='aRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
-			out.println("<input type='radio' id='aActiveRobots" + type + "' name='aActiveRobots" + type + "' />" +
-					"<label for='aActiveRobots" + type + "'>Active " + BSRobotType.values()[type.ordinal()] + "s</label>");
-			if (++index % 3 == 0) {
+		for (int i = 0; i < 4; i++) {
+			out.println("<select onChange='updateChart()'>");
+			out.println("<option name='None'>None</option>");
+			for (String[] keyVal: selections) {
+				out.println("<option name='a" + keyVal[0] + "'>" + keyVal[1] + "</option>");
+			}
+			out.println("</select>");
+			if (i % 2 == 1) {
 				out.println("</div><div>");
 			}
 		}
 		out.println("</div>");
-		out.println("<div>" +
-				"<span style='font-weight:bold; margin:10px'>Flux:</span>" +
-				"<input type='radio' id='aFluxGained' name='aFluxGained' /><label for='aFluxGained'>Gained</label>" +
-				"<span style='font-weight:bold; margin:10px'>Spent:</span>" +
-				"<input type='radio' id='aFluxSpawn' name='aFluxSpawn' /><label for='aFluxSpawn'>Spawning</label>" +
-				"<input type='radio' id='aFluxMove' name='aFluxMove' /><label for='aFluxMove'>Moving</label>" +
-		"<input type='radio' id='aFluxUpkeep' name='aFluxUpkeep' /><label for='aFluxUpkeep'>Upkeep</label>");
-		out.println("</div>" +
-		"</div>");
+		out.println("</div>");
 
-		out.println("<div id='bViewButtons' style='margin-left:20px; float:right'>" +
-				"<div>" +
-				"<input type='radio' id='bTotalRobots' name='bTotalRobots' /><label for='bTotalRobots'>All Robots</label>" + 
-				"<input type='radio' id='bActiveRobots' name='bActiveRobots' /><label for='bActiveRobots'>All Active Robots</label>" +
-		"</div>");
+		out.println("<div id='bViewButtons' style='margin-left:20px; float:right'>");
 		out.println("<div>");
-		for (BSRobotType type: BSRobotType.values()) {
-			//			out.println("<input type='radio' id='bRobots" + i + "' name='bRobots" + i + "' /><label for='bRobots" + i + "'>" + BSRobotType.values()[i] + "s</label>");
-			out.println("<input type='radio' id='bActiveRobots" + type + "' name='bActiveRobots" + type + "' />" +
-					"<label for='bActiveRobots" + type + "'>Active " + BSRobotType.values()[type.ordinal()] + "s</label>");
-			if (++index % 3 == 0) {
+		for (int i = 0; i < 4; i++) {
+			out.println("<select onChange='updateChart()'>");
+			out.println("<option name='None'>None</option>");
+			for (String[] keyVal: selections) {
+				out.println("<option name='b" + keyVal[0] + "'>" + keyVal[1] + "</option>");
+			}
+			out.println("</select>");
+			if (i % 2 == 1) {
 				out.println("</div><div>");
 			}
 		}
 		out.println("</div>");
-		out.println("<div>" +
-				"<span style='font-weight:bold; margin:10px'>Flux:</span>" +
-				"<input type='radio' id='bFluxGained' name='bFluxGained' /><label for='bFluxGained'>Gained</label>" +
-				"<span style='font-weight:bold; margin:10px'>Spent:</span>" +
-				"<input type='radio' id='bFluxSpawn' name='bFluxSpawn' /><label for='bFluxSpawn'>Spawning</label>" +
-				"<input type='radio' id='bFluxMove' name='bFluxMove' /><label for='bFluxMove'>Moving</label>" +
-		"<input type='radio' id='bFluxUpkeep' name='bFluxUpkeep' /><label for='bFluxUpkeep'>Upkeep</label>");
-		out.println("</div>" +
-		"</div>");
+		out.println("</div>");
+		out.println("</div>");
+		out.println("<div style='text-align:center'>");
 		out.println("<button id='resetZoom' style='margin-top:10px'>Reset zoom</button>");
 		out.println("</div>");
-		out.println("<div id='chart' style='height: 400px; width:100%; top:100px'></div>");
+		out.println("<div id='chart' style='height: 400px; width:100%; top:0px'></div>");
 		out.println("<script src='js/analysis.js'></script>");
 		out.println("</body></html>");
 	}

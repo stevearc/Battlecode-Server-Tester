@@ -1,20 +1,14 @@
 $(function() {
     var index;
-    var aButtons = $("#aViewButtons").children().children("input");
+    var aButtons = $("#aViewButtons").children().children("select");
     for (index = 0; index < aButtons.length; index++) {
-        if (viewLines[0][index]) {
-            $(aButtons[index]).attr('checked', 'checked');
-        }
+        $(aButtons[index].selectedIndex = viewLines[0][index]);
     }
-    var bButtons = $("#bViewButtons").children().children("input");
+    var bButtons = $("#bViewButtons").children().children("select");
     for (index = 0; index < bButtons.length; index++) {
-        if (viewLines[1][index]) {
-            $(bButtons[index]).attr('checked', 'checked');
-        }
+        $(bButtons[index].selectedIndex = viewLines[0][index]);
     }
 
-    $("#aViewButtons").buttonset();
-    $("#bViewButtons").buttonset();
     $("#buttonWrapper input").each(function() {
         $(this).click(function() {
             var index = $.inArray($(this).attr("name"), chartedKeys);
@@ -82,39 +76,33 @@ function updateChart() {
     chartedKeys = [];
     var seriesColors = [];
     var seriesIndex = 0;
-    $("#aViewButtons input").each(function() {
-        if ($(this).attr("checked") === "checked") {
-            chartedKeys.push($(this).attr("name"));
-            array.push(dataMap[$(this).attr("name")]);
+    $("#aViewButtons select").each(function() {
+        var name = $($(this).children("option")[this.selectedIndex]).attr("name")
+        if (name !== "None") {
+            chartedKeys.push(name);
+            array.push(dataMap[name]);
             seriesColors.push(aColorPalatte[(seriesIndex++)%aColorPalatte.length]);
         }
     });
     seriesIndex = 0;
-    $("#bViewButtons input").each(function() {
-        if ($(this).attr("checked") === "checked") {
-            chartedKeys.push($(this).attr("name"));
-            array.push(dataMap[$(this).attr("name")]);
+    $("#bViewButtons select").each(function() {
+        var name = $($(this).children("option")[this.selectedIndex]).attr("name")
+        if (name !== "None") {
+            chartedKeys.push(name);
+            array.push(dataMap[name]);
             seriesColors.push(bColorPalatte[(seriesIndex++)%bColorPalatte.length]);
         }
     });
     options['seriesColors'] = seriesColors;
 
     // Update the session preferences
-    var aButtons = $("#aViewButtons").children().children("input");
+    var aButtons = $("#aViewButtons").children().children("select");
     for (index = 0; index < aButtons.length; index++) {
-        if ($(aButtons[index]).attr('checked') === 'checked') {
-            viewLines[0][index] = 1;
-        } else {
-            viewLines[0][index] = 0;
-        }
+        viewLines[0][index] = aButtons[index].selectedIndex;
     }
-    var bButtons = $("#bViewButtons").children().children("input");
+    var bButtons = $("#bViewButtons").children().children("select");
     for (index = 0; index < bButtons.length; index++) {
-        if ($(bButtons[index]).attr('checked') === 'checked') {
-            viewLines[1][index] = 1;
-        } else {
-            viewLines[1][index] = 0;
-        }
+        viewLines[1][index] = bButtons[index].selectedIndex;
     }
     $.ajax({
         url: "analysis.html",
