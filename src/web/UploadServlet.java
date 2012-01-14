@@ -75,7 +75,6 @@ public class UploadServlet extends HttpServlet {
 				bsPlayer.setPlayerName(playerName);
 				EntityManager em = HibernateUtil.getEntityManager();
 				em.persist(bsPlayer);
-				WebSocketChannelManager.broadcastMsg("index", "ADD_PLAYER", bsPlayer.getPlayerName());
 				em.getTransaction().begin();
 				try {
 					em.flush();
@@ -88,6 +87,8 @@ public class UploadServlet extends HttpServlet {
 					em.getTransaction().rollback();
 				} else {
 					em.getTransaction().commit();
+					em.refresh(bsPlayer);
+					WebSocketChannelManager.broadcastMsg("index", "ADD_PLAYER", bsPlayer.getId() + "," + bsPlayer.getPlayerName());
 				}
 				em.close();
 			}

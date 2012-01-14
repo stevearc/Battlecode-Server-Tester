@@ -75,9 +75,9 @@ $(function() {
             } else if (cmd == "MATCH_FINISHED") {
                 matchFinished(args[1], args[2], args[3]);
             } else if (cmd == "ADD_MAP") {
-                // TODO: add the new map
+                addMap(args[1], args[2]);
             } else if (cmd == "ADD_PLAYER") {
-                // TODO: add the new player
+                addPlayer(args[1], args[2]);
             } else {
                 console.log("Unknown command: " + cmd);
             }
@@ -91,6 +91,19 @@ $(function() {
 // Navigate to view all matches for a run
 function doNavMatches(id) {
     document.location="matches.html?id="+id;
+}
+
+function addPlayer(playerId, playerName) {
+    $("#team_a_button").prepend($("<option />").attr("value", playerId).html(playerName));
+    $("#team_b_button").prepend($("<option />").attr("value", playerId).html(playerName));
+}
+
+function addMap(mapId, mapName) {
+    var table = $("#map_table").dataTable();
+    table.fnAddData([
+        "<input type='checkbox' value='" + mapId + "' />",
+        mapName,
+    ]);
 }
 
 // Toggle all of the checkboxes in the New Run selection

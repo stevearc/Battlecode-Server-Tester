@@ -653,12 +653,17 @@ public class Master extends AbstractMaster {
 		for (BSMap map: newMaps) {
 			if (!mapNames.contains(map.getMapName())) {
 				em.persist(map);
-				WebSocketChannelManager.broadcastMsg("index", "ADD_MAP", map.getMapName());
 			}
 		}
 		em.getTransaction().begin();
 		em.flush();
 		em.getTransaction().commit();
+		for (BSMap map: newMaps) {
+			if (!mapNames.contains(map.getMapName())) {
+				em.refresh(map);
+				WebSocketChannelManager.broadcastMsg("index", "ADD_MAP", map.getId() + "," + map.getMapName());
+			}
+		}
 		em.close();
 	}
 
