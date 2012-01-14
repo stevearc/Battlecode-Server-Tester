@@ -57,7 +57,7 @@ public class IndexServlet extends HttpServlet {
 				"what the seeds will be for each match.</div>");
 		EntityManager em = HibernateUtil.getEntityManager();
 		// Begin the New Run form
-		List<BSPlayer> players = em.createQuery("from BSPlayer player order by player.playerName desc", BSPlayer.class).getResultList();
+		List<BSPlayer> players = em.createQuery("from BSPlayer player order by player.id desc", BSPlayer.class).getResultList();
 		out.println("<button id='newRunButton' style='margin-left: 20px'>New Run</button>");
 		out.println("<div id='newRunForm' style='display:none'>");
 		out.println("<div class='overlay'>");
