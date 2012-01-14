@@ -209,18 +209,16 @@ public class GameData extends Proxy {
 				{
 					DeathSignal s = (DeathSignal)signal;
 					r = robots.remove(s.getObjectID());
-					if (r != null) {
-						currentRobots[r.team.ordinal()]--;
-						currentRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
-						if (r.isOn()) {
-							currentActiveRobots[r.team.ordinal()]--;
-							currentActiveRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
-						}
-						currentRobotsKilled[r.team.opponent().ordinal()]++;
-						currentRobotsKilledByType[r.team.opponent().ordinal()][r.type.ordinal()]++;
-						if (r.type == RobotType.ARCHON) {
-							archons[r.team.ordinal()].remove(s.getObjectID());
-						}
+					currentRobots[r.team.ordinal()]--;
+					currentRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
+					if (r.isOn()) {
+						currentActiveRobots[r.team.ordinal()]--;
+						currentActiveRobotsByType[r.team.ordinal()][r.type.ordinal()]--;
+					}
+					currentRobotsKilled[r.team.opponent().ordinal()]++;
+					currentRobotsKilledByType[r.team.opponent().ordinal()][r.type.ordinal()]++;
+					if (r.type == RobotType.ARCHON) {
+						archons[r.team.ordinal()].remove(s.getObjectID());
 					}
 				} 
 				else if (signal instanceof MovementSignal) 
@@ -236,9 +234,6 @@ public class GameData extends Proxy {
 					for (int i = 0; i < s.getRobotIDs().length; i++) {
 						r = robots.get(s.getRobotIDs()[i]);
 						r.setFlux(s.getFlux()[i]);
-						if (r.type != RobotType.ARCHON && r.type != RobotType.TOWER) {
-							currentFluxSpentOnUpkeep[r.team.ordinal()] += GameConstants.UNIT_UPKEEP;
-						}
 						if (r.recalculateOnStatus()) {
 							if (r.isOn()) {
 								currentActiveRobots[r.team.ordinal()]++;
@@ -256,9 +251,11 @@ public class GameData extends Proxy {
 					for (int i = 0; i < s.getRobotIDs().length; i++) {
 						r = robots.get(s.getRobotIDs()[i]);
 						int bytecodesBelowBase = GameConstants.BYTECODE_LIMIT - s.getNumBytecodes()[i];
-						if(bytecodesBelowBase > 0 && r.type != RobotType.ARCHON)
-							currentFluxSpentOnUpkeep[r.team.ordinal()] += 
-								(GameConstants.YIELD_BONUS*bytecodesBelowBase/GameConstants.BYTECODE_LIMIT*GameConstants.UNIT_UPKEEP);		
+						// Refund the yield bonus to upkeep
+						if(bytecodesBelowBase > 0 && r.type != RobotType.ARCHON && r.type != RobotType.TOWER) {
+							currentFluxSpentOnUpkeep[r.team.ordinal()] += GameConstants.UNIT_UPKEEP - 
+							(GameConstants.YIELD_BONUS*bytecodesBelowBase/GameConstants.BYTECODE_LIMIT*GameConstants.UNIT_UPKEEP);	
+						}
 					}
 				}
 			}
@@ -274,7 +271,7 @@ public class GameData extends Proxy {
 					}
 					double prod = GameConstants.MIN_PRODUCTION + (GameConstants.MAX_PRODUCTION - GameConstants.MIN_PRODUCTION)*
 					Math.sqrt(((double)dmin)/GameConstants.PRODUCTION_PENALTY_R2);
-					currentFluxGathered[i] += prod;
+					currentFluxGathered[i] += Math.max(0, Math.min(prod, RobotType.ARCHON.maxFlux - rs.flux));
 				}
 			}
 
