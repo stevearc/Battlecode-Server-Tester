@@ -1,0 +1,19 @@
+#######################
+# Update Instructions #
+#######################
+Unzip the contents of bs-tester.tar.gz into your current install directory.  That should overwrite
+all the necessary files.  
+
+For a more complete upgrade, unzip the new version into a new directory and copy over
+static/matches
+static/scrimmages
+and all files that start with BSTesterDB
+
+
+#########
+# 1.0.2 #
+#########
+    * Added a summary view to the analysis page
+    * Worker auto-updates when Master is updated
+    * Analysis page uses dropdowns instead of buttons
+    * Websocket bug fixes and improvements
