@@ -22,7 +22,7 @@ function rowClick(scrimId) {
 
     $("<iframe />")
         .attr("src", 'analysis_content.html?id=' + scrimId + "&scrimmage=true")
-        .attr("style", "width:1000px; height:630px; border:0;")
+        .attr("style", "width:1000px; height:600px; border:0;")
         .appendTo(container);
 
     var overlay = $("<div />")
@@ -34,27 +34,5 @@ function rowClick(scrimId) {
         $("#scrimmage_table_wrapper").show();
     })
     .appendTo("body");
-    
-    var buttonContainer = $("<div />")
-    .appendTo(container);
-
-    $("<button>Close</button>")
-        .attr("style", "")
-        .button()
-        .click(function() {
-            $("#container").remove();
-            $("#overlay").remove();
-            $("#scrimmage_table_wrapper").show();
-        })
-        .appendTo(buttonContainer);
-    /*
-    $("<button>View in full page</button>")
-        .attr("style", "")
-        .button()
-        .click(function() {
-            document.location='analysis.html?id=' + scrimId;
-        })
-        .appendTo(buttonContainer);
-    */
     $("#scrimmage_table_wrapper").hide();
 }

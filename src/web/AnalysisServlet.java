@@ -57,13 +57,26 @@ public class AnalysisServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		BSUser user = (BSUser) request.getSession().getAttribute("user");
-		int[][] viewLines = user.getPrefs().getAnalysisViewLines();
-		String[] segmentedViewLines = request.getParameter("viewLines").split(",");
-		int index = 0;
-		for (int i = 0; i < viewLines.length; i++) {
-			for (int j = 0; j < viewLines[i].length; j++) {
-				viewLines[i][j] = Integer.parseInt(segmentedViewLines[index++]);
+		String viewLinesParam = request.getParameter("viewLines");
+		if (viewLinesParam != null) {
+			String[] segmentedViewLines = viewLinesParam.split(",");
+			int[][] viewLines = user.getPrefs().getAnalysisViewLines();
+			int index = 0;
+			for (int i = 0; i < viewLines.length; i++) {
+				for (int j = 0; j < viewLines[i].length; j++) {
+					viewLines[i][j] = Integer.parseInt(segmentedViewLines[index++]);
+				}
 			}
+		}
+		
+		String viewChartParam = request.getParameter("viewChart");
+		if (viewChartParam != null) {
+			user.getPrefs().setViewChart(Boolean.parseBoolean(viewChartParam));
+		}
+		
+		String summaryTabParam = request.getParameter("summaryTab");
+		if (summaryTabParam != null) {
+			user.getPrefs().setSummaryTab(Integer.parseInt(summaryTabParam));
 		}
 	}
 }

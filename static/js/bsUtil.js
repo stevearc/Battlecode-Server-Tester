@@ -25,3 +25,7 @@ function bsAlert(type, message, duration, containerId) {
     }
     return id;
 }
+
+function bsRound(number, decimals) {
+    return Math.round(number * 10 * decimals)/(10*decimals);
+}
