@@ -62,6 +62,7 @@
             <fileset dir=".">
                 <include name="README"/>
                 <include name="COPYING"/>
+                <include name="CHANGELOG"/>
                 <include name="run.sh"/>
                 <include name="run.bat"/>
                 <include name="lib/"/>

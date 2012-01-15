@@ -24,7 +24,7 @@ function rowClick(matchId) {
 
     $("<iframe />")
         .attr("src", 'analysis_content.html?id=' + matchId)
-        .attr("style", "width:1000px; height:600px; border:0;")
+        .attr("style", "width:1000px; height:620px; border:0;")
         .appendTo(container);
 
     var overlay = $("<div />")

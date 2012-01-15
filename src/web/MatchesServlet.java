@@ -37,6 +37,7 @@ public class MatchesServlet extends HttpServlet {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, id);
 
+		out.println("<div>");
 		out.println("<table id='matches_table' class='datatable datatable-clickable'>" +
 				"<thead>" + 
 				"<tr>" +
@@ -65,8 +66,8 @@ public class MatchesServlet extends HttpServlet {
 			out.println(td(match) + match.getMap().getSize() + "</td>");
 			out.println(td(match) + match.getResult().getRounds() + "</td>");
 			out.println(td(match) + match.getResult().getWinCondition() + "</td>");
-			out.println("<td><input type=button value='download' onclick=\"downloadFile('/matches/" + match.toMatchFileName() + "')\"></td>");
-			out.println("<td><input type=button value='download' onclick=\"downloadFile('/matches/" + match.toOutputFileName() + "')\"></td>");
+			out.println("<td><input type='button' value='download' onclick=\"downloadFile('/matches/" + match.toMatchFileName() + "')\" /></td>");
+			out.println("<td><input type='button' value='download' onclick=\"downloadFile('/matches/" + match.toOutputFileName() + "')\" /></td>");
 			out.println("</tr>");
 		}
 		em.close();
@@ -74,6 +75,7 @@ public class MatchesServlet extends HttpServlet {
 		out.println("</table>");
 
 		out.println("<script type=\"text/javascript\" src=\"js/matches_individual.js\"></script>");
+		out.println("</div>");
 	}
 	
 	public String td(BSMatch match) {

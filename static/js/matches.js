@@ -14,28 +14,34 @@ function buttonChange() {
     if ($("#byMatch").prop('checked')) {
         if ($('#matches_table').size() === 0) {
             $.ajax({
-                async: false,
                 url: "matches_individual.html",
+                dataType: "html",
                 data: "id=" + $("#match_id").html(),
                 success: function(data) {
-                    $("#individual_container").html(data);
+                    $("#individual_container").append(data);
+                    $("#individual_container").show();
+                    $("#map_container").hide();
                 },
             });
+        } else {
+            $("#individual_container").show();
+            $("#map_container").hide();
         }
-        $("#individual_container").show();
-        $("#map_container").hide();
     } else {
         if ($('#matches_by_map_table').size() === 0) {
             $.ajax({
-                async: false,
                 url: "matches_by_map.html",
+                dataType: "html",
                 data: "id=" + $("#match_id").html(),
                 success: function(data) {
-                    $("#map_container").html(data);
+                    $("#map_container").append(data);
+                    $("#individual_container").hide();
+                    $("#map_container").show();
                 },
             });
+        } else {
+            $("#individual_container").hide();
+            $("#map_container").show();
         }
-        $("#individual_container").hide();
-        $("#map_container").show();
     }
 }

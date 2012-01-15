@@ -9,6 +9,10 @@ static/matches
 static/scrimmages
 and all files that start with BSTesterDB
 
+#########
+# 1.0.2 #
+#########
+    * Added Firefox support
 
 #########
 # 1.0.2 #
