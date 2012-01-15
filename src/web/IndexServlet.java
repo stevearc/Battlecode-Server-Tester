@@ -153,7 +153,7 @@ public class IndexServlet extends HttpServlet {
 			case QUEUED:
 				out.println(td + r.getStatus() + "</td>");
 				out.println("<td>&nbsp</td>");
-				out.println("<td><input type=\"button\" value=\"dequeue\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
+				out.println("<td><input type=\"button\" value=\"dequeue\" onclick=\"dequeueRun(" + r.getId() + ")\"></td>");
 				break;
 			case RUNNING:
 				long currentMatches = 0;
@@ -170,22 +170,22 @@ public class IndexServlet extends HttpServlet {
 				}
 				out.println(td + (currentMatches*100/totalMatches) + "%</td>");
 				out.println(td + "<a id=\"cntdwn\" name=" + r.calculateTimeTaken()/1000 + "></a></td>");
-				out.println("<td><input type=\"button\" value=\"cancel\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
+				out.println("<td><input type=\"button\" value=\"cancel\" onclick=\"cancelRun(" + r.getId() + ")\"></td>");
 				break;
 			case COMPLETE:
 				out.println(td + r.getStatus() + "</td>");
 				out.println(td + "<span style='display:none'>" + r.calculateTimeTaken()/10000000. + "</span>" + r.printTimeTaken() + "</td>");
-				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", true)\"></td>");
+				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ")\"></td>");
 				break;
 			case CANCELED:
 				out.println(td + r.getStatus() + "</td>");
 				out.println(td + r.printTimeTaken() + "</td>");
-				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", true)\"></td>");
+				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ")\"></td>");
 				break;
 			default:
 				out.println("<td>Unknown Error</td>");
 				out.println("<td>&nbsp</td>");
-				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ", false)\"></td>");
+				out.println("<td><input type=\"button\" value=\"delete\" onclick=\"delRun(" + r.getId() + ")\"></td>");
 			}
 			out.println("</tr>");
 		}

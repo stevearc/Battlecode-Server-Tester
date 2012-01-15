@@ -62,21 +62,9 @@ public abstract class AbstractMaster {
 	}
 	protected abstract void queueRun(final Long teamAId, final Long teamBId, final List<Long> seeds, final List<Long> mapIds);
 	
-	/**
-	 * Delete run data
-	 * @param run_id
-	 */
-	public static void kickoffDeleteRun(final Long run_id) {
-		new Thread(new Runnable(){
-
-			@Override
-			public void run() {
-				singleton.deleteRun(run_id);
-			}
-
-		}).start();
-	}
-	protected abstract void deleteRun(final Long run_id);
+	public abstract void deleteRun(final Long run_id);
+	public abstract void cancelRun(final Long run_id);
+	public abstract void dequeueRun(final Long run_id);
 	
 	public abstract void deleteScrimmage(Long scrimId);
 

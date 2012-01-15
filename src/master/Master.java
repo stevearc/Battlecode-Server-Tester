@@ -180,19 +180,44 @@ public class Master extends AbstractMaster {
 		}
 	}
 
+	@Override
+	public synchronized void cancelRun(Long runId) {
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSRun run = em.find(BSRun.class, runId);
+		if (run != null && run.getStatus() == STATUS.RUNNING) {
+			_log.info("canceling run " + runId);
+			stopCurrentRun(STATUS.CANCELED);
+			startRun();
+		}
+		em.close();
+	}
+
+	@Override
+	public synchronized void dequeueRun(Long runId) {
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSRun run = em.find(BSRun.class, runId);
+		if (run != null && run.getStatus() == STATUS.QUEUED) {
+			_log.info("dequeueing run " + runId);
+			em.getTransaction().begin();
+			em.remove(run);
+			em.flush();
+			em.getTransaction().commit();
+			WebSocketChannelManager.broadcastMsg("index", "DELETE_TABLE_ROW", ""+runId);
+		}
+		em.close();
+	}
+
 	/**
 	 * Delete run data
 	 * @param runId
 	 */
 	@Override
-	protected synchronized void deleteRun(Long runId) {
+	public synchronized void deleteRun(Long runId) {
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSRun run = em.find(BSRun.class, runId);
 		// If it's running right now, just cancel it
-		if (run.getStatus() == STATUS.RUNNING) {
-			_log.info("canceling run " + runId);
-			stopCurrentRun(STATUS.CANCELED);
-			startRun();
+		if (run == null || run.getStatus() == STATUS.QUEUED || run.getStatus() == STATUS.RUNNING) {
+			// pass
 		} else {
 			_log.info("deleting run " + runId);
 			// otherwise, delete it
@@ -215,9 +240,9 @@ public class Master extends AbstractMaster {
 			em.remove(run);
 			em.flush();
 			em.getTransaction().commit();
-			em.close();
 			WebSocketChannelManager.broadcastMsg("index", "DELETE_TABLE_ROW", ""+runId);
 		}
+		em.close();
 	}
 
 	@Override

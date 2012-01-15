@@ -31,6 +31,10 @@ public class ActionServlet extends HttpServlet {
 			queueRun(request, response);
 		} else if (cmd.equals("delete")) {
 			deleteRun(request, response);
+		} else if (cmd.equals("dequeue")) {
+			dequeueRun(request, response);
+		} else if (cmd.equals("cancel")) {
+			cancelRun(request, response);
 		} else if (cmd.equals("deleteScrim")) {
 			deleteScrimmage(request, response);
 		}
@@ -85,7 +89,28 @@ public class ActionServlet extends HttpServlet {
 			out.println("Invalid id: " + strId);
 		}
 
-		AbstractMaster.kickoffDeleteRun(new Long(Integer.parseInt(strId)));
+		AbstractMaster.getMaster().deleteRun(new Long(Integer.parseInt(strId)));
+		out.print("success");
+	}
+	
+	private void cancelRun(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		PrintWriter out = response.getWriter();
+		String strId = request.getParameter("id");
+		if (strId == null || !strId.matches("\\d+")) {
+			out.println("Invalid id: " + strId);
+		}
+
+		AbstractMaster.getMaster().cancelRun(new Long(Integer.parseInt(strId)));
+		out.print("success");
+	}
+	private void dequeueRun(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		PrintWriter out = response.getWriter();
+		String strId = request.getParameter("id");
+		if (strId == null || !strId.matches("\\d+")) {
+			out.println("Invalid id: " + strId);
+		}
+
+		AbstractMaster.getMaster().dequeueRun(new Long(Integer.parseInt(strId)));
 		out.print("success");
 	}
 	

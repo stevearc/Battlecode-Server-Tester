@@ -187,13 +187,31 @@ function newRun() {
 }
 
 // Send query to server to delete a run
-function delRun(id, ask) {
-	if(ask && !confirm("This will delete the run and all replay files.  Continue?")) {
+function delRun(id) {
+	if(!confirm("This will delete the run and all replay files.  Continue?")) {
 		return;
 	}
     $.ajax({
         url: "action.html",
         data: "cmd=delete&id="+id,
+        success: function(data) {
+            deleteTableRow(id);
+        },
+    });
+}
+
+// Send query to server to delete a run
+function cancelRun(id) {
+    $.ajax({
+        url: "action.html",
+        data: "cmd=cancel&id="+id,
+    });
+}
+
+function dequeueRun(id) {
+    $.ajax({
+        url: "action.html",
+        data: "cmd=dequeue&id="+id,
         success: function(data) {
             deleteTableRow(id);
         },
@@ -223,7 +241,7 @@ function startRun(rowid) {
     $("#cntdwn").attr("name", "0");
     table.fnUpdate("<input type='button' id='temp1' />", rowIndex, 6);
     $("#temp1").removeAttr("id").attr("value", "cancel").click(function() {
-        delRun(rowid, false);
+        cancelRun(rowid);
     });
 }
 
@@ -246,7 +264,7 @@ function finishRun(rowid, run_status) {
     table.fnUpdate($("#cntdwn").html(), rowIndex, 5);
     table.fnUpdate("<input type='button' id='temp1' />", rowIndex, 6);
     $("#temp1").removeAttr("id").attr('value', 'delete').click(function() {
-        delRun(rowid, true);
+        delRun(rowid);
     });
 }
 
@@ -269,7 +287,7 @@ function insertTableRow(rowid, team_a, team_b) {
     });
     $('#temp1').attr('value', 'dequeue')
     .click(function() {
-        delRun(rowid, false);
+        dequeueRun(rowid);
     })
     .removeAttr('id');
 }
