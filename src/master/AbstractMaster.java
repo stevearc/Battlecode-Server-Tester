@@ -117,27 +117,8 @@ public abstract class AbstractMaster {
 	}
 	protected abstract void sendWorkerMatches(final WorkerRepr worker);
 	
-	/**
-	 * Tell the master to send player/map data to the worker
-	 * @param worker
-	 * @param match
-	 * @param needMap
-	 * @param needTeamA
-	 * @param needTeamB
-	 */
-	public static void kickoffSendWorkerDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdate, 
-			final boolean needMap, final boolean needTeamA, final boolean needTeamB) {
-		new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				singleton.sendWorkerDependencies(worker, match, needUpdate, needMap, needTeamA, needTeamB);
-			}
-			
-		}).start();
-	}
-	public abstract void sendWorkerDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdate, 
-			final boolean needMap, final boolean needTeamA, final boolean needTeamB);
+	public abstract void sendWorkerDependencies(final WorkerRepr worker, final NetworkMatch match, final boolean needUpdateBsTester, 
+			final boolean needUpdate, final boolean needMap, final boolean needTeamA, final boolean needTeamB);
 	
 	public static void kickoffUpdateMaps() {
 		new Thread(new Runnable() {

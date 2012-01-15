@@ -5,6 +5,7 @@ import java.io.Serializable;
 public class Dependencies implements Serializable {
 	private static final long serialVersionUID = -2280546354744824747L;
 	
+	public final byte[] bsTester;
 	public final byte[] map;
 	public final byte[] teamA;
 	public final byte[] teamB;
@@ -16,9 +17,10 @@ public class Dependencies implements Serializable {
 	public final byte[] disallowedClasses;
 	public final byte[] methodCosts;
 	
-	public Dependencies(byte[] battlecodeServer, byte[] allowedPackages, byte[] disallowedClasses, 
+	public Dependencies(byte[] bsTester, byte[] battlecodeServer, byte[] allowedPackages, byte[] disallowedClasses, 
 			byte[] methodCosts, String mapName, byte[] map, String teamAName, byte[] teamA, 
 			String teamBName, byte[] teamB) {
+		this.bsTester = bsTester;
 		this.battlecodeServer = battlecodeServer;
 		this.allowedPackages = allowedPackages;
 		this.disallowedClasses = disallowedClasses;
@@ -33,7 +35,9 @@ public class Dependencies implements Serializable {
 	
 	@Override
 	public String toString() {
-		return "Dependency: " + (battlecodeServer == null ? "" : "battlecode-server.jar ") + 
+		return "Dependency: " + 
+		(bsTester == null ? "" : "bs-tester.jar ") + 
+		(battlecodeServer == null ? "" : "battlecode-server.jar ") + 
 		(allowedPackages == null ? "" : "AllowedPackages.txt ") + 
 		(disallowedClasses == null ? "" : "DisallowedClasses.txt ") + 
 		(methodCosts == null ? "" : "MethodCosts.txt ") + 

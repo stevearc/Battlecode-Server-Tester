@@ -118,11 +118,12 @@ public class WorkerRepr implements Controller {
 			break;
 		case REQUEST_DEPENDENCIES:
 			NetworkMatch match = (NetworkMatch) p.get(0);
-			boolean needUpdate = (Boolean) p.get(1);
-			boolean needMap = (Boolean) p.get(2);
-			boolean needTeamA = (Boolean) p.get(3);
-			boolean needTeamB = (Boolean) p.get(4);
-			AbstractMaster.getMaster().sendWorkerDependencies(this, match, needUpdate, needMap, needTeamA, needTeamB);
+			boolean needUpdateBsTester = (Boolean) p.get(1);
+			boolean needUpdate = (Boolean) p.get(2);
+			boolean needMap = (Boolean) p.get(3);
+			boolean needTeamA = (Boolean) p.get(4);
+			boolean needTeamB = (Boolean) p.get(5);
+			AbstractMaster.getMaster().sendWorkerDependencies(this, match, needUpdateBsTester, needUpdate, needMap, needTeamA, needTeamB);
 			break;
 		case ANALYZE_REPLY:
 			analyzingMatches.remove((BSScrimmageSet)p.get(0));

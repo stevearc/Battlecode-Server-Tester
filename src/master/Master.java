@@ -406,11 +406,13 @@ public class Master extends AbstractMaster {
 	@Override
 	protected synchronized void sendWorkerMatches(WorkerRepr worker) {
 		EntityManager em = HibernateUtil.getEntityManager();
+		String bsTesterHash;
 		String battlecodeServerHash;
 		String allowedPackagesHash;
 		String disallowedClassesHash;
 		String methodCostsHash;
 		try {
+			bsTesterHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("bs-tester.jar"));
 			battlecodeServerHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.battlecodeServerFile));
 			allowedPackagesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.allowedPackagesFile));
 			disallowedClassesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.disallowedClassesFile));
@@ -425,7 +427,7 @@ public class Master extends AbstractMaster {
 			_log.error("Error hashing battlecode-server.jar or idata", e);
 			return;
 		}
-		DependencyHashes deps = new DependencyHashes(battlecodeServerHash, allowedPackagesHash, disallowedClassesHash, methodCostsHash);
+		DependencyHashes deps = new DependencyHashes(bsTesterHash, battlecodeServerHash, allowedPackagesHash, disallowedClassesHash, methodCostsHash);
 
 		sendBlock:
 		{
@@ -520,16 +522,20 @@ public class Master extends AbstractMaster {
 	}
 
 	@Override
-	public synchronized void sendWorkerDependencies(WorkerRepr worker, NetworkMatch match, boolean needUpdate, boolean needMap, boolean needTeamA, boolean needTeamB) {
+	public synchronized void sendWorkerDependencies(WorkerRepr worker, NetworkMatch match, boolean needUpdateBsTester, boolean needUpdate, boolean needMap, boolean needTeamA, boolean needTeamB) {
 		Dependencies dep;
 		byte[] map = null;
 		byte[] teamA = null;
 		byte[] teamB = null;
+		byte[] bsTester = null;
 		byte[] battlecodeServer = null;
 		byte[] allowedPackages = null;
 		byte[] disallowedClasses = null;
 		byte[] methodCosts = null;
 		try {
+			if (needUpdateBsTester) {
+				bsTester = BSUtil.getFileData("bs-tester.jar");
+			}
 			if (needUpdate) {
 				battlecodeServer = BSUtil.getFileData(Config.battlecodeServerFile);
 				allowedPackages = BSUtil.getFileData(Config.allowedPackagesFile);
@@ -546,9 +552,9 @@ public class Master extends AbstractMaster {
 				if (needTeamB) {
 					teamB = BSUtil.getFileData(Config.teamsDir + match.team_b + ".jar");
 				}
-				dep = new Dependencies(battlecodeServer, allowedPackages, disallowedClasses, methodCosts, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
+				dep = new Dependencies(bsTester, battlecodeServer, allowedPackages, disallowedClasses, methodCosts, match.map.getMapName(), map, match.team_a, teamA, match.team_b, teamB);
 			} else {
-				dep = new Dependencies(battlecodeServer, allowedPackages, disallowedClasses, methodCosts, null, map, null, teamA, null, teamB);
+				dep = new Dependencies(bsTester, battlecodeServer, allowedPackages, disallowedClasses, methodCosts, null, map, null, teamA, null, teamB);
 			}
 			_log.info("Sending " + worker + " " + dep);
 			worker.sendDependencies(dep);

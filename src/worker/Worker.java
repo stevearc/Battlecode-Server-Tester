@@ -114,6 +114,27 @@ public class Worker implements Controller, Runnable {
 			}
 		}
 	}
+	
+	private boolean bsTesterUpToDate(DependencyHashes deps) {
+		if (deps == null) {
+			return true;
+		}
+		try {
+			if (!deps.bsTesterHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("bs-tester.jar")))) {
+				return false;
+			}
+		} catch (NoSuchAlgorithmException e) {
+			_log.error("Could not find SHA1 algorithm", e);
+			return false;
+		} catch (FileNotFoundException e) {
+			_log.error("Error can't find bs-tester.jar", e);
+			return false;
+		} catch (IOException e) {
+			_log.error("Error hashing bs-tester.jar", e);
+			return false;
+		}
+		return true;
+	}
 
 	private boolean battlecodeUpToDate(DependencyHashes deps) {
 		if (deps == null) {
@@ -171,10 +192,15 @@ public class Worker implements Controller, Runnable {
 	 */
 	private boolean resolveDependencies(NetworkMatch match, DependencyHashes deps) {
 		boolean allClear = true;
+		boolean needUpdateBsTester = false;
 		boolean needUpdate = false;
 		boolean needMap = false;
 		boolean needTeamA = false;
 		boolean needTeamB = false;
+		if (!bsTesterUpToDate(deps)) {
+			allClear = false;
+			needUpdateBsTester = true;
+		}
 		if (!battlecodeUpToDate(deps)) {
 			allClear = false;
 			needUpdate = true;
@@ -192,11 +218,13 @@ public class Worker implements Controller, Runnable {
 			needTeamB = true;
 		}
 		if (!allClear) {
-			_log.info("Requesting " + (needUpdate ? "battlecode files, " : "") + 
+			_log.info("Requesting " + 
+					(needUpdateBsTester ? "bs-tester.jar, " : "") + 
+					(needUpdate ? "battlecode files, " : "") + 
 					(needMap ? "map: " + match.map + ", " : "") + 
 					(needTeamA ? "player: " + match.team_a + ", " : "") + 
 					(needTeamB ? "player: " + match.team_b : ""));
-			Packet requestPacket = new Packet(PacketCmd.REQUEST_DEPENDENCIES, new Object[]{match, needUpdate, needMap, needTeamA, needTeamB});
+			Packet requestPacket = new Packet(PacketCmd.REQUEST_DEPENDENCIES, new Object[]{match, needUpdateBsTester, needUpdate, needMap, needTeamA, needTeamB});
 			network.send(requestPacket);
 		}
 		return allClear;
@@ -297,6 +325,10 @@ public class Worker implements Controller, Runnable {
 			}
 			if (dep.teamB != null) {
 				writeDataToFile(dep.teamB, Config.teamsDir + dep.teamBName + ".jar");
+			}
+			if (dep.bsTester != null) {
+				writeDataToFile(dep.bsTester, "bs-tester.jar");
+				needRestart = true;
 			}
 
 		} catch (IOException e) {
