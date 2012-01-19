@@ -231,13 +231,13 @@ public class Worker implements Controller, Runnable {
 	}
 
 	private boolean resolveDependencies(DependencyHashes deps) {
-		boolean needUpdate = false;
-		if (!battlecodeUpToDate(deps)) {
-			needUpdate = true;
-		}
+		boolean needUpdate = !battlecodeUpToDate(deps);
+		boolean needUpdateBsTester = !bsTesterUpToDate(deps);
 		if (needUpdate) {
-			_log.info("Requesting " + (needUpdate ? "battlecode files" : ""));
-			Packet requestPacket = new Packet(PacketCmd.REQUEST_DEPENDENCIES, new Object[]{null, needUpdate, false, false, false});
+			_log.info("Requesting " + 
+					(needUpdateBsTester ? "bs-tester.jar, " : "") + 
+					(needUpdate ? "battlecode files" : ""));
+			Packet requestPacket = new Packet(PacketCmd.REQUEST_DEPENDENCIES, new Object[]{null, needUpdateBsTester, needUpdate, false, false, false});
 			network.send(requestPacket);
 		}
 		return !needUpdate;
