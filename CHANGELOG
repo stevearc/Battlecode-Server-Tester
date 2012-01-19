@@ -11,6 +11,11 @@ static/scrimmages
 and all files that start with BSTesterDB
 
 #########
+# 1.0.4 #
+#########
+    * Fixed a bug with analyzing scrimmage files
+
+#########
 # 1.0.3 #
 #########
     * Added Firefox support
