@@ -1,10 +1,12 @@
 package master;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -295,20 +297,33 @@ public class Master extends AbstractMaster {
 		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.getId() + "," + scrim.getFileName());
 		EntityManager em = HibernateUtil.getEntityManager();
 		BSScrimmageSet dbScrim = em.find(BSScrimmageSet.class, scrim.getId());
-		if (dbScrim == null || dbScrim.getStatus() != STATUS.RUNNING) {
-			// Match was already analyzed by another worker or it was canceled
-		} else if (status == STATUS.COMPLETE) {
-			for (ScrimmageMatchResult smr: scrim.getScrimmageMatches()) {
-				smr.setScrimmageSet(scrim);
-				em.persist(smr);
+		try {
+			if (dbScrim == null || dbScrim.getStatus() != STATUS.RUNNING) {
+				// Match was already analyzed by another worker or it was canceled
+			} else if (status == STATUS.COMPLETE) {
+				for (ScrimmageMatchResult smr: scrim.getScrimmageMatches()) {
+					smr.setScrimmageSet(scrim);
+					em.persist(smr);
+				}
+				// Write the observation files
+				for (int i = 0; i < scrim.getScrimmageMatches().size(); i++) {
+					File obsFile = new File(Config.scrimmageDir + scrim.toObsFileName(i));
+					obsFile.createNewFile();
+					BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(obsFile)));
+					writer.write(scrim.getScrimmageMatches().get(i).getObservations());
+					writer.close();
+				}
+				// Commit the db changes
+				em.merge(scrim);
+				em.getTransaction().begin();
+				em.flush();
+				em.getTransaction().commit();
+				_log.info("Match analyzed: " + scrim.getFileName());
+				WebSocketChannelManager.broadcastMsg("scrimmage", "FINISH_SCRIMMAGE", scrim.getId() + "," + scrim.getPlayerA() + "," + 
+						scrim.getPlayerB() + "," + scrim.getStatus() + "," + scrim.getWinner());
 			}
-			em.merge(scrim);
-			em.getTransaction().begin();
-			em.flush();
-			em.getTransaction().commit();
-			_log.info("Match analyzed: " + scrim.getFileName());
-			WebSocketChannelManager.broadcastMsg("scrimmage", "FINISH_SCRIMMAGE", scrim.getId() + "," + scrim.getPlayerA() + "," + 
-					scrim.getPlayerB() + "," + scrim.getStatus() + "," + scrim.getWinner());
+		} catch (IOException e) {
+			_log.error("Error writing observations file", e);
 		}
 		sendWorkerMatches(worker);
 		em.close();
@@ -326,6 +341,7 @@ public class Master extends AbstractMaster {
 		MatchResultImpl result = (MatchResultImpl) p.get(2);
 		byte[] data = (byte[]) p.get(3);
 		byte[] outputData = (byte[]) p.get(4);
+		String observations = (String) p.get(5);
 		WebSocketChannelManager.broadcastMsg("connections", "REMOVE_MAP", worker.getId() + "," + m.toMapString());
 		try {
 			EntityManager em = HibernateUtil.getEntityManager();
@@ -346,16 +362,25 @@ public class Master extends AbstractMaster {
 					run.setbWins(run.getbWins() + 1);
 				}
 				_log.info("Match finished: " + m + " winner: " + result.getWinner());
+				// Write the match file
 				File matchFile = new File(Config.matchDir + match.toMatchFileName());
 				matchFile.createNewFile();
 				FileOutputStream fos = new FileOutputStream(matchFile);
 				fos.write(data);
 				fos.close();
+				// Write the output file
 				File outFile = new File(Config.matchDir + match.toOutputFileName());
 				outFile.createNewFile();
 				fos = new FileOutputStream(outFile);
 				fos.write(outputData);
 				fos.close();
+				// Write the observations file
+				File obsFile = new File(Config.matchDir + match.toObsFileName());
+				obsFile.createNewFile();
+				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(obsFile)));
+				writer.write(observations);
+				writer.close();
+				// Commit changes to database
 				em.getTransaction().begin();
 				em.merge(match);
 				em.merge(run);

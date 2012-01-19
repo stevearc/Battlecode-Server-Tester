@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
+import javax.persistence.Transient;
 
 @Entity
 public class ScrimmageMatchResult implements MatchResult, Serializable{
@@ -27,6 +28,7 @@ public class ScrimmageMatchResult implements MatchResult, Serializable{
 	private TeamMatchResult aResult;
 	private TeamMatchResult bResult;
 	private String map;
+	private String observations;
 	
 	public ScrimmageMatchResult() {
 		
@@ -101,6 +103,10 @@ public class ScrimmageMatchResult implements MatchResult, Serializable{
 	public String getMap() {
 		return map;
 	}
+	@Transient
+	public String getObservations() {
+		return observations;
+	}
 	
 	public void setId(Long id) {
 		this.id = id;
@@ -122,6 +128,9 @@ public class ScrimmageMatchResult implements MatchResult, Serializable{
 	}
 	public void setRounds(Long rounds) {
 		this.rounds = rounds;
+	}
+	public void setObservations(String observations) {
+		this.observations = observations;
 	}
 	
 

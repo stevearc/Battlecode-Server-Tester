@@ -82,5 +82,9 @@ public class BSMatch {
 	public String toOutputFileName() {
 		return getRun().getId() + getMap().getMapName() + getSeed() + ".out";
 	}
+	
+	public String toObsFileName() {
+		return getRun().getId() + getMap().getMapName() + getSeed() + "-obs.out";
+	}
 
 }

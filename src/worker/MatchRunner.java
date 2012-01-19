@@ -194,7 +194,8 @@ public class MatchRunner implements Runnable {
 			} catch (InterruptedException e) {
 			}
 			if (running) {
-				worker.matchFinish(this, core, match, STATUS.COMPLETE, MatchResultImpl.constructMockMatchResult(), new byte[0], new byte[0]);
+				worker.matchFinish(this, core, match, STATUS.COMPLETE, 
+						MatchResultImpl.constructMockMatchResult(), new byte[0], new byte[0], "Mock match");
 			}
 			return;
 		}
@@ -270,7 +271,7 @@ public class MatchRunner implements Runnable {
 
 			if (running) {
 				_log.info("Finished: " + match);
-				worker.matchFinish(this, core, match, STATUS.COMPLETE, result, data, outputData);
+				worker.matchFinish(this, core, match, STATUS.COMPLETE, result, data, outputData, ga.getObservations());
 			}
 		} catch (IOException e) {
 			if (running) {

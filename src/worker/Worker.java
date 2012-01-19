@@ -55,7 +55,7 @@ public class Worker implements Controller, Runnable {
 	}
 
 	public synchronized void matchFailed(MatchRunner runner, int core, NetworkMatch match) {
-		matchFinish(runner, core, match, null, null, null, null);
+		matchFinish(runner, core, match, null, null, null, null, null);
 	}
 
 	/**
@@ -70,12 +70,12 @@ public class Worker implements Controller, Runnable {
 	 * @param data
 	 */
 	public synchronized void matchFinish(MatchRunner runner, int core, NetworkMatch match, STATUS status, 
-			MatchResultImpl result, byte[] data, byte[] outputData) {
+			MatchResultImpl result, byte[] data, byte[] outputData, String observations) {
 		// If the runner is out of date, we should ignore it
 		if (running[core] != runner) {
 			return;
 		}
-		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, result, data, outputData});
+		Packet p = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, status, result, data, outputData, observations});
 		network.send(p);
 		running[core].stop();
 		running[core] = null;

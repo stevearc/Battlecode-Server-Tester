@@ -52,18 +52,21 @@ public class ScrimmageViewServlet extends HttpServlet{
 				"<th>Map</th>" +
 				"<th>Winner</th>" +
 				"<th>Rounds</th>" +
-				"<th>Win condition</th>" +
+				"<th>Win Condition</th>" +
+				"<th>Match Observations</th>" +
 				"</tr>" +
 				"</thead>" +
 		"<tbody>");
 
-		for (ScrimmageMatchResult result: scrim.getScrimmageMatches()) {
+		for (int i = 0; i < scrim.getScrimmageMatches().size(); i++) {
+			ScrimmageMatchResult result = scrim.getScrimmageMatches().get(i);
 			out.println("<tr>");
 			out.println(td(result) + result.getId() + "</td>");
 			out.println(td(result) + result.getMap() + "</td>");
 			out.println(td(result) + "<font color='" + (result.getWinner() == TEAM.A ? "red'>" + scrim.getPlayerA() : "blue'>" + scrim.getPlayerB()) + "</font></td>");
 			out.println(td(result) + result.getRounds() + "</td>");
 			out.println(td(result) + result.getWinCondition() + "</td>");
+			out.println("<td><a href='/scrimmages/" + scrim.toObsFileName(i) + "'>download</a></td>");
 			out.println("</tr>");
 		}
 		em.close();

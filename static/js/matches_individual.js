@@ -11,10 +11,6 @@ $(function() {
     runTable.fnSort( [ [0,'asc'] ] );
 });
 
-function downloadFile(fileUrl) {
-    document.location=fileUrl;
-}
-
 function rowClick(matchId) {
     $('#container').remove();
     var container = $("<div/>").attr('id', 'container')

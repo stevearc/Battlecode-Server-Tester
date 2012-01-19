@@ -100,6 +100,11 @@ public class BSScrimmageSet implements Serializable{
 	public void setScrimmageMatches(List<ScrimmageMatchResult> scrimmageMatches) {
 		this.scrimmageMatches = scrimmageMatches;
 	}
+	
+	public String toObsFileName(int scrimNumber) {
+		int index = fileName.indexOf(".rms");
+		return fileName.substring(0, index) + "-obs" + scrimNumber + ".out";
+	}
 
 	@Override
 	public int hashCode() {

@@ -24,6 +24,7 @@ import battlecode.server.proxy.Proxy;
 import battlecode.world.signal.BytecodesUsedSignal;
 import battlecode.world.signal.DeathSignal;
 import battlecode.world.signal.FluxChangeSignal;
+import battlecode.world.signal.MatchObservationSignal;
 import battlecode.world.signal.MovementSignal;
 import battlecode.world.signal.SpawnSignal;
 
@@ -43,6 +44,7 @@ public class GameData extends Proxy {
 	private String teamA;
 	private String teamB;
 	private String[] maps;
+	private StringBuilder observations = new StringBuilder();
 
 	@Override
 	public void open() throws IOException {
@@ -113,6 +115,10 @@ public class GameData extends Proxy {
 
 	public String[] getMaps() {
 		return maps;
+	}
+	
+	public String getObservations() {
+		return observations.toString();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -257,6 +263,12 @@ public class GameData extends Proxy {
 							(GameConstants.YIELD_BONUS*bytecodesBelowBase/GameConstants.BYTECODE_LIMIT*GameConstants.UNIT_UPKEEP);	
 						}
 					}
+				}
+				else if (signal instanceof MatchObservationSignal) {
+					MatchObservationSignal s = (MatchObservationSignal) signal;
+					r = robots.get(s.getRobotID());
+					observations.append("[" + r.team + ":" + r.type + "#" + s.getRobotID() + 
+							"@" + l + "] " + s.getObservation() + "\n");
 				}
 			}
 			// Calculate the flux produced this round

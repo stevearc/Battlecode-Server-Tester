@@ -21,9 +21,11 @@ public class GameAnalyzer {
 	private static final Logger _log = Logger.getLogger(GameAnalyzer.class);
 	private ObjectInputStream input;
 	private List<MatchResultImpl> results;
+	private List<String> observationList;
 	private String teamA;
 	private String teamB;
 	private String[] maps;
+	private StringBuilder observations = new StringBuilder();
 
 	public GameAnalyzer(byte[] data) throws IOException, ClassNotFoundException {
 		input = XStreamProxy.getXStream().createObjectInputStream(new GZIPInputStream(new ByteArrayInputStream(data)));
@@ -36,8 +38,11 @@ public class GameAnalyzer {
 	public List<ScrimmageMatchResult> analyzeScrimmageMatches() throws IOException, ClassNotFoundException {
 		List<ScrimmageMatchResult> scrimResults = new ArrayList<ScrimmageMatchResult>();
 		List<MatchResultImpl> r = analyzeMatches();
-		for (MatchResultImpl m: r) {
-			scrimResults.add(new ScrimmageMatchResult(m));
+		for (int i = 0; i < r.size(); i++) {
+			MatchResultImpl m = r.get(i);
+			ScrimmageMatchResult smr = new ScrimmageMatchResult(m);
+			smr.setObservations(observationList.get(i));
+			scrimResults.add(smr);
 		}
 		if (maps == null) {
 			throw new IOException("Scrimmage match has no map data");
@@ -71,8 +76,10 @@ public class GameAnalyzer {
 			_log.error("Match in bad format");
 			return results;
 		}
+		List<GameData> gameDatas = new ArrayList<GameData>();
 		GameData gameData = new GameData();
 		gameData.addData(o);
+		gameDatas.add(gameData);
 
 		try {
 			while ((o = input.readObject()) != null) {
@@ -80,6 +87,7 @@ public class GameAnalyzer {
 					// New Game
 					results.add(gameData.analyzeMatch());
 					gameData = new GameData();
+					gameDatas.add(gameData);
 				}
 
 				gameData.addData(o);
@@ -92,8 +100,29 @@ public class GameAnalyzer {
 		teamA = gameData.getTeamA();
 		teamB = gameData.getTeamB();
 		maps = gameData.getMaps();
+		String header = "-------------------- Match Starting --------------------";
+		StringBuilder sb;
+		observationList = new ArrayList<String>();
+		for (int i = 0; i < gameDatas.size(); i++) {
+			sb = new StringBuilder();
+			sb.append(header);
+			sb.append("\n");
+			String center = teamA + " vs. " + teamB + " on " + maps[i];
+			for (int j = 0; j < (header.length() - center.length())/2; j++) {
+				sb.append(" ");
+			}
+			sb.append(center);
+			sb.append("\n");
+			sb.append(gameDatas.get(i).getObservations());
+			observations.append(sb.toString());
+			observationList.add(sb.toString());
+		}
 
 		return results;
+	}
+	
+	public String getObservations() {
+		return observations.toString();
 	}
 	
 	public void close() {
