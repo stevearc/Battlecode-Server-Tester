@@ -5,6 +5,7 @@ import javax.persistence.EntityManagerFactory;
 
 import model.BSMap;
 import model.BSMatch;
+import model.BSMetadata;
 import model.BSPlayer;
 import model.BSRun;
 import model.BSScrimmageSet;
@@ -13,13 +14,10 @@ import model.MatchResultImpl;
 import model.ScrimmageMatchResult;
 import model.TeamMatchResult;
 
-import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.ejb.Ejb3Configuration;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
-import org.hibernate.tool.hbm2ddl.Target;
 
 
 public class HibernateUtil {
@@ -49,6 +47,7 @@ public class HibernateUtil {
 			cfg.addAnnotatedClass(ScrimmageMatchResult.class);
 			cfg.addAnnotatedClass(TeamMatchResult.class);
 			cfg.addAnnotatedClass(BSScrimmageSet.class);
+			cfg.addAnnotatedClass(BSMetadata.class);
 			for (String[] keyVal: properties) {
 				cfg.setProperty(keyVal[0], keyVal[1]);
 			}
@@ -89,6 +88,7 @@ public class HibernateUtil {
 		cfg.addAnnotatedClass(ScrimmageMatchResult.class);
 		cfg.addAnnotatedClass(TeamMatchResult.class);
 		cfg.addAnnotatedClass(BSScrimmageSet.class);
+		cfg.addAnnotatedClass(BSMetadata.class);
 		for (String[] keyVal: properties) {
 			cfg.setProperty(keyVal[0], keyVal[1]);
 		}

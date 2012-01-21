@@ -20,6 +20,7 @@ import javax.persistence.NoResultException;
 
 import model.BSMap;
 import model.BSMatch;
+import model.BSMetadata;
 import model.BSPlayer;
 import model.BSRun;
 import model.BSScrimmageSet;
@@ -78,6 +79,7 @@ public class Master extends AbstractMaster {
 	 * @throws NoSuchAlgorithmException 
 	 */
 	public synchronized void start() throws NoSuchAlgorithmException, IOException {
+		updateMetadata();
 		new Thread(handler).start();
 		startRun();
 		new Thread(new Runnable() {
@@ -437,11 +439,11 @@ public class Master extends AbstractMaster {
 		String disallowedClassesHash;
 		String methodCostsHash;
 		try {
-			bsTesterHash = BSUtil.convertToHex(BSUtil.SHA1Checksum("bs-tester.jar"));
-			battlecodeServerHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.battlecodeServerFile));
-			allowedPackagesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.allowedPackagesFile));
-			disallowedClassesHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.disallowedClassesFile));
-			methodCostsHash = BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.methodCostsFile));
+			bsTesterHash = BSUtil.bsHashDependency("bs-tester.jar");
+			battlecodeServerHash = BSUtil.bsHashDependency(Config.battlecodeServerFile);
+			allowedPackagesHash = BSUtil.bsHashDependency(Config.allowedPackagesFile);
+			disallowedClassesHash = BSUtil.bsHashDependency(Config.disallowedClassesFile);
+			methodCostsHash = BSUtil.bsHashDependency(Config.methodCostsFile);
 		} catch (FileNotFoundException e) {
 			_log.warn(e);
 			return;
@@ -729,6 +731,58 @@ public class Master extends AbstractMaster {
 	@Override
 	protected Set<WorkerRepr> getConnections() {
 		return workers;
+	}
+
+	private static void updateMetadata() {
+		EntityManager em = HibernateUtil.getEntityManager();
+		BSMetadata meta;
+		try {
+			meta = em.createQuery("from BSMetadata", BSMetadata.class).getSingleResult();
+			if (BSUtil.compareVersions(meta.getVersion(), Config.VERSION) != 0) {
+				meta.setVersion(Config.VERSION);
+				// If this version changed the HASH_VERSION, we need to update all map hashes in the DB
+				if (meta.getHashVersion() < Config.HASH_VERSION) {
+					meta.setHashVersion(Config.HASH_VERSION);
+					updateMapHashes(em);
+				}
+			}
+		} catch (NoResultException e) {
+			// Create the metadata
+			meta = new BSMetadata();
+			meta.setId(1l);
+			meta.setVersion(Config.VERSION);
+			meta.setHashVersion(Config.HASH_VERSION);
+			em.persist(meta);
+			// Metadata did not exist before 1.0.5, so perform the 1.0.4 upgrade 
+			// in case this is 1.0.4 and not just the first run
+			upgrade_1_0_4(em);
+		}
+		em.merge(meta);
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
+		em.close();
+	}
+
+	private static void updateMapHashes(EntityManager em) {
+		List<BSMap> maps = em.createQuery("from BSMap", BSMap.class).getResultList();
+		try {
+			for (BSMap map: maps) {
+				map.setHash(BSUtil.bsHashDependency(Config.mapsDir + map.getMapName() + ".xml"));
+				em.persist(map);
+			}
+		} catch (NoSuchAlgorithmException e) {
+			_log.error("Could not find SHA1 algorithm while re-hashing maps!", e);
+		} catch (IOException e) {
+			_log.error("Could not re-hash maps!", e);
+		}
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
+	}
+
+	private static void upgrade_1_0_4(EntityManager em) {
+		updateMapHashes(em);
 	}
 
 }

@@ -67,12 +67,12 @@ public class BSMap implements Serializable {
 		return rounds;
 	}
 	
-	@Column(nullable=false,updatable=false)
+	@Column(nullable=false)
 	public SIZE getSize() {
 		return size;
 	}
 	
-	@Column(nullable=false,updatable=false)
+	@Column(nullable=false)
 	public String getHash() {
 		return hash;
 	}
@@ -146,7 +146,7 @@ public class BSMap implements Serializable {
 		n = nodeLst.item(0);
 		nl = n.getAttributes();
 		rounds = new Long(Integer.parseInt(nl.getNamedItem("rounds").getNodeValue()));
-		hash = BSUtil.convertToHex(BSUtil.SHA1Checksum(map.getAbsolutePath()));
+		hash = BSUtil.bsHashDependency(map.getAbsolutePath());
 	}
 	
 	/**

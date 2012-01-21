@@ -18,7 +18,7 @@ public class BSUtil {
 	private static final String[] HEXES = {"0","1","2","3","4",
 		"5","6","7","8","9","A","B","C","D","E","F"};
 
-	public static String convertToHex(byte[] raw) {
+	private static String convertToHex(byte[] raw) {
 		if (raw == null) {
 			return null;
 		}
@@ -29,7 +29,24 @@ public class BSUtil {
 		}
 		return hex.toString();
 	}
-
+	
+	public static String bsHashDependency(String filename) throws NoSuchAlgorithmException, IOException {
+		return Config.HASH_VERSION + convertToHex(SHA1Checksum(filename));
+	}
+	
+	public static int compareVersions(String v1, String v2) {
+		String[] v1arr = v1.split("\\.");
+		String[] v2arr = v2.split("\\.");
+		int cmpResult = new Integer(Integer.parseInt(v1arr[0])).compareTo(Integer.parseInt(v2arr[0]));
+		if (cmpResult != 0)
+			return cmpResult;
+		cmpResult = new Integer(Integer.parseInt(v1arr[1])).compareTo(Integer.parseInt(v2arr[1]));
+		if (cmpResult != 0)
+			return cmpResult;
+		cmpResult = new Integer(Integer.parseInt(v1arr[2])).compareTo(Integer.parseInt(v2arr[2]));
+		return cmpResult;
+	}
+	
 	/**
 	 * 
 	 * @param text

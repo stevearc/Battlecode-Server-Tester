@@ -120,7 +120,7 @@ public class Worker implements Controller, Runnable {
 			return true;
 		}
 		try {
-			if (!deps.bsTesterHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum("bs-tester.jar")))) {
+			if (!deps.bsTesterHash.equals(BSUtil.bsHashDependency("bs-tester.jar"))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -141,16 +141,16 @@ public class Worker implements Controller, Runnable {
 			return true;
 		}
 		try {
-			if (!deps.battlecodeServerHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.battlecodeServerFile)))) {
+			if (!deps.battlecodeServerHash.equals(BSUtil.bsHashDependency(Config.battlecodeServerFile))) {
 				return false;
 			}
-			if (!deps.allowedPackagesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.allowedPackagesFile)))) {
+			if (!deps.allowedPackagesHash.equals(BSUtil.bsHashDependency(Config.allowedPackagesFile))) {
 				return false;
 			}
-			if (!deps.disallowedClassesHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.disallowedClassesFile)))) {
+			if (!deps.disallowedClassesHash.equals(BSUtil.bsHashDependency(Config.disallowedClassesFile))) {
 				return false;
 			}
-			if (!deps.methodCostsHash.equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(Config.methodCostsFile)))) {
+			if (!deps.methodCostsHash.equals(BSUtil.bsHashDependency(Config.methodCostsFile))) {
 				return false;
 			}
 		} catch (NoSuchAlgorithmException e) {
@@ -170,7 +170,7 @@ public class Worker implements Controller, Runnable {
 		File mapFile = new File(Config.mapsDir + map.getMapName() + ".xml");
 		if (mapFile.exists()) {
 			try {
-				return map.getHash().equals(BSUtil.convertToHex(BSUtil.SHA1Checksum(mapFile.getAbsolutePath())));
+				return map.getHash().equals(BSUtil.bsHashDependency(mapFile.getAbsolutePath()));
 			} catch (NoSuchAlgorithmException e) {
 				_log.error("Can't find SHA1 hash!", e);
 			} catch (IOException e) {
@@ -233,14 +233,15 @@ public class Worker implements Controller, Runnable {
 	private boolean resolveDependencies(DependencyHashes deps) {
 		boolean needUpdate = !battlecodeUpToDate(deps);
 		boolean needUpdateBsTester = !bsTesterUpToDate(deps);
-		if (needUpdate) {
+		boolean needDeps = needUpdate || needUpdateBsTester;
+		if (needDeps) {
 			_log.info("Requesting " + 
 					(needUpdateBsTester ? "bs-tester.jar, " : "") + 
 					(needUpdate ? "battlecode files" : ""));
 			Packet requestPacket = new Packet(PacketCmd.REQUEST_DEPENDENCIES, new Object[]{null, needUpdateBsTester, needUpdate, false, false, false});
 			network.send(requestPacket);
 		}
-		return !needUpdate;
+		return !needDeps;
 	}
 
 	private boolean fileEqualsData(File file, byte[] data) throws IOException {
