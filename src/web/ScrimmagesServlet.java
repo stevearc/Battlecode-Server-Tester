@@ -120,10 +120,10 @@ public class ScrimmagesServlet extends HttpServlet {
 				break;
 			for (int i = 0; i < possibleTeams.size(); i++) {
 				boolean remove = true;
-				if (s.getPlayerA().equals("") || s.getPlayerA().equals(possibleTeams.get(0))) {
+				if (s.getPlayerA().equals("") || s.getPlayerA().equals(possibleTeams.get(i))) {
 					remove = false;
 				}
-				if (s.getPlayerB().equals("") || s.getPlayerB().equals(possibleTeams.get(0))) {
+				if (s.getPlayerB().equals("") || s.getPlayerB().equals(possibleTeams.get(i))) {
 					remove = false;
 				}
 				if (remove) {
