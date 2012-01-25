@@ -44,3 +44,16 @@ match eats up a lot of memory.
 
 While you *can* run both a master and a worker on the same computer, you should not run them from
 the same directory.
+
+#######################
+# UPDATE INSTRUCTIONS #
+#######################
+Unzip the contents of bs-tester.tar.gz into your current install directory.  That should overwrite
+all the necessary files.  You only need to do this to the server; the workers should all be
+updated automatically afterwards.
+
+If that does not work (or if you want to be extra-super-careful), unzip the new version into a new 
+directory and copy over
+static/matches
+static/scrimmages
+and all files that start with BSTesterDB
