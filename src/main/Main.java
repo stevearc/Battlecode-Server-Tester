@@ -386,7 +386,7 @@ public class Main {
 	private static void createWorkerTarball() {
 		String targetName = "bs-worker.tar.gz";
 		String finalTargetName = "static" + File.separator + targetName;
-		String[] tarFiles = {"README", "COPYING", "run.sh", "run.bat", "lib", "static", "bs-tester.jar"};
+		String[] tarFiles = {"README", "COPYING", "run.sh", "run.bat", "lib", "bs-tester.jar"};
 		File finalFile = new File(finalTargetName);
 		if (finalFile.exists()) {
 			return;

@@ -236,6 +236,10 @@ public class Master extends AbstractMaster {
 					if (outputFile.exists()) {
 						outputFile.delete();
 					}
+					File obsFile = new File(Config.matchDir + match.toObsFileName());
+					if (obsFile.exists()) {
+						obsFile.delete();
+					}
 				}
 			}
 
@@ -259,6 +263,13 @@ public class Master extends AbstractMaster {
 		File f = new File(scrim.toPath());
 		if (f.exists()) {
 			f.delete();
+		}
+		// delete obs files
+		for (int i = 0; i < scrim.getScrimmageMatches().size(); i++) {
+			File obsFile = new File(Config.scrimmageDir + scrim.toObsFileName(i));
+			if (obsFile.exists()) {
+				obsFile.delete();
+			}
 		}
 
 		// Then delete database entries
