@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import model.BSUser;
+import model.BSUser.PRIVS;
 
 import common.BSUtil;
 import common.HibernateUtil;
@@ -82,6 +83,8 @@ public class LoginServlet extends HttpServlet {
 			warn(out, "Username already taken");
 		} else if ("name_length".equals(error)) {
 			warn(out, "Username is too long");
+		} else if ("pending_user".equals(error)) {
+			warn(out, "You must wait for an Admin to approve your account");
 		} else if ("bad_char".equals(error)) {
 			String msg = "Username or password contains illegal characters <br/>(";
 			for (char c: WebUtil.BLACKLIST)
@@ -157,7 +160,12 @@ public class LoginServlet extends HttpServlet {
 			return;
 		}
 		BSUser user = getMatchingUser(username, password);
-		if (user != null && request.getParameter("login") != null) {
+		if (user.getPrivs() == PRIVS.PENDING) {
+			request.setAttribute("error", "pending_user");
+			em.close();
+			doGet(request, response);
+			return;
+		} else if (user != null && request.getParameter("login") != null) {
 			user.setSession(salt);
 			em.getTransaction().begin();
 			em.merge(user);
