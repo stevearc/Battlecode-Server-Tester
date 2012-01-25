@@ -17,7 +17,6 @@ public class Config {
 	public static final int RESTART_STATUS = 121;
 	public static final boolean DEBUG = false;
 	public static final boolean SHOW_SQL = false;
-	public static final boolean PRINT_WORKER_OUTPUT = true;
 	public static boolean MOCK_WORKER = false;
 	public static int MOCK_WORKER_SLEEP = 0;
 	
