@@ -5,10 +5,20 @@ if [ ! -e bs-tester.jar ]; then
   exit 1
 fi
 
+VMARGS=""
+BSARGS=""
+for i in $*; do
+    if [[ $i == -X* ]]; then
+        VMARGS="$VMARGS $i"
+    else
+        BSARGS="$BSARGS $i"
+    fi
+done
+
 START_EXIT_STATUS=121
 status=$START_EXIT_STATUS
 while [ "$status" = "$START_EXIT_STATUS" ]
 do
-    java -jar bs-tester.jar $*
+    java $VMARGS -jar bs-tester.jar $BSARGS
     status=$?
 done
