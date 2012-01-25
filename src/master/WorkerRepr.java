@@ -28,7 +28,6 @@ public class WorkerRepr implements Controller {
 	private Network net;
 	private HashSet<NetworkMatch> runningMatches;
 	private HashSet<BSScrimmageSet> analyzingMatches;
-	private int numCores = 0;
 
 	public WorkerRepr(Socket s, int id) throws IOException {
 		this.id = id;
@@ -72,14 +71,6 @@ public class WorkerRepr implements Controller {
 	}
 
 	/**
-	 * 
-	 * @return True if worker can accept more matches
-	 */
-	public boolean isFree() {
-		return runningMatches.size() + analyzingMatches.size() < numCores;
-	}
-
-	/**
 	 * Start running the networking thread
 	 */
 	public void start() {
@@ -112,8 +103,7 @@ public class WorkerRepr implements Controller {
 			runningMatches.remove((NetworkMatch) p.get(0));
 			AbstractMaster.getMaster().matchFinished(this, p);
 			break;
-		case INIT:
-			numCores = (Integer) p.get(0);
+		case REQUEST_MATCH:
 			AbstractMaster.getMaster().sendWorkerMatches(this);
 			break;
 		case REQUEST_DEPENDENCIES:

@@ -103,7 +103,7 @@ public class Worker implements Controller, Runnable {
 						network = new Network(this, socket);
 						new Thread(network).start();
 						_log.info("Connecting to master");
-						network.send(new Packet(PacketCmd.INIT, new Object[]{cores}));
+						network.send(new Packet(PacketCmd.REQUEST_MATCH, new Object[0]));
 					} catch (UnknownHostException e) {
 					} catch (IOException e) {
 					}
@@ -114,7 +114,7 @@ public class Worker implements Controller, Runnable {
 			}
 		}
 	}
-	
+
 	private boolean bsTesterUpToDate(DependencyHashes deps) {
 		if (deps == null) {
 			return true;
@@ -266,7 +266,7 @@ public class Worker implements Controller, Runnable {
 		ostream.write(data);
 		ostream.close();
 	}
-	
+
 	private void cleanWorkingFiles() {
 		File[] garbageDirs = new File("teams").listFiles(new FileFilter() {
 			@Override
@@ -337,7 +337,7 @@ public class Worker implements Controller, Runnable {
 		}
 		return needRestart;
 	}
-	
+
 	private void compilePlayers(String teamA, String teamB) throws IOException {
 		// Make sure we have compiled the players
 		String team_a = teamA.replaceAll("\\W", "_");
@@ -351,50 +351,70 @@ public class Worker implements Controller, Runnable {
 		}
 	}
 
+	private void requestAnother() {
+		_log.info("Requesting another match");
+		network.send(new Packet(PacketCmd.REQUEST_MATCH, new Object[0]));
+	}
+
 	@Override
 	public synchronized void addPacket(Packet p) {
-		int core;
+		int freeCore = -1;
+		int numFreeCores = 0;
 		switch (p.getCmd()) {
 		case RUN:
 			// Find a free core
-			for (core = 0; core < cores; core++) {
-				if (running[core] == null)
-					break;
+			freeCore = -1;
+			numFreeCores = 0;
+			for (int core = 0; core < cores; core++) {
+				if (running[core] == null) {
+					numFreeCores++;
+					freeCore = (freeCore < 0 ? core : freeCore);
+				}
 			}
 			// Could not find free core
-			if (core == cores)
+			if (numFreeCores == 0)
 				break;
 
 			NetworkMatch match = (NetworkMatch) p.get(0);
 			DependencyHashes deps = (DependencyHashes) p.get(1);
-			MatchRunner m = new MatchRunner(this, match, core);
-			running[core] = m;
+			MatchRunner m = null;
+			m = new MatchRunner(this, match, freeCore);
+			running[freeCore] = m;
 			if (resolveDependencies(match, deps)) {
 				try {
 					compilePlayers(match.team_a, match.team_b);
-					new Thread(m).start();
+					Thread thread = new Thread(m);
+					thread.start();
+					if (numFreeCores > 1)
+						requestAnother();
 				} catch (IOException e) {
 					_log.error("Error compiling players", e);
-					matchFailed(m, core, match);
+					matchFailed(m, freeCore, match);
 				}
 			}
 			break;
 		case ANALYZE:
 			// Find a free core
-			for (core = 0; core < cores; core++) {
-				if (running[core] == null)
-					break;
+			for (int core = 0; core < cores; core++) {
+				if (running[core] == null) {
+					numFreeCores++;
+					freeCore = (freeCore < 0 ? core : freeCore);
+				}
 			}
 			// Could not find free core
-			if (core == cores)
+			if (numFreeCores == 0)
 				break;
+
 			BSScrimmageSet scrim = (BSScrimmageSet) p.get(0);
 			byte[] fileData = (byte[]) p.get(1);
 			DependencyHashes depHashes = (DependencyHashes) p.get(2);
-			MatchRunner mr = new MatchRunner(this, scrim, fileData, core);
-			running[core] = mr;
+			MatchRunner mr = new MatchRunner(this, scrim, fileData, freeCore);
+			running[freeCore] = mr;
 			if (resolveDependencies(depHashes)) {
-				new Thread(mr).start();
+				Thread thread = new Thread(mr);
+				thread.start();
+				if (numFreeCores > 1)
+					requestAnother();
 			}
 			break;
 		case DEPENDENCIES:
@@ -402,20 +422,28 @@ public class Worker implements Controller, Runnable {
 
 			boolean needRestart = writeDependencies(dep);
 			if (needRestart) {
-				_log.info("battlecode-server.jar updated, restarting worker");
+				_log.info("battlecode-server.jar or bs-tester.jar updated, restarting worker");
 				System.exit(Config.RESTART_STATUS);
 			}
 			for (MatchRunner matchRunner: running) {
-				if (!matchRunner.isRunning()) {
+				if (matchRunner != null && !matchRunner.isRunning()) {
 					try {
 						compilePlayers(matchRunner.getMatch().team_a, matchRunner.getMatch().team_b);
-						new Thread(matchRunner).start();
+						Thread thread = new Thread(matchRunner);
+						thread.start();
 					} catch (IOException e) {
 						_log.error("Error compiling players", e);
 						matchFailed(matchRunner, matchRunner.getCore(), matchRunner.getMatch());
 					}
 				}
 			}
+			for (int core = 0; core < cores; core++) {
+				if (running[core] == null) {
+					numFreeCores++;
+				}
+			}
+			if (numFreeCores > 0)
+				requestAnother();
 			break;
 		case STOP:
 			_log.info("Received stop command");

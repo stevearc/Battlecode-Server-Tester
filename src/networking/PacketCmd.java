@@ -13,7 +13,7 @@ public enum PacketCmd {
 	DEPENDENCIES, // Response with up-to-date dependency files
 	
 	// Worker -> Master
-	INIT, // Sends initial worker data to master
+	REQUEST_MATCH, // Requests that the master send the worker a match
 	RUN_REPLY, // Response with match data
 	REQUEST_DEPENDENCIES, // Requests files from the master
 	ANALYZE_REPLY, // The response with the analyzed scrimmage match

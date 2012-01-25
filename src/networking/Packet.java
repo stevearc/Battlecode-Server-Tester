@@ -1,6 +1,7 @@
 package networking;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * Wrapper object to send data between worker and server
@@ -24,5 +25,14 @@ public class Packet implements Serializable {
 	
 	public Object get(int index) {
 		return args[index];
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Packet [" + cmd + ": ");
+		sb.append(Arrays.toString(args));
+		sb.append("]");
+		return sb.toString();
 	}
 }

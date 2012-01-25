@@ -392,8 +392,8 @@ public class Master extends AbstractMaster {
 				// Calculate percent finished and find win status
 				String winRecord = run.getaWins() + "/" + run.getbWins();
 				List<Object[]> resultList = em.createQuery("select match.status, count(*) from BSMatch match where match.run.status = ? group by match.status", Object[].class)
-				.setParameter(1, STATUS.RUNNING)
-				.getResultList();
+						.setParameter(1, STATUS.RUNNING)
+						.getResultList();
 				long currentMatches = 0;
 				long totalMatches = 0;
 				for (Object[] valuePair: resultList) {
@@ -410,9 +410,9 @@ public class Master extends AbstractMaster {
 			}
 
 			Long matchesLeft = em.createQuery("select count(*) from BSMatch match where match.run = ? and match.status != ?", Long.class)
-			.setParameter(1, match.getRun())
-			.setParameter(2, STATUS.COMPLETE)
-			.getSingleResult();
+					.setParameter(1, match.getRun())
+					.setParameter(2, STATUS.COMPLETE)
+					.getSingleResult();
 			// If finished, start next run
 			if (matchesLeft == 0) {
 				stopCurrentRun(STATUS.COMPLETE);
@@ -460,11 +460,11 @@ public class Master extends AbstractMaster {
 		{
 			// First check queued scrimmage matches
 			List<BSScrimmageSet> queuedScrimmages = em.createQuery("from BSScrimmageSet scrim where scrim.status = ?", BSScrimmageSet.class)
-			.setParameter(1, STATUS.QUEUED)
-			.getResultList();
-			for (BSScrimmageSet s: queuedScrimmages) {
-				if (!worker.isFree())
-					break sendBlock;
+					.setParameter(1, STATUS.QUEUED)
+					.setMaxResults(1)
+					.getResultList();
+			if (queuedScrimmages.size() == 1) {
+				BSScrimmageSet s = queuedScrimmages.get(0);
 				_log.info("Sending scrimmage match " + s.getFileName() + " to worker " + worker);
 				try {
 					worker.analyzeMatch(s, BSUtil.getFileData(s.toPath()), deps);
@@ -472,32 +472,30 @@ public class Master extends AbstractMaster {
 					em.merge(s);
 					WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + s.getFileName());
 					WebSocketChannelManager.broadcastMsg("scrimmage", "START_SCRIMMAGE", "" + s.getId());
+					break sendBlock;
 				} catch (IOException e) {
 					_log.warn("Error reading scrimmage match " + s.toPath(), e);
 				}
 			}
-			if (!worker.isFree())
-				break sendBlock;
 
 			// Then check queued runs
 			List<BSMatch> queuedMatches = em.createQuery("from BSMatch match inner join fetch match.map inner join fetch match.run " +
 					"where match.status = ? and match.run.status = ?", BSMatch.class)
 					.setParameter(1, STATUS.QUEUED)
 					.setParameter(2, STATUS.RUNNING)
+					.setMaxResults(1)
 					.getResultList();
 
-			for (BSMatch m: queuedMatches) {
-				if (!worker.isFree())
-					break sendBlock;
+			if (queuedMatches.size() == 1) {
+				BSMatch m = queuedMatches.get(0);
 				NetworkMatch nm = m.buildNetworkMatch();
 				_log.info("Sending match " + nm + " to worker " + worker);
 				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + nm.toMapString());
 				worker.runMatch(nm, deps);
 				m.setStatus(STATUS.RUNNING);
 				em.merge(m);
-			}
-			if (!worker.isFree())
 				break sendBlock;
+			}
 
 			// If we are currently running all necessary maps, add some redundancy by
 			// Sending this worker random maps that other workers are currently running
@@ -507,8 +505,7 @@ public class Master extends AbstractMaster {
 					.setParameter(1, STATUS.RUNNING)
 					.setParameter(2, STATUS.RUNNING)
 					.getResultList();
-			while (!runningMatches.isEmpty() && worker.isFree() && 
-					worker.getRunningMatches().size() < runningMatches.size()) {
+			if (!runningMatches.isEmpty() && worker.getRunningMatches().size() < runningMatches.size()) {
 				BSMatch m = null;
 				NetworkMatch nm = null;
 				do {
@@ -518,16 +515,14 @@ public class Master extends AbstractMaster {
 				_log.info("Sending redundant match " + nm + " to worker " + worker);
 				WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + nm.toMapString());
 				worker.runMatch(nm, deps);
-			}
-			if (!worker.isFree())
 				break sendBlock;
+			}
 
 			// Lastly, try sending redundant scrimmage matches
 			List<BSScrimmageSet> runningScrimmages = em.createQuery("from BSScrimmageSet scrim where scrim.status = ?", BSScrimmageSet.class)
-			.setParameter(1, STATUS.RUNNING)
-			.getResultList();
-			while (!runningScrimmages.isEmpty() && worker.isFree() && 
-					worker.getAnalyzingMatches().size() < runningScrimmages.size()) {
+					.setParameter(1, STATUS.RUNNING)
+					.getResultList();
+			while (!runningScrimmages.isEmpty() && worker.getAnalyzingMatches().size() < runningScrimmages.size()) {
 				BSScrimmageSet s;
 				do {
 					s = runningScrimmages.get(r.nextInt(runningScrimmages.size()));
@@ -536,11 +531,11 @@ public class Master extends AbstractMaster {
 					worker.analyzeMatch(s, BSUtil.getFileData(s.toPath()), deps);
 					_log.info("Sending redundant scrimmage match " + s.getFileName() + " to worker " + worker);
 					WebSocketChannelManager.broadcastMsg("connections", "ADD_MAP", worker.getId() + "," + s.getFileName());
+					break sendBlock;
 				} catch (IOException e) {
 					_log.warn("Error reading scrimmage match " + s.toPath(), e);
 				}
 			}
-
 		}
 		em.getTransaction().begin();
 		em.flush();
@@ -602,8 +597,8 @@ public class Master extends AbstractMaster {
 		BSRun nextRun = null;
 		try {
 			List<BSRun> queued = em.createQuery("from BSRun run where run.status = ? order by run.id asc limit 1", BSRun.class)
-			.setParameter(1, STATUS.QUEUED)
-			.getResultList();
+					.setParameter(1, STATUS.QUEUED)
+					.getResultList();
 			if (queued.size() > 0) {
 				nextRun = queued.get(0);
 			}
@@ -625,9 +620,9 @@ public class Master extends AbstractMaster {
 		else // Check for scrimmages to analyze
 		{
 			Long scrimmagesQueued = em.createQuery("select count(*) from BSScrimmageSet scrim where scrim.status = ? or scrim.status = ?", Long.class)
-			.setParameter(1, STATUS.QUEUED)
-			.setParameter(2, STATUS.RUNNING)
-			.getSingleResult();
+					.setParameter(1, STATUS.QUEUED)
+					.setParameter(2, STATUS.RUNNING)
+					.getSingleResult();
 			if (scrimmagesQueued > 0) {
 				for (WorkerRepr c: workers) {
 					sendWorkerMatches(c);
