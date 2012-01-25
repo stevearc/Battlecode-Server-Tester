@@ -3,6 +3,7 @@ package web;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -69,6 +70,13 @@ public class ActionServlet extends HttpServlet {
 		ArrayList<Long> seedLongs = new ArrayList<Long>();
 		for (String seed: seeds.split(",")) {
 			seedLongs.add(new Long(Integer.parseInt(seed)));
+		}
+		HashSet<Long> seedSet = new HashSet<Long>();
+		seedSet.addAll(seedLongs);
+		if (seedSet.size() != seedLongs.size()) {
+			out.print("err seed_dup");
+			_log.warn("Error seed duplicates");
+			return;
 		}
 		ArrayList<Long> mapIds = new ArrayList<Long>();
 		for (String mapId: maps.split(",")) {

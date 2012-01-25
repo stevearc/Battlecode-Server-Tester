@@ -50,9 +50,7 @@ $(function() {
     });
     $("#startButton").button();
     $("#startButton").click(function() { 
-        if (newRun()) {
-            $("#newRunForm").hide();
-        }
+        newRun();
     });
 
     var socket;  
@@ -142,7 +140,7 @@ function newRun() {
         var seed = $('#seed' + i + " input:first").attr("value");
         if (isNaN(seed) || seed <= 0) {
             bsAlert("error", "Map seeds must be positive integers", 5, "overlayAlerts");
-            return false;
+            return;
         }
         seeds.push(seed);
     }
@@ -155,12 +153,12 @@ function newRun() {
     });
     if (maps.length == 0) {
         bsAlert("error", "Must select at least one map", 5, "overlayAlerts");
-        return false;
+        return;
     }
 
 	if (team_a.length==0 || team_b.length==0) {
 		bsAlert("error", "Must have a non-empty team name", 5, "overlayAlerts");
-		return false;
+		return;
 	}
 
     var urlData = "cmd=run&team_a="+team_a+"&team_b="+team_b+"&seeds="+seeds.join()+"&maps="+maps.join();
@@ -168,22 +166,25 @@ function newRun() {
     $.ajax({
         url: "action.html",
         data: urlData,
-        error: function(data) {
+        success: function(data) {
 			if (data === "err team_a") {
                 bsAlert("error", "Must have a valid name for Team A", 5, "overlayAlerts");
 			} else if (data === "err team_b") {
                 bsAlert("error", "Must have a valid name for Team B", 5, "overlayAlerts");
 			} else if (data === "err seed") {
                 bsAlert("error", "Seeds must be positive integers", 5, "overlayAlerts");
+			} else if (data === "err seed_dup") {
+                bsAlert("error", "All the seed values must be unique", 5, "overlayAlerts");
 			} else if (data === "err maps") {
                 bsAlert("error", "Must select at least one map", 5, "overlayAlerts");
-			} else {
-                bsAlert("error", "Unknown error adding run", 5, "overlayAlerts");
-                console.log(data);
+			} else if (data === "success") {
+                $("#newRunForm").hide();
             }
         },
+        error: function(data) {
+            bsAlert("error", "Unknown error", 5, "overlayAlerts");
+        },
     });
-    return true;
 }
 
 // Send query to server to delete a run
