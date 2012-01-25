@@ -371,12 +371,16 @@ public class Worker implements Controller, Runnable {
 					freeCore = (freeCore < 0 ? core : freeCore);
 				}
 			}
-			// Could not find free core
-			if (numFreeCores == 0)
-				break;
-
 			NetworkMatch match = (NetworkMatch) p.get(0);
 			DependencyHashes deps = (DependencyHashes) p.get(1);
+			
+			// Could not find free core
+			if (numFreeCores == 0) {
+				Packet response = new Packet(PacketCmd.RUN_REPLY, new Object[] {match, null, null, null, null, null});
+				network.send(response);
+				break;
+			}
+
 			MatchRunner m = null;
 			m = new MatchRunner(this, match, freeCore);
 			running[freeCore] = m;
@@ -401,13 +405,16 @@ public class Worker implements Controller, Runnable {
 					freeCore = (freeCore < 0 ? core : freeCore);
 				}
 			}
-			// Could not find free core
-			if (numFreeCores == 0)
-				break;
-
 			BSScrimmageSet scrim = (BSScrimmageSet) p.get(0);
 			byte[] fileData = (byte[]) p.get(1);
 			DependencyHashes depHashes = (DependencyHashes) p.get(2);
+			// Could not find free core
+			if (numFreeCores == 0) {
+				Packet response = new Packet(PacketCmd.ANALYZE_REPLY, new Object[] {scrim, STATUS.CANCELED});
+				network.send(response);
+				break;
+			}
+
 			MatchRunner mr = new MatchRunner(this, scrim, fileData, freeCore);
 			running[freeCore] = mr;
 			if (resolveDependencies(depHashes)) {
