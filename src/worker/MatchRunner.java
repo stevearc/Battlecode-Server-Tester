@@ -88,6 +88,19 @@ public class MatchRunner implements Runnable {
 
 	private static void extractAndRenameTeam(String jarfile, String team) throws IOException {
 		JarFile jar = new JarFile(jarfile);
+		// First search for the package name
+		Enumeration<JarEntry> searchEntries = jar.entries();
+		String packageName = null;
+		while (searchEntries.hasMoreElements() && packageName == null) {
+			JarEntry file = searchEntries.nextElement();
+			if (file.getName().endsWith("RobotPlayer.java")) {
+				packageName = file.getName().substring(0, file.getName().length() - "/RobotPlayer.java".length());
+			}
+		}
+		if (packageName == null) {
+			throw new IOException("Cannot find package name; no file ends in RobotPlayer.java");
+		}
+		
 		Enumeration<JarEntry> entries = jar.entries();
 		while (entries.hasMoreElements()) {
 			JarEntry file = entries.nextElement();
@@ -100,7 +113,7 @@ public class MatchRunner implements Runnable {
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f)));
 			String line;
 			while ((line = br.readLine()) != null) {
-				bw.write(line.replaceAll("package team[0-9]{3}", "package " + team).replaceAll("import team[0-9]{3}", "import " + team));
+				bw.write(line.replaceAll("package " + packageName, "package " + team).replaceAll("import " + packageName, "import " + team));
 				bw.newLine();
 			}
 			br.close();
