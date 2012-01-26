@@ -73,6 +73,7 @@ public class UploadServlet extends HttpServlet {
 				BSUtil.writeFileData(player, Config.teamsDir + playerName + ".jar");
 				BSPlayer bsPlayer = new BSPlayer();
 				bsPlayer.setPlayerName(playerName);
+				bsPlayer.setInvisible(false);
 				EntityManager em = HibernateUtil.getEntityManager();
 				em.persist(bsPlayer);
 				em.getTransaction().begin();

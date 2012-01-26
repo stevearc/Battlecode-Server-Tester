@@ -31,6 +31,7 @@ import common.BSUtil;
 @Entity
 public class BSMap implements Serializable {
 	private static final long serialVersionUID = -3033262234181516847L;
+	public static enum SIZE {SMALL, MEDIUM, LARGE}
 	private Long id;
 	private String mapName;
 	private Long height;
@@ -38,6 +39,7 @@ public class BSMap implements Serializable {
 	private Long rounds;
 	private String hash;
 	private Boolean invisible;
+	private SIZE size;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="map_id_gen")
@@ -76,6 +78,12 @@ public class BSMap implements Serializable {
 		return invisible;
 	}
 	
+	@Column(nullable=false)
+	@Deprecated
+	public SIZE getSize() {
+		return size;
+	}
+	
 	public void setId(Long id) {
 		this.id = id;
 	}
@@ -102,6 +110,11 @@ public class BSMap implements Serializable {
 	
 	public void setInvisible(Boolean invisible) {
 		this.invisible = invisible;
+	}
+	
+	@Deprecated
+	public void setSize(SIZE size) {
+		this.size = size;
 	}
 	
 	public BSMap() {
@@ -135,6 +148,7 @@ public class BSMap implements Serializable {
 		rounds = new Long(Integer.parseInt(nl.getNamedItem("rounds").getNodeValue()));
 		hash = BSUtil.bsHashDependency(map.getAbsolutePath());
 		invisible = false;
+		size = SIZE.MEDIUM;
 	}
 	
 	/**

@@ -1,4 +1,9 @@
 #########
+# 1.1.1 #
+#########
+    * Fixed a DB bug when upgrading
+
+#########
 # 1.1.0 #
 #########
     * You can now pass arguments beginning with -X into the java VM 

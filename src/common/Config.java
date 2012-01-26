@@ -10,7 +10,7 @@ import java.io.File;
  *
  */
 public class Config {
-	public static final String VERSION = "1.1.0";
+	public static final String VERSION = "1.1.1";
 	// HASH_VERSION affects the dependency hash algorithm.  This is only changed to force the server to re-send
 	// dependencies when a user upgrades the software
 	public static final int HASH_VERSION = 1;
