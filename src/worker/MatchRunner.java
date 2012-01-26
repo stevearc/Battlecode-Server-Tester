@@ -231,12 +231,6 @@ public class MatchRunner implements Runnable {
 			String outputFile = match.seed + match.map.getMapName() + ".out";
 			
 			if (!running) {
-				if (!new File(matchFile).delete()) {
-					_log.warn("Error deleting file: " + matchFile);
-				}
-				if (!new File(outputFile).delete()) {
-					_log.warn("Error deleting file: " + outputFile);
-				}
 				return;
 			}
 
@@ -274,13 +268,6 @@ public class MatchRunner implements Runnable {
 			}
 			
 			File mf = new File(matchFile);
-			if (!mf.delete()) {
-				_log.warn("Error deleting file: " + matchFile);
-			}
-			File of = new File(outputFile);
-			if (!of.delete()) {
-				_log.warn("Error deleting file: " + outputFile);
-			}
 
 			if (running) {
 				_log.info("Finished: " + match);
