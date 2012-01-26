@@ -38,8 +38,9 @@ public class ActionServlet extends HttpServlet {
 			cancelRun(request, response);
 		} else if (cmd.equals("deleteScrim")) {
 			deleteScrimmage(request, response);
+		} else if (cmd.equals("restart")) {
+			restartWorker(request, response);
 		}
-		
 	}
 	
 	private void queueRun(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -98,6 +99,17 @@ public class ActionServlet extends HttpServlet {
 		}
 
 		AbstractMaster.getMaster().deleteRun(new Long(Integer.parseInt(strId)));
+		out.print("success");
+	}
+	
+	private void restartWorker(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		PrintWriter out = response.getWriter();
+		String strId = request.getParameter("id");
+		if (strId == null || !strId.matches("\\d+")) {
+			out.println("Invalid id: " + strId);
+		}
+
+		AbstractMaster.getMaster().restartWorker(Integer.parseInt(strId));
 		out.print("success");
 	}
 	

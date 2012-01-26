@@ -61,6 +61,11 @@ public class WorkerRepr implements Controller {
 		net.send(p);
 	}
 	
+	public synchronized void restart() {
+		Packet p = new Packet(PacketCmd.RESTART, new Object[0]);
+		net.send(p);
+	}
+	
 	/**
 	 * Messages worker telling it to stop the matches it's running
 	 */

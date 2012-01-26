@@ -462,6 +462,9 @@ public class Worker implements Controller, Runnable {
 			}
 			cleanWorkingFiles();
 			break;
+		case RESTART:
+			System.exit(Config.RESTART_STATUS);
+			break;
 		default:
 			_log.warn("Unrecognized packet command: " + p.getCmd());
 		}

@@ -289,7 +289,7 @@ public class Master extends AbstractMaster {
 	synchronized void workerConnect(WorkerRepr worker) {
 		_log.info("Worker connected: " + worker);
 		workers.add(worker);
-		WebSocketChannelManager.broadcastMsg("connections", "INSERT_TABLE_ROW", worker.toHTML());
+		WebSocketChannelManager.broadcastMsg("connections", "INSERT_TABLE_ROW", worker.toHTML() + "," + worker.getId());
 	}
 
 	/**
@@ -301,6 +301,16 @@ public class Master extends AbstractMaster {
 		_log.info("Worker disconnected: " + worker);
 		WebSocketChannelManager.broadcastMsg("connections", "DELETE_TABLE_ROW", ""+worker.getId());
 		workers.remove(worker);
+	}
+	
+	@Override
+	public synchronized void restartWorker(int workerId) {
+		for (WorkerRepr worker: workers) {
+			if (worker.getId() == workerId) {
+				worker.restart();
+				break;
+			}
+		}
 	}
 
 	@Override

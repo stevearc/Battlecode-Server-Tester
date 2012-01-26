@@ -267,8 +267,6 @@ public class MatchRunner implements Runnable {
 				return;
 			}
 			
-			File mf = new File(matchFile);
-
 			if (running) {
 				_log.info("Finished: " + match);
 				worker.matchFinish(this, core, match, STATUS.COMPLETE, result, data, outputData, ga.getObservations());

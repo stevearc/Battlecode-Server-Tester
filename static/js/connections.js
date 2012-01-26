@@ -3,7 +3,7 @@ $(function() {
         "bJQueryUI": true,
         "sPaginationType": "full_numbers",
         "aoColumnDefs": [ 
-            { "bSortable": false, "aTargets": [ 1 ] }
+            { "bSortable": false, "aTargets": [ 1,2] }
         ],
     });
 
@@ -19,7 +19,7 @@ $(function() {
             if (cmd == "DELETE_TABLE_ROW") {
                 removeConn(args[1]);
             } else if (cmd == "INSERT_TABLE_ROW") {
-                addConn(args[1]);
+                addConn(args[1], args[2]);
             } else if (cmd == "ADD_MAP") {
                 addMap(args[1], args[2]);
             } else if (cmd == "REMOVE_MAP") {
@@ -36,6 +36,13 @@ $(function() {
     } 
 });
 
+function restart(workerId) {
+    $.ajax({
+        url: "action.html",
+        data: "cmd=restart&id="+workerId,
+    });
+}
+
 // Find what row the connection is in
 function getRow(connId) {
     var table = $('#conn_table').dataTable();
@@ -46,7 +53,6 @@ function getRow(connId) {
             return parseInt(row_index);
         }
     }
-    return;
 }
 
 // Remove a map from the list of maps a connection is running
@@ -83,11 +89,12 @@ function addMap(connId, map) {
 }
 
 // Add a new connection to the table
-function addConn(conn) {
+function addConn(conn, id) {
     var table = $("#conn_table").dataTable();
     table.fnAddData([
         conn,
         "",
+        "<input type='button' onClick='restart(" + id + ")' value='Force Restart' />",
     ]);
 }
 

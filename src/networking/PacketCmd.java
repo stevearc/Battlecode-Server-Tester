@@ -11,6 +11,7 @@ public enum PacketCmd {
 	STOP, // Tells worker to stop running matches
 	ANALYZE, // Tell a worker to analyze a scrimmage match
 	DEPENDENCIES, // Response with up-to-date dependency files
+	RESTART, // Tell a worker to restart
 	
 	// Worker -> Master
 	REQUEST_MATCH, // Requests that the master send the worker a match

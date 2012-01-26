@@ -42,6 +42,7 @@ public class ConnectionsServlet extends HttpServlet {
 		out.println("<tr>" +
 				"<th>Worker</th>" +
 				"<th>Maps</th>" +
+				"<th></th>" +
 		"</tr>");
 		out.println("</thead>");
 		out.println("<tbody>");
@@ -61,6 +62,7 @@ public class ConnectionsServlet extends HttpServlet {
 			else
 				out.print("&nbsp;");
 			out.println("</td>");
+			out.println("<td><input type='button' onClick='restart(" + c.getId() + ")' value='Force Restart' /></td>");
 			out.println("</tr>");
 		}
 		out.println("</tbody>");

@@ -144,6 +144,8 @@ public abstract class AbstractMaster {
 	}
 	abstract void workerDisconnect(WorkerRepr worker);
 	
+	public abstract void restartWorker(int workerId);
+	
 	static void kickoffWorkerConnect(final WorkerRepr worker) {
 		new Thread(new Runnable() {
 
