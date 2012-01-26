@@ -1,4 +1,15 @@
 #########
+# 1.1.0 #
+#########
+    * You can now pass arguments beginning with -X into the java VM 
+          (ex: ./run.sh -s -p 8080 -Xmx1024M -Xms1024M)
+    * Improved Master-Worker communication
+    * Fixed security bug with registration
+    * Team names can now be in any format, not just teamXXX
+    * Admin tab allows you to hide unused players and maps
+    * Connections tab has force restart button for workers
+
+#########
 # 1.0.5 #
 #########
     * Added a download for Match Observations

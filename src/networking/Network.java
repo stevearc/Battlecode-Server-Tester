@@ -79,6 +79,7 @@ public class Network implements Runnable{
 				controller.addPacket(packet);
 			} 
 			catch (IOException e){
+				_log.error("Error running network", e);
 				break;
 			}
 		}

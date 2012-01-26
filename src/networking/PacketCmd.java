@@ -18,4 +18,5 @@ public enum PacketCmd {
 	RUN_REPLY, // Response with match data
 	REQUEST_DEPENDENCIES, // Requests files from the master
 	ANALYZE_REPLY, // The response with the analyzed scrimmage match
+	INIT, // DEPRECATED
 }
