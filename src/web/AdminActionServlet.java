@@ -9,9 +9,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import common.HibernateUtil;
-
+import master.WebSocketChannelManager;
+import model.BSMap;
+import model.BSPlayer;
 import model.BSUser;
+
+import common.HibernateUtil;
 
 
 /**
@@ -26,22 +29,54 @@ public class AdminActionServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		BSUser user = WebUtil.getUserFromCookie(request, response);
-		Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
 		String cmd = request.getParameter("cmd");
 		response.setContentType("text/plain");
 		response.setStatus(HttpServletResponse.SC_OK);
 		PrintWriter out = response.getWriter();
-		EntityManager em = HibernateUtil.getEntityManager();
-		BSUser targetUser = em.find(BSUser.class, userid);
-		if (targetUser == null) {
-			return;
-		}
 		// check for admin privs
 		if (user.getPrivs() != BSUser.PRIVS.ADMIN) {
 			out.print("Unauthorized access");
 			return;
 		}
-		if ("accept".equals(cmd)) {
+		EntityManager em = HibernateUtil.getEntityManager();
+		if ("toggle_player".equals(cmd)) {
+			Long playerid = new Long(Integer.parseInt(request.getParameter("playerid")));
+			BSPlayer targetPlayer = em.find(BSPlayer.class, playerid);
+			if (targetPlayer == null) {
+				return;
+			}
+			targetPlayer.setInvisible(!targetPlayer.getInvisible());
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			if (targetPlayer.getInvisible()) {
+				WebSocketChannelManager.broadcastMsg("index", "DELETE_PLAYER", targetPlayer.getId() + "");
+			} else {
+				WebSocketChannelManager.broadcastMsg("index", "ADD_PLAYER", targetPlayer.getId() + "," + targetPlayer.getPlayerName());
+			}
+			out.print("success");
+		} else if ("toggle_map".equals(cmd)) {
+			Long mapid = new Long(Integer.parseInt(request.getParameter("mapid")));
+			BSMap map = em.find(BSMap.class, mapid);
+			if (map == null) {
+				return;
+			}
+			map.setInvisible(!map.getInvisible());
+			em.getTransaction().begin();
+			em.flush();
+			em.getTransaction().commit();
+			if (map.getInvisible()) {
+				WebSocketChannelManager.broadcastMsg("index", "DELETE_MAP", map.getId() + "");
+			} else {
+				WebSocketChannelManager.broadcastMsg("index", "ADD_MAP", map.getId() + "," + map.getMapName());
+			}
+			out.print("success");
+		} else if ("accept".equals(cmd)) {
+			Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
+			BSUser targetUser = em.find(BSUser.class, userid);
+			if (targetUser == null) {
+				return;
+			}
 			targetUser.setPrivs(BSUser.PRIVS.USER);
 			em.merge(targetUser);
 			em.getTransaction().begin();
@@ -50,6 +85,11 @@ public class AdminActionServlet extends HttpServlet {
 			out.print("success");
 		} 
 		else if ("delete".equals(cmd)) {
+			Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
+			BSUser targetUser = em.find(BSUser.class, userid);
+			if (targetUser == null) {
+				return;
+			}
 			if (getNumAdmins() <= 1 && targetUser.getPrivs() == BSUser.PRIVS.ADMIN) {
 				out.print("admin_limit");
 				return;
@@ -61,6 +101,11 @@ public class AdminActionServlet extends HttpServlet {
 			out.print("success");
 		} 
 		else if ("make_admin".equals(cmd)) {
+			Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
+			BSUser targetUser = em.find(BSUser.class, userid);
+			if (targetUser == null) {
+				return;
+			}
 			targetUser.setPrivs(BSUser.PRIVS.ADMIN);
 			em.merge(targetUser);
 			em.getTransaction().begin();
@@ -69,6 +114,11 @@ public class AdminActionServlet extends HttpServlet {
 			out.print("success");
 		}
 		else if ("remove_admin".equals(cmd)) {
+			Long userid = new Long(Integer.parseInt(request.getParameter("userid")));
+			BSUser targetUser = em.find(BSUser.class, userid);
+			if (targetUser == null) {
+				return;
+			}
 			if (getNumAdmins() <= 1 && targetUser.getPrivs() == BSUser.PRIVS.ADMIN) {
 				out.print("admin_limit");
 				return;
@@ -97,5 +147,5 @@ public class AdminActionServlet extends HttpServlet {
 		em.close();
 		return numAdmins.intValue();
 	}
-	
+
 }

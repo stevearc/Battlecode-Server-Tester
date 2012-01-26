@@ -31,14 +31,13 @@ import common.BSUtil;
 @Entity
 public class BSMap implements Serializable {
 	private static final long serialVersionUID = -3033262234181516847L;
-	public static enum SIZE {SMALL, MEDIUM, LARGE}
 	private Long id;
 	private String mapName;
 	private Long height;
 	private Long width;
 	private Long rounds;
-	private SIZE size;
 	private String hash;
+	private boolean invisible;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="map_id_gen")
@@ -68,13 +67,13 @@ public class BSMap implements Serializable {
 	}
 	
 	@Column(nullable=false)
-	public SIZE getSize() {
-		return size;
+	public String getHash() {
+		return hash;
 	}
 	
 	@Column(nullable=false)
-	public String getHash() {
-		return hash;
+	public boolean getInvisible() {
+		return invisible;
 	}
 	
 	public void setId(Long id) {
@@ -97,25 +96,14 @@ public class BSMap implements Serializable {
 		this.rounds = rounds;
 	}
 	
-	public void setSize(SIZE size) {
-		this.size = size;
-	}
-	
 	public void setHash(String hash) {
 		this.hash = hash;
 	}
 	
-	public SIZE calculateSize() {
-		long area = height * width;
-		if (area < 1400) {
-			return SIZE.SMALL;
-		} else if (area < 2400) {
-			return SIZE.MEDIUM;
-		} else {
-			return SIZE.LARGE;
-		}
+	public void setInvisible(boolean invisible) {
+		this.invisible = invisible;
 	}
-
+	
 	public BSMap() {
 		
 	}
@@ -140,13 +128,13 @@ public class BSMap implements Serializable {
 		NamedNodeMap nl = n.getAttributes();
 		width = new Long(Integer.parseInt(nl.getNamedItem("width").getNodeValue()));
 		height = new Long(Integer.parseInt(nl.getNamedItem("height").getNodeValue()));
-		setSize(calculateSize());
 
 		nodeLst = doc.getElementsByTagName("game");
 		n = nodeLst.item(0);
 		nl = n.getAttributes();
 		rounds = new Long(Integer.parseInt(nl.getNamedItem("rounds").getNodeValue()));
 		hash = BSUtil.bsHashDependency(map.getAbsolutePath());
+		invisible = false;
 	}
 	
 	/**
@@ -162,7 +150,6 @@ public class BSMap implements Serializable {
 		this.height = height;
 		this.width = width;
 		this.rounds = rounds;
-		setSize(calculateSize());
 	}
 	
 	@Override

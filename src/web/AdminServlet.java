@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import model.BSMap;
+import model.BSPlayer;
 import model.BSUser;
 
 import common.HibernateUtil;
@@ -46,6 +48,7 @@ public class AdminServlet extends HttpServlet {
 
 		out.println("<div style='clear:both; width:100%; text-align:center'><button id='download'>Download worker</button></div>");
 		out.println("<div style='float:left'>");
+		out.println("<h2 style='text-align:center; width:100%'>Pending Users</h2>");
 		out.println("<table id='new_user_table' class='datatable' style='width:470px'>");
 		out.println("<thead>");
 		out.println("<tr>");
@@ -70,8 +73,9 @@ public class AdminServlet extends HttpServlet {
 
 		out.println("</tbody></table>");
 		out.println("</div>");
-		
+
 		out.println("<div style='float:right'>");
+		out.println("<h2 style='text-align:center; width:100%'>Users</h2>");
 		out.println("<table id='existing_user_table' class='datatable' style='width:470px'>");
 		out.println("<thead>");
 		out.println("<tr>");
@@ -106,9 +110,62 @@ public class AdminServlet extends HttpServlet {
 		}
 		out.println("</tbody></table>");
 		out.println("</div>");
+
+		out.println("<div style='float:clear'></div>");
+
+		// Player table
+		out.println("<div style='float:left'>");
+		out.println("<h2 style='text-align:center; width:100%'>Players</h2>");
+		out.println("<table id='player_table' class='datatable' style='width:470px'>");
+		out.println("<thead>");
+		out.println("<tr>");
+		out.println("<th>Player</th>");
+		out.println("<th>&nbsp;</th>");
+		out.println("</tr>");
+		out.println("</thead><tbody>");
+
+		List<BSPlayer> players = em.createQuery("from BSPlayer", BSPlayer.class).getResultList();
+		for (BSPlayer player: players) {
+			out.println("<tr>");
+			out.println("<td playerid='" + player.getId() + "'>" + player.getPlayerName() + "</td>");
+			out.println("<td><input type='button' value='" + (player.getInvisible() ? "Show" : "Hide") + "' onClick='togglePlayer(" + player.getId() + ", " + 
+					player.getInvisible() + ")'></td>");
+			out.println("</tr>");
+		}
+
+		out.println("</tbody></table>");
+		out.println("</div>");
+
+		// map table
+		out.println("<div style='float:right'>");
+		out.println("<h2 style='text-align:center; width:100%'>Maps</h2>");
+		out.println("<table id='map_table' class='datatable' style='width:470px'>");
+		out.println("<thead>");
+		out.println("<tr>");
+		out.println("<th>Map</th>");
+		out.println("<th>Width</th>");
+		out.println("<th>Height</th>");
+		out.println("<th>&nbsp;</th>");
+		out.println("</tr>");
+		out.println("</thead><tbody>");
+
+		List<BSMap> maps = em.createQuery("from BSMap", BSMap.class).getResultList();
+		for (BSMap map: maps) {
+			out.println("<tr>");
+			out.println("<td mapid='" + map.getId() + "'>" + map.getMapName() + "</td>");
+			out.println("<td>" + map.getWidth() + "</td>");
+			out.println("<td>" + map.getHeight() + "</td>");
+			out.println("<td><input type='button' value='" + (map.getInvisible() ? "Show" : "Hide") + "' onClick='toggleMap(" + map.getId() + ", " + 
+					map.getInvisible() + ")'></td>");
+			out.println("</tr>");
+		}
+
+		out.println("</tbody></table>");
+		out.println("</div>");
+
 		out.println("<script type=\"text/javascript\" src=\"js/bsUtil.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/admin.js\"></script>");
 		out.println("</body></html>");
 	}
-	
+
 }

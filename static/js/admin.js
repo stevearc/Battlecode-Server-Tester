@@ -13,6 +13,21 @@ $(function() {
             { "bSortable": false, "aTargets": [ 2, 3 ] }
         ],
     });
+    var playerTable = $('#player_table').dataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "aoColumnDefs": [ 
+            { "bSortable": false, "aTargets": [ 1 ] }
+        ],
+    });
+    var playerTable = $('#map_table').dataTable({
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "aoColumnDefs": [ 
+            { "bSortable": false, "aTargets": [ 5 ] }
+        ],
+    });
+
 
     $('.dataTables_wrapper').attr("style", "width:470px; margin:8");
     $('#download').button().click(function() {
@@ -20,6 +35,54 @@ $(function() {
     });
     
 });
+
+function togglePlayer(id, show) {
+    $.ajax({
+        url: "admin_action",
+        data: "playerid=" + id + "&cmd=toggle_player",
+        success: function(data) {
+            var table = $("#player_table").dataTable();
+            var rowIndex;
+            var rows = table.fnGetNodes();
+            for (rowIndex in rows) {
+                if (parseInt($($(rows[rowIndex]).children()[0]).attr("playerid")) === id) {
+                    var button = $("<input type='button' />")
+                    .attr("value", (show ? "Hide" : "Show"))
+                    .click(function() {
+                        togglePlayer(id, !show);
+                    });
+                    $($(rows[rowIndex]).children()[1]).empty();
+                    $($(rows[rowIndex]).children()[1]).append(button);
+                    break;
+                }
+            }
+        },
+    });
+}
+
+function toggleMap(id, show) {
+    $.ajax({
+        url: "admin_action",
+        data: "mapid=" + id + "&cmd=toggle_map",
+        success: function(data) {
+            var table = $("#map_table").dataTable();
+            var rowIndex;
+            var rows = table.fnGetNodes();
+            for (rowIndex in rows) {
+                if (parseInt($($(rows[rowIndex]).children()[0]).attr("mapid")) === id) {
+                    var button = $("<input type='button' />")
+                    .attr("value", (show ? "Hide" : "Show"))
+                    .click(function() {
+                        toggleMap(id, !show);
+                    });
+                    $($(rows[rowIndex]).children()[5]).empty();
+                    $($(rows[rowIndex]).children()[5]).append(button);
+                    break;
+                }
+            }
+        },
+    });
+}
 
 // Makes an asynchronous call to change a user's status
 function manageUser(id, username, userid, cmd) {

@@ -74,8 +74,12 @@ $(function() {
                 matchFinished(args[1], args[2], args[3]);
             } else if (cmd == "ADD_MAP") {
                 addMap(args[1], args[2]);
+            } else if (cmd == "DELETE_MAP") {
+                deleteMap(args[1]);
             } else if (cmd == "ADD_PLAYER") {
                 addPlayer(args[1], args[2]);
+            } else if (cmd == "DELETE_PLAYER") {
+                deletePlayer(args[1]);
             } else {
                 console.log("Unknown command: " + cmd);
             }
@@ -91,9 +95,36 @@ function doNavMatches(id) {
     document.location="matches.html?id="+id;
 }
 
+function deletePlayer(playerId) {
+    var options = $("#team_a_button option");
+    for (rowIndex in options) {
+        if ($(options[0]).attr("value") === playerId) {
+            $(options[0]).remove();
+        }
+    }
+    options = $("#team_b_button option");
+    for (rowIndex in options) {
+        if ($(options[0]).attr("value") === playerId) {
+            $(options[0]).remove();
+        }
+    }
+}
+
 function addPlayer(playerId, playerName) {
     $("#team_a_button").prepend($("<option />").attr("value", playerId).html(playerName));
     $("#team_b_button").prepend($("<option />").attr("value", playerId).html(playerName));
+}
+
+function deleteMap(mapId) {
+    var table = $("#map_table").dataTable();
+    var rowIndex;
+    var rows = table.fnGetNodes();
+    for (rowIndex in rows) {
+        if ($($($(rows[rowIndex]).children()[0]).children()[0]).attr("value") === mapId) {
+            table.fnDeleteRow(rowIndex);
+            break;
+        }
+    }
 }
 
 function addMap(mapId, mapName) {

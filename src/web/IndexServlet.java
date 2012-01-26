@@ -57,7 +57,7 @@ public class IndexServlet extends HttpServlet {
 				"what the seeds will be for each match.</div>");
 		EntityManager em = HibernateUtil.getEntityManager();
 		// Begin the New Run form
-		List<BSPlayer> players = em.createQuery("from BSPlayer player order by player.id desc", BSPlayer.class).getResultList();
+		List<BSPlayer> players = em.createQuery("from BSPlayer player where player.invisible = false order by player.id desc", BSPlayer.class).getResultList();
 		out.println("<button id='newRunButton' style='margin-left: 20px'>New Run</button>");
 		out.println("<div id='newRunForm' style='display:none'>");
 		out.println("<div class='overlay'>");
@@ -103,7 +103,7 @@ public class IndexServlet extends HttpServlet {
 				"<th>Map</th>" +
 		"</tr>");
 		out.println("</thead><tbody>");
-		List<BSMap> maps = em.createQuery("from BSMap", BSMap.class).getResultList();
+		List<BSMap> maps = em.createQuery("from BSMap map where map.invisible = false", BSMap.class).getResultList();
 		for (BSMap m: maps) {
 			out.println("<tr><td><input type='checkbox' value='" + m.getId() + "'></td>" +
 					"<td>" + m.getMapName() + "</td></tr>");
@@ -146,8 +146,12 @@ public class IndexServlet extends HttpServlet {
 			out.println("<tr>");
 			
 			out.println(td + r.getId() + "</td>" + 
-					td + r.getTeamA().getPlayerName() + "</td>" +
-					td + r.getTeamB().getPlayerName() + "</td>" +				
+					td + (r.getaWins() > r.getbWins() && r.getStatus() != STATUS.RUNNING ? 
+							"<span style='font-weight:bold'>" + r.getTeamA().getPlayerName() + "</span>" : 
+								r.getTeamA().getPlayerName()) + "</td>" +
+					td + (r.getbWins() > r.getaWins() && r.getStatus() != STATUS.RUNNING ? 
+							"<span style='font-weight:bold'>" + r.getTeamB().getPlayerName() + "</span>" : 
+								r.getTeamB().getPlayerName()) + "</td>" +
 					td + r.getaWins() + "/" + r.getbWins() + "</td>");
 			switch (r.getStatus()){
 			case QUEUED:

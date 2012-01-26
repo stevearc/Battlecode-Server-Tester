@@ -45,7 +45,6 @@ public class MatchesByMapServlet extends HttpServlet {
 				"<tr>" +
 				"<th>Map</th>" +
 				"<th>Win %</th>" +
-				"<th>Size</th>" +
 				"</tr>" +
 				"</thead>" +
 		"<tbody>");
@@ -71,7 +70,6 @@ public class MatchesByMapServlet extends HttpServlet {
 			out.println("<tr>");
 			out.println("<td>" + map.getMapName() + "</td>");
 			out.println("<td>" + WebUtil.getFormattedWinPercentage((double)aCount/(aCount+bCount)) + "</td>");
-			out.println("<td>" + map.getSize() + "</td>");
 			out.println("</tr>");
 		}
 		out.println("</tbody>");

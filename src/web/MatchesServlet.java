@@ -44,7 +44,6 @@ public class MatchesServlet extends HttpServlet {
 				"<th>Map</th>" +
 				"<th>Map seed</th>" +
 				"<th>Winner</th>" +
-				"<th>Size</th>" +
 				"<th>Rounds</th>" +
 				"<th>Win condition</th>" +
 				"<th>Replay File</th>" +
@@ -64,7 +63,6 @@ public class MatchesServlet extends HttpServlet {
 			out.println(td(match) + match.getSeed() + "</td>");
 			out.println(td(match) + "<font color='" + (match.getResult().getWinner() == TEAM.A ? "red'>" + 
 					run.getTeamA().getPlayerName() : "blue'>" + run.getTeamB().getPlayerName()) + "</font></td>");
-			out.println(td(match) + match.getMap().getSize() + "</td>");
 			out.println(td(match) + match.getResult().getRounds() + "</td>");
 			out.println(td(match) + match.getResult().getWinCondition() + "</td>");
 			out.println("<td><a href='/matches/" + match.toMatchFileName() + "'>download</a></td>");
