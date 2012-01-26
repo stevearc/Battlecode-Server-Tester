@@ -10,7 +10,7 @@ import javax.persistence.Id;
 public class BSPlayer {
 	private Long id;
 	private String playerName;
-	private boolean invisible;
+	private Boolean invisible;
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE)
@@ -23,8 +23,8 @@ public class BSPlayer {
 		return playerName;
 	}
 	
-	@Column(nullable=false)
-	public boolean getInvisible() {
+	@Column(nullable=false, columnDefinition="boolean default false")
+	public Boolean getInvisible() {
 		return invisible;
 	}
 
@@ -36,7 +36,7 @@ public class BSPlayer {
 		this.playerName = playerName;
 	}
 	
-	public void setInvisible(boolean invisible) {
+	public void setInvisible(Boolean invisible) {
 		this.invisible = invisible;
 	}
 	

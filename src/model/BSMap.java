@@ -37,7 +37,7 @@ public class BSMap implements Serializable {
 	private Long width;
 	private Long rounds;
 	private String hash;
-	private boolean invisible;
+	private Boolean invisible;
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO, generator="map_id_gen")
@@ -71,8 +71,8 @@ public class BSMap implements Serializable {
 		return hash;
 	}
 	
-	@Column(nullable=false)
-	public boolean getInvisible() {
+	@Column(nullable=false, columnDefinition="boolean default false")
+	public Boolean getInvisible() {
 		return invisible;
 	}
 	
@@ -100,7 +100,7 @@ public class BSMap implements Serializable {
 		this.hash = hash;
 	}
 	
-	public void setInvisible(boolean invisible) {
+	public void setInvisible(Boolean invisible) {
 		this.invisible = invisible;
 	}
 	
