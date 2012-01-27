@@ -160,12 +160,12 @@ public class LoginServlet extends HttpServlet {
 			return;
 		}
 		BSUser user = getMatchingUser(username, password);
-		if (user.getPrivs() == PRIVS.PENDING) {
+		if (user == null || user.getPrivs() == PRIVS.PENDING) {
 			request.setAttribute("error", "pending_user");
 			em.close();
 			doGet(request, response);
 			return;
-		} else if (user != null && request.getParameter("login") != null) {
+		} else if (request.getParameter("login") != null) {
 			user.setSession(salt);
 			em.getTransaction().begin();
 			em.merge(user);
