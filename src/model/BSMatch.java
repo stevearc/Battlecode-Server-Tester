@@ -30,12 +30,12 @@ public class BSMatch {
 		return id;
 	}
 	@ManyToOne
-	@JoinColumn(name = "bsrun_id")
+	@JoinColumn(name = "bsrun_id", nullable=false)
 	public BSRun getRun() {
 		return run;
 	}
 	@ManyToOne
-	@JoinColumn(name = "bsmap_id")
+	@JoinColumn(name = "bsmap_id", nullable=false)
 	public BSMap getMap() {
 		return map;
 	}
@@ -44,6 +44,7 @@ public class BSMatch {
 		return seed;
 	}
 	@Enumerated(EnumType.STRING)
+	@Column(nullable=false)
 	public STATUS getStatus() {
 		return status;
 	}

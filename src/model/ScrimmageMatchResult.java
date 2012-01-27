@@ -2,10 +2,7 @@ package model;
 
 import java.io.Serializable;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -14,8 +11,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Transient;
+
+import org.hibernate.annotations.LazyToOne;
+import org.hibernate.annotations.LazyToOneOption;
 
 @Entity
 public class ScrimmageMatchResult implements MatchResult, Serializable{
@@ -53,39 +54,13 @@ public class ScrimmageMatchResult implements MatchResult, Serializable{
 	public BSScrimmageSet getScrimmageSet() {
 		return scrimmageSet;
 	}
-	@Embedded
-	@AttributeOverrides( {
-		@AttributeOverride(name="totalRobots", column = @Column(name="totalRobots_A")),
-		@AttributeOverride(name="robotsByType", column = @Column(name="robotsByType_A")),
-		@AttributeOverride(name="activeRobots", column = @Column(name="activeRobots_A")),
-		@AttributeOverride(name="activeRobotsByType", column = @Column(name="activeRobotsByType_A")),
-		@AttributeOverride(name="totalRobotsBuilt", column = @Column(name="totalRobotsBuilt_A")),
-		@AttributeOverride(name="robotsBuiltByType", column = @Column(name="robotsBuiltByType_A")),
-		@AttributeOverride(name="totalRobotsKilled", column = @Column(name="totalRobotsKilled_A")),
-		@AttributeOverride(name="robotsKilledByType", column = @Column(name="robotsKilledByType_A")),
-		@AttributeOverride(name="fluxSpentOnSpawning", column = @Column(name="fluxSpentOnSpawning_A")),
-		@AttributeOverride(name="fluxSpentOnMoving", column = @Column(name="fluxSpentOnMoving_A")),
-		@AttributeOverride(name="fluxSpentOnUpkeep", column = @Column(name="fluxSpentOnUpkeep_A")),
-		@AttributeOverride(name="totalFluxGathered", column = @Column(name="totalFluxGathered_A"))
-	})
+	@OneToOne(orphanRemoval=true)
+	@LazyToOne(LazyToOneOption.NO_PROXY)
 	public TeamMatchResult getaResult() {
 		return aResult;
 	}
-	@Embedded
-	@AttributeOverrides( {
-		@AttributeOverride(name="totalRobots", column = @Column(name="totalRobots_B")),
-		@AttributeOverride(name="robotsByType", column = @Column(name="robotsByType_B")),
-		@AttributeOverride(name="activeRobots", column = @Column(name="activeRobots_B")),
-		@AttributeOverride(name="activeRobotsByType", column = @Column(name="activeRobotsByType_B")),
-		@AttributeOverride(name="totalRobotsBuilt", column = @Column(name="totalRobotsBuilt_B")),
-		@AttributeOverride(name="robotsBuiltByType", column = @Column(name="robotsBuiltByType_B")),
-		@AttributeOverride(name="totalRobotsKilled", column = @Column(name="totalRobotsKilled_B")),
-		@AttributeOverride(name="robotsKilledByType", column = @Column(name="robotsKilledByType_B")),
-		@AttributeOverride(name="fluxSpentOnSpawning", column = @Column(name="fluxSpentOnSpawning_B")),
-		@AttributeOverride(name="fluxSpentOnMoving", column = @Column(name="fluxSpentOnMoving_B")),
-		@AttributeOverride(name="fluxSpentOnUpkeep", column = @Column(name="fluxSpentOnUpkeep_B")),
-		@AttributeOverride(name="totalFluxGathered", column = @Column(name="totalFluxGathered_B"))
-	})
+	@OneToOne(orphanRemoval=true)
+	@LazyToOne(LazyToOneOption.NO_PROXY)
 	public TeamMatchResult getbResult() {
 		return bResult;
 	}

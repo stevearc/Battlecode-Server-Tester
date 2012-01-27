@@ -2,12 +2,17 @@ package model;
 
 import java.io.Serializable;
 
-import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Lob;
+import javax.persistence.SequenceGenerator;
 
-@Embeddable
+@Entity
 public class TeamMatchResult implements Serializable {
 	private static final long serialVersionUID = 5493198563817908787L;
+	private Long id;
 	private Integer[] totalRobots;
 	private Integer[][] robotsByType;
 	private Integer[] activeRobots;
@@ -48,6 +53,13 @@ public class TeamMatchResult implements Serializable {
 		}
 		return tmr;
 		*/
+	}
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO, generator="team_result_id_gen")
+	@SequenceGenerator(name="team_result_id_gen", sequenceName="TEAM_RESULT_ID_GEN")
+	public Long getId() {
+		return id;
 	}
 
 	@Lob
@@ -110,6 +122,9 @@ public class TeamMatchResult implements Serializable {
 		return totalFluxGathered;
 	}
 
+	public void setId(Long id) {
+		this.id = id;
+	}
 
 	public void setTotalRobots(Integer[] totalRobots) {
 		this.totalRobots = totalRobots;

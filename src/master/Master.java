@@ -327,6 +327,8 @@ public class Master extends AbstractMaster {
 				for (ScrimmageMatchResult smr: scrim.getScrimmageMatches()) {
 					smr.setScrimmageSet(scrim);
 					em.persist(smr);
+					em.persist(smr.getaResult());
+					em.persist(smr.getbResult());
 				}
 				// Write the observation files
 				for (int i = 0; i < scrim.getScrimmageMatches().size(); i++) {
@@ -373,6 +375,8 @@ public class Master extends AbstractMaster {
 				// Match was already finished by another worker
 			} else if (status == STATUS.COMPLETE) {
 				em.getTransaction().begin();
+				em.persist(result.getaResult());
+				em.persist(result.getbResult());
 				em.persist(result);
 				em.flush();
 				em.getTransaction().commit();
@@ -755,6 +759,7 @@ public class Master extends AbstractMaster {
 		try {
 			meta = em.createQuery("from BSMetadata", BSMetadata.class).getSingleResult();
 			if (BSUtil.compareVersions(meta.getVersion(), Config.VERSION) != 0) {
+				
 				meta.setVersion(Config.VERSION);
 				// If this version changed the HASH_VERSION, we need to update all map hashes in the DB
 				if (meta.getHashVersion() < Config.HASH_VERSION) {
