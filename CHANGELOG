@@ -1,4 +1,12 @@
 #########
+# 1.1.2 #
+#########
+    * DB performance improvement that breaks the upgrade process.
+    If you have an existing installation, you will lose the current results.  To keep the same
+    maps and players, follow the standard upgrade process in the README and then delete all 
+    files beginning with BSTesterDB
+
+#########
 # 1.1.1 #
 #########
     * Fixed a DB bug when upgrading
