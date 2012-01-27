@@ -54,7 +54,6 @@ public class Master extends AbstractMaster {
 	private File pendingAllowedPackagesFile;
 	private File pendingDisallowedClassesFile;
 	private File pendingMethodCostsFile;
-	private boolean initialized;
 
 	public static Master createMaster(int dataPort) throws Exception {
 		if (singleton != null) {
@@ -95,11 +94,6 @@ public class Master extends AbstractMaster {
 			}
 		}).start();
 		WebSocketChannelManager.start();
-		initialized = true;
-	}
-
-	public synchronized boolean isInitialized() {
-		return initialized;
 	}
 
 	/**
@@ -768,6 +762,7 @@ public class Master extends AbstractMaster {
 				}
 			}
 		} catch (NoResultException e) {
+			onFirstRun(em);
 			// Create the metadata
 			meta = new BSMetadata();
 			meta.setId(1l);
@@ -783,6 +778,29 @@ public class Master extends AbstractMaster {
 		em.flush();
 		em.getTransaction().commit();
 		em.close();
+	}
+	
+	private static void onFirstRun(EntityManager em) {
+		// Check to see if there are already players in the teams dir
+		File file = new File("teams");
+		File[] playerFiles = file.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".jar");
+			}
+		});
+		if (playerFiles == null)
+			return;
+		for (File m: playerFiles) {
+				BSPlayer p = new BSPlayer();
+				p.setInvisible(false);
+				p.setPlayerName(m.getName().substring(0, m.getName().length() - 4));
+				em.persist(p);
+		}
+
+		em.getTransaction().begin();
+		em.flush();
+		em.getTransaction().commit();
 	}
 
 	private static void updateMapHashes(EntityManager em) {
