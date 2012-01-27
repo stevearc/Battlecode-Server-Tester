@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -23,11 +24,11 @@ import common.HibernateUtil;
 public class ScrimmagesServlet extends HttpServlet {
 	private static final long serialVersionUID = -4741371113331532230L;
 	public static final String NAME = "/scrimmages.html";
-	
+
 	private void warn(HttpServletResponse response, String warning) throws IOException {
 		response.getWriter().println("<p class='ui-state-error' style='padding:10px'>" + warning + "</p>");
 	}
-	
+
 	private void highlight(HttpServletResponse response, String msg) throws IOException {
 		response.getWriter().println("<p class='ui-state-highlight' style='padding:10px'>" + msg + "</p>");
 	}
@@ -54,7 +55,8 @@ public class ScrimmagesServlet extends HttpServlet {
 
 		WebUtil.writeTabs(request, response, NAME);
 		out.println("<script src='js/jquery.dataTables.min.js'></script>");
-		
+
+		EntityManager em = HibernateUtil.getEntityManager();
 		if (request.getParameter("submit-scrimmage") != null) {
 			File scrimmage = (File) request.getAttribute("scrimmage");
 			String scrimmageName = request.getParameter("scrimmageName").trim().replaceAll("\\s", "_");
@@ -63,14 +65,22 @@ public class ScrimmagesServlet extends HttpServlet {
 			} else if (scrimmageName == null || scrimmageName.isEmpty() || scrimmageName.contains("/")) {
 				warn(response, "Scrimmage file has invalid name"); 
 			} else {
-				BSScrimmageSet scrim = new BSScrimmageSet();
-				scrim.setFileName(scrimmageName);
-				scrim.setStatus(STATUS.QUEUED);
-				scrim.setPlayerA("");
-				scrim.setPlayerB("");
-				if (new File(scrim.toPath()).exists()) {
+				boolean exists = true;
+				try {
+					em.createQuery("from BSScrimmageSet scrim where scrim.fileName = ?")
+					.setParameter(1, scrimmageName)
+					.getSingleResult();
+				} catch (NoResultException e) {
+					exists = false;
+				}
+				if (exists) {
 					warn(response, "Scrimmage " + scrimmageName + " already exists!");
 				} else {
+					BSScrimmageSet scrim = new BSScrimmageSet();
+					scrim.setFileName(scrimmageName);
+					scrim.setStatus(STATUS.QUEUED);
+					scrim.setPlayerA("");
+					scrim.setPlayerB("");
 					BSUtil.writeFileData(scrimmage, scrim.toPath());
 					highlight(response, "Successfully uploaded map: " + scrimmageName);
 					// Don't spawn a new thread because we *want* the new web thread to block
@@ -78,18 +88,17 @@ public class ScrimmagesServlet extends HttpServlet {
 				}
 			}
 		}
-		
-		EntityManager em = HibernateUtil.getEntityManager();
+
 		// Begin the upload form
 		out.println("<form id='scrimmageForm' action='" + response.encodeURL(NAME) + "' method='post' enctype='multipart/form-data'>");
 		out.println("<table>");
 		out.println("<tr>" +
 				"<td style='text-align:right'>Scrimmage:</td>" +
 				"<td><input type='file' name='scrimmage' id='scrimFile' /></td>" +
-				"</tr>");
+		"</tr>");
 		out.println("<tr><td></td>" +
 				"<td><input type='submit' name='submit-scrimmage' value='Upload'/></td>" +
-				"</tr>");
+		"</tr>");
 		out.println("</table>");
 		out.println("<input id='scrimmageName' type='hidden' name='scrimmageName' />");
 		out.println("</form>");
@@ -135,7 +144,7 @@ public class ScrimmagesServlet extends HttpServlet {
 		if (possibleTeams.size() == 1) {
 			myTeam = possibleTeams.get(0);
 		}
-		
+
 		for (BSScrimmageSet s: scrimmages) {
 			String td;
 			// Make scrimmages with data clickable
@@ -151,7 +160,7 @@ public class ScrimmagesServlet extends HttpServlet {
 				(s.getPlayerB().equals(myTeam) && s.getWinner() == TEAM.B);
 				out.println("<tr class='" + (won ? "win" : "loss") + "'>");
 			}
-			
+
 			out.println(td + s.getId() + "</td>" + 
 					td + s.getFileName() + "</td>" +
 					td + s.getPlayerA() + "</td>" +
@@ -176,14 +185,14 @@ public class ScrimmagesServlet extends HttpServlet {
 		out.println("</tbody>");
 		out.println("</table>");
 		out.println("</div>");
-		
+
 		out.println("<script type=\"text/javascript\">var myTeam = '" + myTeam + "'</script>");
 		out.println("<script type=\"text/javascript\" src=\"js/bsUtil.js\"></script>");
 		out.println("<script type=\"text/javascript\" src=\"js/scrimmage.js\"></script>");
 		out.println("</body></html>");
 		em.close();
 	}
-	
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);
