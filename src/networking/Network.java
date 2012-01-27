@@ -1,5 +1,6 @@
 package networking;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -78,6 +79,9 @@ public class Network implements Runnable{
 
 				controller.addPacket(packet);
 			} 
+			catch (EOFException e) {
+				break;
+			}
 			catch (IOException e){
 				_log.error("Error running network", e);
 				break;
